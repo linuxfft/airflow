@@ -425,6 +425,9 @@ class Airflow(AirflowBaseView):
         result_keys_translation_mapping = Variable.get('result_keys_translation_mapping', deserialize_json=True,
                                                        default_var={})
         controller_name = ti.controller_name.split('@')[0] if ti.controller_name else ''
+        bolt_number = ti.bolt_number if ti.bolt_number else ''
+        k, v = Variable.get_fuzzy_active(bolt_number, deserialize_json=True)
+
         controller = TighteningController.find_controller(controller_name)
         error_tags = ErrorTag.get_all()
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE')
@@ -448,7 +451,8 @@ class Airflow(AirflowBaseView):
                                     controller=controller,
                                     errorTags=error_tags,
                                     show_range=show_range,
-                                    display_keys=display_keys
+                                    display_keys=display_keys,
+                                    curveTemplate=v
                                     )
 
     @expose('/curve_template/<string:bolt_no>/<string:craft_type>')

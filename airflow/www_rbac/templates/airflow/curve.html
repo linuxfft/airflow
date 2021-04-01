@@ -81,7 +81,10 @@
       <tbody id="result_detail"></tbody>
     </table>
   </div>
-  <button onclick="downloadCurveAndResult()" class="btn btn-primary  m-2">下载拧紧结果和曲线</button>
+  <div style="display: flex;flex-direction: row;justify-content: space-between;align-items: center">
+    <button id="btn-toggle-show-template" data-is-shown="false" class="btn btn-default m-1" style="width: 30%">显示模板</button>
+    <button onclick="downloadCurveAndResult()" class="btn btn-primary m-1"  style="width: 70%">下载拧紧结果和曲线</button>
+  </div>
   {% endcall %}
 
 </div>
@@ -103,6 +106,21 @@
   const displayKeys = JSON.parse('{{ display_keys|tojson|safe }}');
   const resultErrs = JSON.parse('{{ resultErrorMessageMapping|tojson|safe }}');
   const resultKeys = JSON.parse('{{ resultKeysTranslationMapping|tojson|safe }}');
+  const curveTemplate = JSON.parse('{{ curveTemplate|tojson|safe }}');
+  let showTemplate = false;
+  const samplingTime = curveTemplate.curve_param.sampling_time;
+  const actualTemplates = curveTemplate.template_cluster[0].curve_template_group_array.map(function (g) {
+    const tmpl = g.template_data_array[g.template_centroid_index];
+    return {
+      cur_m: tmpl.template_torque,
+      cur_s: [],
+      cur_t: tmpl.template_torque.map(function (t, idx) {
+        return (tmpl.start_point + idx) * samplingTime;
+      }),
+      cur_w: tmpl.template_angle,
+    }
+  });
+
   let $errorTagsSelector = null;
   let $errorTagInput = null;
 
@@ -132,10 +150,7 @@
       [dataAxis]: value,
       lineStyle: {
         color: color
-      },
-      // label:{
-      //   show:false
-      // }
+      }
     };
   }
 
@@ -209,6 +224,17 @@
     }, []);
   }
 
+  function genTemplateData(template) {
+    const {xKey, yKey} = chartParams;
+    const data = [];
+    const xData = template[xKey];
+    const yData = template[yKey];
+    for (const x in xData) {
+      data.push([xData[x], yData[x]]);
+    }
+    return data;
+  }
+
   function renderChart() {
     const {xName, yName} = chartParams;
 
@@ -262,8 +288,6 @@
         },
         markLine: {
           data: [
-            // { type: 'min', name: '最小值' },
-            // { type: 'max', name: '最大值' },
             ...getMarkLineByDataKey()
           ]
         },
@@ -304,7 +328,25 @@
         trigger: 'axis'
       }
     };
-    curveChart.setOption(option);
+    if (showTemplate) {
+      option.series = option.series.concat(actualTemplates.map(function (t, idx) {
+        return {
+          name: '模板' + idx,
+          type: 'line',
+          data: genTemplateData(t),
+          itemStyle: {
+            color: '#30bf83'
+          },
+          lineStyle: {
+            color: '#30bf83',
+            width: 3
+          },
+          symbol: 'circle',
+          showSymbol: false
+        }
+      }));
+    }
+    curveChart.setOption(option,true);
   }
 
   function isEmptyValue(val) {
@@ -334,7 +376,7 @@
     if (/[^0-1]/.test(code)) {
       return code;
     }
-    const codeArr = code.split('').reverse();
+    const codeArr = code.split('').reverse() || [];
     const messageArr = [];
     codeArr.forEach((val, idx) => {
       if (val === '0') {
@@ -346,34 +388,10 @@
   }
 
   function renderResultDetail() {
-    const {
-      measure_result: measureResult,
-      error_code: errorCode,
-      angle_max,
-      angle_min,
-      angle_target,
-      measure_angle,
-      torque_max,
-      torque_min,
-      torque_target,
-      measure_torque,
-      ...rest
-    } = result;
     const {detail} = displayKeys;
     const $rows = [];
-    // const isNOK = (measureResult || '').toUpperCase() === 'NOK';
-    // $rows.push(renderResultTableRow(resultKeys.measure_result || 'measure_result', measureResult, isNOK));
-    // $rows.push(renderResultTableRow(resultKeys.error_code || 'error_code', parseResultErrorCode(errorCode), isNOK));
-    // $rows.push(renderResultTableRow(resultKeys.measure_angle || 'measure_angle', measure_angle));
-    // $rows.push(renderResultTableRow(resultKeys.angle_target || 'angle_target', angle_target));
-    // $rows.push(renderResultTableRow(resultKeys.angle_max || 'angle_max', angle_max));
-    // $rows.push(renderResultTableRow(resultKeys.angle_min || 'angle_min', angle_min));
-    // $rows.push(renderResultTableRow(resultKeys.measure_torque || 'measure_torque', measure_torque));
-    // $rows.push(renderResultTableRow(resultKeys.torque_target || 'torque_target', torque_target));
-    // $rows.push(renderResultTableRow(resultKeys.torque_max || 'torque_max', torque_max));
-    // $rows.push(renderResultTableRow(resultKeys.torque_min || 'torque_min', torque_min));
 
-    detail.forEach((k) => {
+    (detail || []).forEach((k) => {
       $rows.push(renderResultTableRow(resultKeys[k] || k, result[k]));
     });
     $('#result_detail').append($rows);
@@ -478,7 +496,7 @@
       work_center_code: {label: '工位编号', value: '{{controller.work_center_code}}'}
     };
     const {basic} = displayKeys;
-    const info = basic.map(function (k) {
+    const info = (basic || []).map(function (k) {
       return baseInfo[k] || {};
     });
 
@@ -526,7 +544,7 @@
       return curKeyMap[k];
     }).join(',') + '\n';
     for (let i = 0; i < length; i++) {
-      keys.forEach(function (k) {
+      (keys || []).forEach(function (k) {
         content += curve[k][i];
         content += ',';
       });
@@ -555,7 +573,23 @@
 
   }
 
+
+  function toggleTemplate(e) {
+    let $btn = $(e.target);
+    if (e.target.dataset.isShown !== 'true') {
+      $btn.attr('data-is-shown', 'true');
+      showTemplate = true;
+      $btn.html('隐藏模板');
+    } else {
+      $btn.attr('data-is-shown', 'false');
+      showTemplate = false;
+      $btn.html('显示模板');
+    }
+    renderChart();
+  }
+
   $(document).ready(() => {
+    $('#btn-toggle-show-template').on('click', toggleTemplate);
     renderBaseInfo();
     chartInit();
     renderChart();
