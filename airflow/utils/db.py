@@ -66,7 +66,7 @@ def provide_session(func):
 
         func_params = func.__code__.co_varnames
         session_in_args = arg_session in func_params and \
-            func_params.index(arg_session) < len(args)
+                          func_params.index(arg_session) < len(args)
         session_in_kwargs = arg_session in kwargs
 
         if session_in_kwargs or session_in_args:
@@ -141,19 +141,11 @@ def create_default_error_tags(session=None):
 
 
 @provide_session
-def create_default_lg_line_controller_map_var(session=None):
-    if not session:
-        return
-    #TODO: 增加临港工厂基础数据创建
-    return
-
-
-@provide_session
-def create_default_nd_line_controller_map_var(session=None):
+def create_default_controller_map_var(file, session=None):
     log.info("Loading default controllers")
     from airflow.models import TighteningController
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    val = load_data_from_csv(os.path.join(current_dir, 'default_controllers.csv'), {
+    val = load_data_from_csv(os.path.join(current_dir, file), {
         'controller_name': '控制器名称',
         'line_code': '工段编号',
         'work_center_code': '工位编号',
@@ -173,6 +165,16 @@ def create_default_nd_line_controller_map_var(session=None):
             work_center_name=controller.get('work_center_name', None),
             session=session
         )
+
+
+@provide_session
+def create_default_lg_line_controller_map_var(session=None):
+    create_default_controller_map_var('default_controllers_lg.csv', session=session)
+
+
+@provide_session
+def create_default_nd_line_controller_map_var(session=None):
+    create_default_controller_map_var('default_controllers.csv', session=session)
 
 
 @provide_session
@@ -442,6 +444,7 @@ def initdb(rbac=False):
         create_default_error_tags()
 
     if os.environ.get('FACTORY_CODE', '') in ['nd', '7200', 'ND']:
+        # 宁德
         create_default_nd_line_controller_map_var(session)
 
     if os.environ.get('FACTORY_CODE', '') in ['lg', '2200', 'LG']:
@@ -509,10 +512,10 @@ def initdb(rbac=False):
     if not session.query(KET).filter(KET.know_event_type == 'Outage').first():
         session.add(KET(know_event_type='Outage'))
     if not session.query(KET).filter(
-            KET.know_event_type == 'Natural Disaster').first():
+        KET.know_event_type == 'Natural Disaster').first():
         session.add(KET(know_event_type='Natural Disaster'))
     if not session.query(KET).filter(
-            KET.know_event_type == 'Marketing Campaign').first():
+        KET.know_event_type == 'Marketing Campaign').first():
         session.add(KET(know_event_type='Marketing Campaign'))
     session.commit()
 
