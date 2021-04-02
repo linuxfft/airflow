@@ -347,6 +347,9 @@
             showSymbol: false
           }
         }));
+        option.legend.data=option.legend.data.concat(actualTemplates.map(function(t,idx){
+          return '模板' + idx;
+        }));
       }
       curveChart.setOption(option, true);
     }
