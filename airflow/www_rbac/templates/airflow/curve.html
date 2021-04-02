@@ -393,7 +393,7 @@
       const {detail} = displayKeys;
       const $rows = [];
 
-      (detail || []).forEach((k) => {
+      (detail || Object.keys(resultKeys)).forEach((k) => {
         $rows.push(renderResultTableRow(resultKeys[k] || k, result[k]));
       });
       $('#result_detail').append($rows);
@@ -498,7 +498,7 @@
         work_center_code: {label: '工位编号', value: '{{controller.work_center_code}}'}
       };
       const {basic} = displayKeys;
-      const info = (basic || []).map(function (k) {
+      const info = (basic || Object.keys(baseInfo)).map(function (k) {
         return baseInfo[k] || {};
       });
 
