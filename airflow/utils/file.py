@@ -172,7 +172,7 @@ def find_dag_file_paths(file_paths, files, patterns, root, safe_mode):
             _, file_ext = os.path.splitext(os.path.split(file_path)[-1])
             if file_ext != '.py' and not zipfile.is_zipfile(file_path):
                 continue
-            if any([re.findall(p, file_path) for p in patterns]):
+            if any(re.findall(p, file_path) for p in patterns):
                 continue
 
             if not might_contain_dag(file_path, safe_mode):
@@ -191,5 +191,5 @@ def might_contain_dag(file_path, safe_mode):
     if safe_mode and not zipfile.is_zipfile(file_path):
         with open(file_path, 'rb') as dag_file:
             content = dag_file.read()
-            return all([s in content for s in (b'DAG', b'airflow')])
+            return all(s in content for s in (b'DAG', b'airflow'))
     return True

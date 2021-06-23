@@ -358,7 +358,7 @@ def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVE
                         os.path.split(file_path)[-1])
                     if file_ext != '.py' and not zipfile.is_zipfile(file_path):
                         continue
-                    if any([re.findall(p, file_path) for p in patterns]):
+                    if any(re.findall(p, file_path) for p in patterns):
                         continue
 
                     # Heuristic that guesses whether a Python file contains an
@@ -368,7 +368,7 @@ def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVE
                         with open(file_path, 'rb') as fp:
                             content = fp.read()
                             might_contain_dag = all(
-                                [s in content for s in (b'DAG', b'airflow')])
+                                s in content for s in (b'DAG', b'airflow'))
 
                     if not might_contain_dag:
                         continue

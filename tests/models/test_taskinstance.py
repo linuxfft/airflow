@@ -843,7 +843,7 @@ class TaskInstanceTest(unittest.TestCase):
             upstream_failed=upstream_failed,
             done=done,
             flag_upstream_failed=flag_upstream_failed)
-        completed = all([dep.passed for dep in dep_results])
+        completed = all(dep.passed for dep in dep_results)
 
         self.assertEqual(completed, expect_completed)
         self.assertEqual(ti.state, expect_state)

@@ -807,7 +807,7 @@ class BaseOperator(LoggingMixin):
                 if content is None:
                     continue
                 elif isinstance(content, six.string_types) and \
-                        any([content.endswith(ext) for ext in self.template_ext]):
+                        any(content.endswith(ext) for ext in self.template_ext):
                     env = self.get_template_env()
                     try:
                         setattr(self, field, env.loader.get_source(env, content)[0])
@@ -817,7 +817,7 @@ class BaseOperator(LoggingMixin):
                     env = self.dag.get_template_env()
                     for i in range(len(content)):
                         if isinstance(content[i], six.string_types) and \
-                                any([content[i].endswith(ext) for ext in self.template_ext]):
+                                any(content[i].endswith(ext) for ext in self.template_ext):
                             try:
                                 content[i] = env.loader.get_source(env, content[i])[0]
                             except Exception as e:

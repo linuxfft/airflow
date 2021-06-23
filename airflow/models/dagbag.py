@@ -212,7 +212,7 @@ class DagBag(BaseDagBag, LoggingMixin):
             if safe_mode:
                 with open(filepath, 'rb') as f:
                     content = f.read()
-                    if not all([s in content for s in (b'DAG', b'airflow')]):
+                    if not all(s in content for s in (b'DAG', b'airflow')):
                         self.file_last_changed[filepath] = file_last_changed_on_disk
                         # Don't want to spam user with skip messages
                         if not self.has_logged:
@@ -252,7 +252,7 @@ class DagBag(BaseDagBag, LoggingMixin):
                         with zip_file.open(mod.filename) as zf:
                             self.log.debug("Reading %s from %s", mod.filename, filepath)
                             content = zf.read()
-                            if not all([s in content for s in (b'DAG', b'airflow')]):
+                            if not all(s in content for s in (b'DAG', b'airflow')):
                                 self.file_last_changed[filepath] = (
                                     file_last_changed_on_disk)
                                 # todo: create ignore list
