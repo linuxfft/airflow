@@ -29,7 +29,6 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Iterable, List, Optional, Set, Type, Union
 
-
 import attr
 from cached_property import cached_property
 
@@ -249,10 +248,12 @@ class BaseOperator(LoggingMixin):
     pool = ""  # type: str
 
     # base list which includes all the attrs that don't need deep copy.
-    _base_operator_shallow_copy_attrs = ('user_defined_macros',
-                                         'user_defined_filters',
-                                         'params',
-                                         '_log',)  # type: Iterable[str]
+    _base_operator_shallow_copy_attrs = (
+        'user_defined_macros',
+        'user_defined_filters',
+        'params',
+        '_log',
+    )  # type: Iterable[str]
 
     # each operator should override this class attr for shallow copy attrs.
     shallow_copy_attrs = ()  # type: Iterable[str]
@@ -287,45 +288,45 @@ class BaseOperator(LoggingMixin):
 
     @apply_defaults
     def __init__(
-        self,
-        task_id,  # type: str
-        owner=conf.get('operators', 'DEFAULT_OWNER'),  # type: str
-        email=None,  # type: Optional[Union[str, Iterable[str]]]
-        email_on_retry=True,  # type: bool
-        email_on_failure=True,  # type: bool
-        retries=conf.getint('core', 'default_task_retries', fallback=0),  # type: int
-        retry_delay=timedelta(seconds=300),  # type: timedelta
-        retry_exponential_backoff=False,  # type: bool
-        max_retry_delay=None,  # type: Optional[datetime]
-        start_date=None,  # type: Optional[datetime]
-        end_date=None,  # type: Optional[datetime]
-        schedule_interval=None,  # not hooked as of now
-        depends_on_past=False,  # type: bool
-        wait_for_downstream=False,  # type: bool
-        dag=None,  # type: Optional[DAG]
-        params=None,  # type: Optional[Dict]
-        default_args=None,  # type: Optional[Dict]
-        priority_weight=1,  # type: int
-        weight_rule=WeightRule.DOWNSTREAM,  # type: str
-        queue=conf.get('celery', 'default_queue'),  # type: str
-        pool=Pool.DEFAULT_POOL_NAME,  # type: str
-        pool_slots=1,  # type: int
-        sla=None,  # type: Optional[timedelta]
-        execution_timeout=None,  # type: Optional[timedelta]
-        on_failure_callback=None,  # type: Optional[Callable]
-        on_success_callback=None,  # type: Optional[Callable]
-        on_retry_callback=None,  # type: Optional[Callable]
-        trigger_rule=TriggerRule.ALL_SUCCESS,  # type: str
-        resources=None,  # type: Optional[Dict]
-        run_as_user=None,  # type: Optional[str]
-        task_concurrency=None,  # type: Optional[int]
-        executor_config=None,  # type: Optional[Dict]
-        do_xcom_push=True,  # type: bool
-        inlets=None,  # type: Optional[Dict]
-        outlets=None,  # type: Optional[Dict]
-        *args,
-        **kwargs
-    ):
+            self,
+            task_id,  # type: str
+            owner=conf.get('operators', 'DEFAULT_OWNER'),  # type: str
+            email=None,  # type: Optional[Union[str, Iterable[str]]]
+            email_on_retry=True,  # type: bool
+            email_on_failure=True,  # type: bool
+            retries=conf.getint('core', 'default_task_retries',
+                                fallback=0),  # type: int
+            retry_delay=timedelta(seconds=300),  # type: timedelta
+            retry_exponential_backoff=False,  # type: bool
+            max_retry_delay=None,  # type: Optional[datetime]
+            start_date=None,  # type: Optional[datetime]
+            end_date=None,  # type: Optional[datetime]
+            schedule_interval=None,  # not hooked as of now
+            depends_on_past=False,  # type: bool
+            wait_for_downstream=False,  # type: bool
+            dag=None,  # type: Optional[DAG]
+            params=None,  # type: Optional[Dict]
+            default_args=None,  # type: Optional[Dict]
+            priority_weight=1,  # type: int
+            weight_rule=WeightRule.DOWNSTREAM,  # type: str
+            queue=conf.get('celery', 'default_queue'),  # type: str
+            pool=Pool.DEFAULT_POOL_NAME,  # type: str
+            pool_slots=1,  # type: int
+            sla=None,  # type: Optional[timedelta]
+            execution_timeout=None,  # type: Optional[timedelta]
+            on_failure_callback=None,  # type: Optional[Callable]
+            on_success_callback=None,  # type: Optional[Callable]
+            on_retry_callback=None,  # type: Optional[Callable]
+            trigger_rule=TriggerRule.ALL_SUCCESS,  # type: str
+            resources=None,  # type: Optional[Dict]
+            run_as_user=None,  # type: Optional[str]
+            task_concurrency=None,  # type: Optional[int]
+            executor_config=None,  # type: Optional[Dict]
+            do_xcom_push=True,  # type: bool
+            inlets=None,  # type: Optional[Dict]
+            outlets=None,  # type: Optional[Dict]
+            *args,
+            **kwargs):
 
         if args or kwargs:
             # TODO remove *args and **kwargs in Airflow 2.0
@@ -333,11 +334,12 @@ class BaseOperator(LoggingMixin):
                 'Invalid arguments were passed to {c} (task_id: {t}). '
                 'Support for passing such arguments will be dropped in '
                 'Airflow 2.0. Invalid arguments were:'
-                '\n*args: {a}\n**kwargs: {k}'.format(
-                    c=self.__class__.__name__, a=args, k=kwargs, t=task_id),
+                '\n*args: {a}\n**kwargs: {k}'.format(c=self.__class__.__name__,
+                                                     a=args,
+                                                     k=kwargs,
+                                                     t=task_id),
                 category=PendingDeprecationWarning,
-                stacklevel=3
-            )
+                stacklevel=3)
         validate_key(task_id)
         self.task_id = task_id
         self.owner = owner
@@ -358,9 +360,11 @@ class BaseOperator(LoggingMixin):
         if not TriggerRule.is_valid(trigger_rule):
             raise AirflowException(
                 "The trigger_rule must be one of {all_triggers},"
-                "'{d}.{t}'; received '{tr}'."
-                .format(all_triggers=TriggerRule.all_triggers(),
-                        d=dag.dag_id if dag else "", t=task_id, tr=trigger_rule))
+                "'{d}.{t}'; received '{tr}'.".format(
+                    all_triggers=TriggerRule.all_triggers(),
+                    d=dag.dag_id if dag else "",
+                    t=task_id,
+                    tr=trigger_rule))
 
         self.trigger_rule = trigger_rule
         self.depends_on_past = depends_on_past
@@ -372,17 +376,16 @@ class BaseOperator(LoggingMixin):
             self.log.warning(
                 "schedule_interval is used for %s, though it has "
                 "been deprecated as a task parameter, you need to "
-                "specify it as a DAG parameter instead",
-                self
-            )
+                "specify it as a DAG parameter instead", self)
         self._schedule_interval = schedule_interval
         self.retries = retries
         self.queue = queue
         self.pool = pool
         self.pool_slots = pool_slots
         if self.pool_slots < 1:
-            raise AirflowException("pool slots for %s in dag %s cannot be less than 1"
-                                   % (self.task_id, self.dag_id))
+            raise AirflowException(
+                "pool slots for %s in dag %s cannot be less than 1" %
+                (self.task_id, self.dag_id))
         self.sla = sla
         self.execution_timeout = execution_timeout
         self.on_failure_callback = on_failure_callback
@@ -401,12 +404,15 @@ class BaseOperator(LoggingMixin):
         if not WeightRule.is_valid(weight_rule):
             raise AirflowException(
                 "The weight_rule must be one of {all_weight_rules},"
-                "'{d}.{t}'; received '{tr}'."
-                .format(all_weight_rules=WeightRule.all_weight_rules,
-                        d=dag.dag_id if dag else "", t=task_id, tr=weight_rule))
+                "'{d}.{t}'; received '{tr}'.".format(
+                    all_weight_rules=WeightRule.all_weight_rules,
+                    d=dag.dag_id if dag else "",
+                    t=task_id,
+                    tr=weight_rule))
         self.weight_rule = weight_rule
 
-        self.resources = Resources(**resources) if resources is not None else None
+        self.resources = Resources(
+            **resources) if resources is not None else None
         self.run_as_user = run_as_user
         self.task_concurrency = task_concurrency
         self.executor_config = executor_config or {}
@@ -423,7 +429,7 @@ class BaseOperator(LoggingMixin):
 
         # subdag parameter is only set for SubDagOperator.
         # Setting it to None by default as other Operators do not have that field
-        self.subdag = None   # type: Optional[DAG]
+        self.subdag = None  # type: Optional[DAG]
 
         self._log = logging.getLogger("airflow.task.operators")
 
@@ -449,9 +455,10 @@ class BaseOperator(LoggingMixin):
             self._outlets.update(outlets)
 
     def __eq__(self, other):
-        if (type(self) == type(other) and
-                self.task_id == other.task_id):
-            return all(self.__dict__.get(c, None) == other.__dict__.get(c, None) for c in self._comps)
+        if (type(self) == type(other) and self.task_id == other.task_id):
+            return all(
+                self.__dict__.get(c, None) == other.__dict__.get(c, None)
+                for c in self._comps)
         return False
 
     def __ne__(self, other):
@@ -539,8 +546,8 @@ class BaseOperator(LoggingMixin):
         that same DAG are ok.
         """
         if not isinstance(dag, DAG):
-            raise TypeError(
-                'Expected DAG; received {}'.format(dag.__class__.__name__))
+            raise TypeError('Expected DAG; received {}'.format(
+                dag.__class__.__name__))
         elif self.has_dag() and self.dag is not dag:
             raise AirflowException(
                 "The DAG assigned to {} can not be changed.".format(self))
@@ -610,8 +617,7 @@ class BaseOperator(LoggingMixin):
 
         return self.priority_weight + sum(
             map(lambda task_id: self._dag.task_dict[task_id].priority_weight,
-                self.get_flat_relative_ids(upstream=upstream))
-        )
+                self.get_flat_relative_ids(upstream=upstream)))
 
     @cached_property
     def operator_extra_link_dict(self):
@@ -624,7 +630,8 @@ class BaseOperator(LoggingMixin):
                 op_extra_links_from_plugin.update({ope.name: ope})
 
         operator_extra_links_all = {
-            link.name: link for link in self.operator_extra_links
+            link.name: link
+            for link in self.operator_extra_links
         }
         # Extra links defined in Plugins overrides operator links defined in operator
         operator_extra_links_all.update(op_extra_links_from_plugin)
@@ -713,17 +720,24 @@ class BaseOperator(LoggingMixin):
         if not jinja_env:
             jinja_env = self.get_template_env()
 
-        self._do_render_template_fields(self, self.template_fields, context, jinja_env, set())
+        self._do_render_template_fields(self, self.template_fields, context,
+                                        jinja_env, set())
 
-    def _do_render_template_fields(self, parent, template_fields, context, jinja_env, seen_oids):
+    def _do_render_template_fields(self, parent, template_fields, context,
+                                   jinja_env, seen_oids):
         # type: (Any, Iterable[str], Dict, jinja2.Environment, Set) -> None
         for attr_name in template_fields:
             content = getattr(parent, attr_name)
             if content:
-                rendered_content = self.render_template(content, context, jinja_env, seen_oids)
+                rendered_content = self.render_template(
+                    content, context, jinja_env, seen_oids)
                 setattr(parent, attr_name, rendered_content)
 
-    def render_template(self, content, context, jinja_env=None, seen_oids=None):
+    def render_template(self,
+                        content,
+                        context,
+                        jinja_env=None,
+                        seen_oids=None):
         # type: (Any, Dict, Optional[jinja2.Environment], Optional[Set]) -> Any
         """
         Render a templated string. The content can be a collection holding multiple templated strings and will
@@ -755,27 +769,40 @@ class BaseOperator(LoggingMixin):
             if type(content) is not tuple:
                 # Special case for named tuples
                 return content.__class__(
-                    *(self.render_template(element, context, jinja_env) for element in content)
-                )
+                    *(self.render_template(element, context, jinja_env)
+                      for element in content))
             else:
-                return tuple(self.render_template(element, context, jinja_env) for element in content)
+                return tuple(
+                    self.render_template(element, context, jinja_env)
+                    for element in content)
 
         elif isinstance(content, list):
-            return [self.render_template(element, context, jinja_env) for element in content]
+            return [
+                self.render_template(element, context, jinja_env)
+                for element in content
+            ]
 
         elif isinstance(content, dict):
-            return {key: self.render_template(value, context, jinja_env) for key, value in content.items()}
+            return {
+                key: self.render_template(value, context, jinja_env)
+                for key, value in content.items()
+            }
 
         elif isinstance(content, set):
-            return {self.render_template(element, context, jinja_env) for element in content}
+            return {
+                self.render_template(element, context, jinja_env)
+                for element in content
+            }
 
         else:
             if seen_oids is None:
                 seen_oids = set()
-            self._render_nested_template_fields(content, context, jinja_env, seen_oids)
+            self._render_nested_template_fields(content, context, jinja_env,
+                                                seen_oids)
             return content
 
-    def _render_nested_template_fields(self, content, context, jinja_env, seen_oids):
+    def _render_nested_template_fields(self, content, context, jinja_env,
+                                       seen_oids):
         # type: (Any, Dict, jinja2.Environment, Set) -> None
         if id(content) not in seen_oids:
             seen_oids.add(id(content))
@@ -785,11 +812,13 @@ class BaseOperator(LoggingMixin):
                 # content has no inner template fields
                 return
 
-            self._do_render_template_fields(content, nested_template_fields, context, jinja_env, seen_oids)
+            self._do_render_template_fields(content, nested_template_fields,
+                                            context, jinja_env, seen_oids)
 
     def get_template_env(self):  # type: () -> jinja2.Environment
         """Fetch a Jinja template environment from the DAG or instantiate empty environment if no DAG."""
-        return self.dag.get_template_env() if self.has_dag() else jinja2.Environment(cache_size=0)
+        return self.dag.get_template_env() if self.has_dag(
+        ) else jinja2.Environment(cache_size=0)
 
     def prepare_template(self):
         """
@@ -810,7 +839,8 @@ class BaseOperator(LoggingMixin):
                         any(content.endswith(ext) for ext in self.template_ext):
                     env = self.get_template_env()
                     try:
-                        setattr(self, field, env.loader.get_source(env, content)[0])
+                        setattr(self, field,
+                                env.loader.get_source(env, content)[0])
                     except Exception as e:
                         self.log.exception(e)
                 elif isinstance(content, list):
@@ -819,7 +849,8 @@ class BaseOperator(LoggingMixin):
                         if isinstance(content[i], six.string_types) and \
                                 any(content[i].endswith(ext) for ext in self.template_ext):
                             try:
-                                content[i] = env.loader.get_source(env, content[i])[0]
+                                content[i] = env.loader.get_source(
+                                    env, content[i])[0]
                             except Exception as e:
                                 self.log.exception(e)
         self.prepare_template()
@@ -867,11 +898,13 @@ class BaseOperator(LoggingMixin):
 
         if upstream:
             tasks += [
-                t.task_id for t in self.get_flat_relatives(upstream=True)]
+                t.task_id for t in self.get_flat_relatives(upstream=True)
+            ]
 
         if downstream:
             tasks += [
-                t.task_id for t in self.get_flat_relatives(upstream=False)]
+                t.task_id for t in self.get_flat_relatives(upstream=False)
+            ]
 
         qry = qry.filter(TI.task_id.in_(tasks))
 
@@ -920,11 +953,11 @@ class BaseOperator(LoggingMixin):
         """
         Get a flat list of relatives, either upstream or downstream.
         """
-        return list(map(lambda task_id: self._dag.task_dict[task_id],
-                        self.get_flat_relative_ids(upstream)))
+        return list(
+            map(lambda task_id: self._dag.task_dict[task_id],
+                self.get_flat_relative_ids(upstream)))
 
-    def run(
-            self,
+    def run(self,
             start_date=None,
             end_date=None,
             ignore_first_depends_on_past=False,
@@ -936,11 +969,12 @@ class BaseOperator(LoggingMixin):
         start_date = start_date or self.start_date
         end_date = end_date or self.end_date or timezone.utcnow()
 
-        for execution_date in self.dag.date_range(start_date, end_date=end_date):
+        for execution_date in self.dag.date_range(start_date,
+                                                  end_date=end_date):
             TaskInstance(self, execution_date).run(
                 mark_success=mark_success,
-                ignore_depends_on_past=(
-                    execution_date == start_date and ignore_first_depends_on_past),
+                ignore_depends_on_past=(execution_date == start_date
+                                        and ignore_first_depends_on_past),
                 ignore_ti_state=ignore_ti_state)
 
     def dry_run(self):
@@ -984,8 +1018,8 @@ class BaseOperator(LoggingMixin):
     def add_only_new(self, item_set, item):
         """Adds only new items to item set"""
         if item in item_set:
-            self.log.warning(
-                'Dependency %s, %s already registered', self, item)
+            self.log.warning('Dependency %s, %s already registered', self,
+                             item)
         else:
             item_set.add(item)
 
@@ -998,15 +1032,16 @@ class BaseOperator(LoggingMixin):
 
         for task in task_list:
             if not isinstance(task, BaseOperator):
-                raise AirflowException(
-                    "Relationships can only be set between "
-                    "Operators; received {}".format(task.__class__.__name__))
+                raise AirflowException("Relationships can only be set between "
+                                       "Operators; received {}".format(
+                                           task.__class__.__name__))
 
         # relationships can only be set if the tasks share a single DAG. Tasks
         # without a DAG are assigned to that DAG.
         dags = {
             task._dag.dag_id: task._dag  # pylint: disable=protected-access
-            for task in [self] + task_list if task.has_dag()}
+            for task in [self] + task_list if task.has_dag()
+        }
 
         if len(dags) > 1:
             raise AirflowException(
@@ -1027,11 +1062,13 @@ class BaseOperator(LoggingMixin):
             if dag and not task.has_dag():
                 task.dag = dag
             if upstream:
-                task.add_only_new(task.get_direct_relative_ids(upstream=False), self.task_id)
+                task.add_only_new(task.get_direct_relative_ids(upstream=False),
+                                  self.task_id)
                 self.add_only_new(self._upstream_task_ids, task.task_id)
             else:
                 self.add_only_new(self._downstream_task_ids, task.task_id)
-                task.add_only_new(task.get_direct_relative_ids(upstream=True), self.task_id)
+                task.add_only_new(task.get_direct_relative_ids(upstream=True),
+                                  self.task_id)
 
     def set_downstream(self, task_or_task_list):
         """
@@ -1047,41 +1084,34 @@ class BaseOperator(LoggingMixin):
         """
         self._set_relatives(task_or_task_list, upstream=True)
 
-    def xcom_push(
-            self,
-            context,
-            key,
-            value,
-            execution_date=None):
+    def xcom_push(self, context, key, value, execution_date=None):
         """
         See TaskInstance.xcom_push()
         """
-        context['ti'].xcom_push(
-            key=key,
-            value=value,
-            execution_date=execution_date)
+        context['ti'].xcom_push(key=key,
+                                value=value,
+                                execution_date=execution_date)
 
-    def xcom_pull(
-            self,
-            context,
-            task_ids=None,
-            dag_id=None,
-            key=XCOM_RETURN_KEY,
-            include_prior_dates=None):
+    def xcom_pull(self,
+                  context,
+                  task_ids=None,
+                  dag_id=None,
+                  key=XCOM_RETURN_KEY,
+                  include_prior_dates=None):
         """
         See TaskInstance.xcom_pull()
         """
-        return context['ti'].xcom_pull(
-            key=key,
-            task_ids=task_ids,
-            dag_id=dag_id,
-            include_prior_dates=include_prior_dates)
+        return context['ti'].xcom_pull(key=key,
+                                       task_ids=task_ids,
+                                       dag_id=dag_id,
+                                       include_prior_dates=include_prior_dates)
 
     @cached_property
     def extra_links(self):
         """@property: extra links for the task. """
-        return list(set(self.operator_extra_link_dict.keys())
-                    .union(self.global_operator_extra_link_dict.keys()))
+        return list(
+            set(self.operator_extra_link_dict.keys()).union(
+                self.global_operator_extra_link_dict.keys()))
 
     def get_extra_links(self, dttm, link_name):
         """
@@ -1096,9 +1126,11 @@ class BaseOperator(LoggingMixin):
         :return: A URL
         """
         if link_name in self.operator_extra_link_dict:
-            return self.operator_extra_link_dict[link_name].get_link(self, dttm)
+            return self.operator_extra_link_dict[link_name].get_link(
+                self, dttm)
         elif link_name in self.global_operator_extra_link_dict:
-            return self.global_operator_extra_link_dict[link_name].get_link(self, dttm)
+            return self.global_operator_extra_link_dict[link_name].get_link(
+                self, dttm)
         else:
             return None
 
@@ -1108,8 +1140,12 @@ class BaseOperator(LoggingMixin):
         if not cls.__serialized_fields:
             cls.__serialized_fields = frozenset(
                 set(vars(BaseOperator(task_id='test')).keys()) - {
-                    'inlets', 'outlets', '_upstream_task_ids', 'default_args', 'dag', '_dag'
-                } | {'_task_type', 'subdag', 'ui_color', 'ui_fgcolor', 'template_fields'})
+                    'inlets', 'outlets', '_upstream_task_ids', 'default_args',
+                    'dag', '_dag'
+                } | {
+                    '_task_type', 'subdag', 'ui_color', 'ui_fgcolor',
+                    'template_fields'
+                })
         return cls.__serialized_fields
 
 
@@ -1121,14 +1157,13 @@ class BaseOperatorLink:
 
     __metaclass__ = ABCMeta
 
-    operators = []   # type: ClassVar[List[Type[BaseOperator]]]
+    operators = []  # type: ClassVar[List[Type[BaseOperator]]]
     """
     This property will be used by Airflow Plugins to find the Operators to which you want
     to assign this Operator Link
 
     :return: List of Operator classes used by task for which you want to create extra link
     """
-
     @property
     @abstractmethod
     def name(self):

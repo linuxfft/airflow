@@ -62,18 +62,20 @@ class CheckOperator(BaseOperator):
     :type sql: str
     """
 
-    template_fields = ('sql',)  # type: Iterable[str]
-    template_ext = ('.hql', '.sql',)  # type: Iterable[str]
+    template_fields = ('sql', )  # type: Iterable[str]
+    template_ext = (
+        '.hql',
+        '.sql',
+    )  # type: Iterable[str]
     ui_color = '#fff7e6'
 
     @apply_defaults
     def __init__(
-        self,
-        sql,  # type: str
-        conn_id=None,  # type: Optional[str]
-        *args,
-        **kwargs
-    ):
+            self,
+            sql,  # type: str
+            conn_id=None,  # type: Optional[str]
+            *args,
+            **kwargs):
         super(CheckOperator, self).__init__(*args, **kwargs)
         self.conn_id = conn_id
         self.sql = sql
@@ -86,8 +88,9 @@ class CheckOperator(BaseOperator):
         if not records:
             raise AirflowException("The query returned None")
         elif not all(bool(r) for r in records):
-            raise AirflowException("Test failed.\nQuery:\n{query}\nResults:\n{records!s}".format(
-                query=self.sql, records=records))
+            raise AirflowException(
+                "Test failed.\nQuery:\n{query}\nResults:\n{records!s}".format(
+                    query=self.sql, records=records))
 
         self.log.info("Success.")
 
@@ -122,23 +125,26 @@ class ValueCheckOperator(BaseOperator):
     :type sql: str
     """
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'ValueCheckOperator'
-    }
-    template_fields = ('sql', 'pass_value',)  # type: Iterable[str]
-    template_ext = ('.hql', '.sql',)  # type: Iterable[str]
+    __mapper_args__ = {'polymorphic_identity': 'ValueCheckOperator'}
+    template_fields = (
+        'sql',
+        'pass_value',
+    )  # type: Iterable[str]
+    template_ext = (
+        '.hql',
+        '.sql',
+    )  # type: Iterable[str]
     ui_color = '#fff7e6'
 
     @apply_defaults
     def __init__(
-        self,
-        sql,  # type: str
-        pass_value,  # type: Any
-        tolerance=None,  # type: Any
-        conn_id=None,  # type: Optional[str]
-        *args,
-        **kwargs
-    ):
+            self,
+            sql,  # type: str
+            pass_value,  # type: Any
+            tolerance=None,  # type: Any
+            conn_id=None,  # type: Optional[str]
+            *args,
+            **kwargs):
         super(ValueCheckOperator, self).__init__(*args, **kwargs)
         self.sql = sql
         self.conn_id = conn_id
@@ -157,15 +163,15 @@ class ValueCheckOperator(BaseOperator):
         pass_value_conv = _convert_to_float_if_possible(self.pass_value)
         is_numeric_value_check = isinstance(pass_value_conv, float)
 
-        tolerance_pct_str = str(self.tol * 100) + '%' if self.has_tolerance else None
+        tolerance_pct_str = str(self.tol *
+                                100) + '%' if self.has_tolerance else None
         error_msg = ("Test failed.\nPass value:{pass_value_conv}\n"
                      "Tolerance:{tolerance_pct_str}\n"
                      "Query:\n{sql}\nResults:\n{records!s}").format(
-            pass_value_conv=pass_value_conv,
-            tolerance_pct_str=tolerance_pct_str,
-            sql=self.sql,
-            records=records
-        )
+                         pass_value_conv=pass_value_conv,
+                         tolerance_pct_str=tolerance_pct_str,
+                         sql=self.sql,
+                         records=records)
 
         if not is_numeric_value_check:
             tests = self._get_string_matches(records, pass_value_conv)
@@ -173,7 +179,9 @@ class ValueCheckOperator(BaseOperator):
             try:
                 numeric_records = self._to_float(records)
             except (ValueError, TypeError):
-                raise AirflowException("Converting a result to float failed.\n{}".format(error_msg))
+                raise AirflowException(
+                    "Converting a result to float failed.\n{}".format(
+                        error_msg))
             tests = self._get_numeric_matches(numeric_records, pass_value_conv)
         else:
             tests = []
@@ -190,11 +198,14 @@ class ValueCheckOperator(BaseOperator):
     def _get_numeric_matches(self, numeric_records, numeric_pass_value_conv):
         if self.has_tolerance:
             return [
-                numeric_pass_value_conv * (1 - self.tol) <= record <= numeric_pass_value_conv * (1 + self.tol)
-                for record in numeric_records
+                numeric_pass_value_conv *
+                (1 - self.tol) <= record <= numeric_pass_value_conv *
+                (1 + self.tol) for record in numeric_records
             ]
 
-        return [record == numeric_pass_value_conv for record in numeric_records]
+        return [
+            record == numeric_pass_value_conv for record in numeric_records
+        ]
 
     def get_db_hook(self):
         return BaseHook.get_hook(conn_id=self.conn_id)
@@ -229,11 +240,12 @@ class IntervalCheckOperator(BaseOperator):
     :type metrics_threshold: dict
     """
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'IntervalCheckOperator'
-    }
+    __mapper_args__ = {'polymorphic_identity': 'IntervalCheckOperator'}
     template_fields = ('sql1', 'sql2')  # type: Iterable[str]
-    template_ext = ('.hql', '.sql',)  # type: Iterable[str]
+    template_ext = (
+        '.hql',
+        '.sql',
+    )  # type: Iterable[str]
     ui_color = '#fff7e6'
 
     ratio_formulas = {
@@ -243,16 +255,16 @@ class IntervalCheckOperator(BaseOperator):
 
     @apply_defaults
     def __init__(
-        self,
-        table,  # type: str
-        metrics_thresholds,  # type: Dict[str, int]
-        date_filter_column='ds',  # type: Optional[str]
-        days_back=-7,  # type: SupportsAbs[int]
-        ratio_formula='max_over_min',  # type: Optional[str]
-        ignore_zero=True,  # type: Optional[bool]
-        conn_id=None,  # type: Optional[str]
-        *args, **kwargs
-    ):
+            self,
+            table,  # type: str
+            metrics_thresholds,  # type: Dict[str, int]
+            date_filter_column='ds',  # type: Optional[str]
+            days_back=-7,  # type: SupportsAbs[int]
+            ratio_formula='max_over_min',  # type: Optional[str]
+            ignore_zero=True,  # type: Optional[bool]
+            conn_id=None,  # type: Optional[str]
+            *args,
+            **kwargs):
         super(IntervalCheckOperator, self).__init__(*args, **kwargs)
         if ratio_formula not in self.ratio_formulas:
             msg_template = "Invalid diff_method: {diff_method}. " \
@@ -260,8 +272,7 @@ class IntervalCheckOperator(BaseOperator):
 
             raise AirflowException(
                 msg_template.format(diff_method=ratio_formula,
-                                    diff_methods=self.ratio_formulas)
-            )
+                                    diff_methods=self.ratio_formulas))
         self.ratio_formula = ratio_formula
         self.ignore_zero = ignore_zero
         self.table = table
@@ -272,11 +283,11 @@ class IntervalCheckOperator(BaseOperator):
         self.conn_id = conn_id
         sqlexp = ', '.join(self.metrics_sorted)
         sqlt = "SELECT {sqlexp} FROM {table} WHERE {date_filter_column}=".format(
-            sqlexp=sqlexp, table=table, date_filter_column=date_filter_column
-        )
+            sqlexp=sqlexp, table=table, date_filter_column=date_filter_column)
 
         self.sql1 = sqlt + "'{{ ds }}'"
-        self.sql2 = sqlt + "'{{ macros.ds_add(ds, " + str(self.days_back) + ") }}'"
+        self.sql2 = sqlt + "'{{ macros.ds_add(ds, " + str(
+            self.days_back) + ") }}'"
 
     def execute(self, context=None):
         hook = self.get_db_hook()
@@ -287,9 +298,11 @@ class IntervalCheckOperator(BaseOperator):
         row1 = hook.get_first(self.sql1)
 
         if not row2:
-            raise AirflowException("The query {} returned None".format(self.sql2))
+            raise AirflowException("The query {} returned None".format(
+                self.sql2))
         if not row1:
-            raise AirflowException("The query {} returned None".format(self.sql1))
+            raise AirflowException("The query {} returned None".format(
+                self.sql1))
 
         current = dict(zip(self.metrics_sorted, row1))
         reference = dict(zip(self.metrics_sorted, row2))
@@ -305,16 +318,15 @@ class IntervalCheckOperator(BaseOperator):
                 ratios[m] = None
                 test_results[m] = self.ignore_zero
             else:
-                ratios[m] = self.ratio_formulas[self.ratio_formula](current[m], reference[m])
+                ratios[m] = self.ratio_formulas[self.ratio_formula](
+                    current[m], reference[m])
                 test_results[m] = ratios[m] < threshold
 
-            self.log.info(
-                (
-                    "Current metric for %s: %s\n"
-                    "Past metric for %s: %s\n"
-                    "Ratio for %s: %s\n"
-                    "Threshold: %s\n"
-                ), m, cur, m, ref, m, ratios[m], threshold)
+            self.log.info(("Current metric for %s: %s\n"
+                           "Past metric for %s: %s\n"
+                           "Ratio for %s: %s\n"
+                           "Threshold: %s\n"), m, cur, m, ref, m, ratios[m],
+                          threshold)
 
         if not all(test_results.values()):
             failed_tests = [it[0] for it in test_results.items() if not it[1]]
@@ -322,11 +334,11 @@ class IntervalCheckOperator(BaseOperator):
             n = len(self.metrics_sorted)
             self.log.warning("The following %s tests out of %s failed:", j, n)
             for k in failed_tests:
-                self.log.warning(
-                    "'%s' check failed. %s is above %s", k, ratios[k], self.metrics_thresholds[k]
-                )
-            raise AirflowException("The following tests have failed:\n {0}".format(", ".join(
-                sorted(failed_tests))))
+                self.log.warning("'%s' check failed. %s is above %s", k,
+                                 ratios[k], self.metrics_thresholds[k])
+            raise AirflowException(
+                "The following tests have failed:\n {0}".format(", ".join(
+                    sorted(failed_tests))))
 
         self.log.info("All tests have passed")
 
@@ -352,18 +364,22 @@ class ThresholdCheckOperator(BaseOperator):
     :type max_threshold: numeric or str
     """
 
-    template_fields = ('sql', 'min_threshold', 'max_threshold')  # type: Iterable[str]
-    template_ext = ('.hql', '.sql',)  # type: Iterable[str]
+    template_fields = ('sql', 'min_threshold', 'max_threshold'
+                       )  # type: Iterable[str]
+    template_ext = (
+        '.hql',
+        '.sql',
+    )  # type: Iterable[str]
 
     @apply_defaults
     def __init__(
-        self,
-        sql,   # type: str
-        min_threshold,   # type: Any
-        max_threshold,   # type: Any
-        conn_id=None,   # type: Optional[str]
-        *args, **kwargs
-    ):
+            self,
+            sql,  # type: str
+            min_threshold,  # type: Any
+            max_threshold,  # type: Any
+            conn_id=None,  # type: Optional[str]
+            *args,
+            **kwargs):
         super(ThresholdCheckOperator, self).__init__(*args, **kwargs)
         self.sql = sql
         self.conn_id = conn_id
@@ -394,20 +410,19 @@ class ThresholdCheckOperator(BaseOperator):
 
         self.push(meta_data)
         if not meta_data["within_threshold"]:
-            error_msg = (
-                'Threshold Check: "{task_id}" failed.\n'
-                'DAG: {dag_id}\nTask_id: {task_id}\n'
-                'Check description: {description}\n'
-                'SQL: {sql}\n'
-                'Result: {result} is not within thresholds '
-                '{min_threshold} and {max_threshold}'
-            ).format(
-                task_id=self.task_id, dag_id=self.dag_id,
-                description=meta_data.get("description"), sql=self.sql,
-                result=round(meta_data.get("result"), 2),
-                min_threshold=meta_data.get("min_threshold"),
-                max_threshold=meta_data.get("max_threshold")
-            )
+            error_msg = ('Threshold Check: "{task_id}" failed.\n'
+                         'DAG: {dag_id}\nTask_id: {task_id}\n'
+                         'Check description: {description}\n'
+                         'SQL: {sql}\n'
+                         'Result: {result} is not within thresholds '
+                         '{min_threshold} and {max_threshold}').format(
+                             task_id=self.task_id,
+                             dag_id=self.dag_id,
+                             description=meta_data.get("description"),
+                             sql=self.sql,
+                             result=round(meta_data.get("result"), 2),
+                             min_threshold=meta_data.get("min_threshold"),
+                             max_threshold=meta_data.get("max_threshold"))
             raise AirflowException(error_msg)
 
         self.log.info("Test %s Successful.", self.task_id)
@@ -418,7 +433,9 @@ class ThresholdCheckOperator(BaseOperator):
         Default functionality will log metadata.
         """
 
-        info = "\n".join(["""{}: {}""".format(key, item) for key, item in meta_data.items()])
+        info = "\n".join([
+            """{}: {}""".format(key, item) for key, item in meta_data.items()
+        ])
         self.log.info("Log from %s:\n%s", self.dag_id, info)
 
     def get_db_hook(self):

@@ -71,7 +71,6 @@ class SimpleDag(BaseDag):
     :param pickle_id: ID associated with the pickled version of this DAG.
     :type pickle_id: unicode
     """
-
     def __init__(self, dag, pickle_id=None):
         self._dag_id = dag.dag_id
         self._task_ids = [task.task_id for task in dag.tasks]
@@ -140,7 +139,8 @@ class SimpleDag(BaseDag):
         return self._task_special_args
 
     def get_task_special_arg(self, task_id, special_arg_name):
-        if task_id in self._task_special_args and special_arg_name in self._task_special_args[task_id]:
+        if task_id in self._task_special_args and special_arg_name in self._task_special_args[
+                task_id]:
             return self._task_special_args[task_id][special_arg_name]
         else:
             return None
@@ -232,8 +232,7 @@ class SimpleTaskInstance(object):
         TI = airflow.models.TaskInstance
 
         qry = session.query(TI).filter(
-            TI.dag_id == self._dag_id,
-            TI.task_id == self._task_id,
+            TI.dag_id == self._dag_id, TI.task_id == self._task_id,
             TI.execution_date == self._execution_date)
 
         if lock_for_update:
@@ -247,7 +246,6 @@ class SimpleDagBag(BaseDagBag):
     """
     A collection of SimpleDag objects with some convenience methods.
     """
-
     def __init__(self, simple_dags):
         """
         Constructor.
@@ -299,7 +297,10 @@ def correct_maybe_zipped(fileloc):
 COMMENT_PATTERN = re.compile(r"\s*#.*")
 
 
-def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVERY_SAFE_MODE', fallback=True),
+def list_py_file_paths(directory,
+                       safe_mode=conf.getboolean('core',
+                                                 'DAG_DISCOVERY_SAFE_MODE',
+                                                 fallback=True),
                        include_examples=None):
     """
     Traverse a directory and look for Python files.
@@ -332,15 +333,19 @@ def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVE
                 with open(ignore_file, 'r') as f:
                     # If we have new patterns create a copy so we don't change
                     # the previous list (which would affect other subdirs)
-                    lines_no_comments = [COMMENT_PATTERN.sub("", line) for line in f.read().split("\n")]
-                    patterns += [re.compile(line) for line in lines_no_comments if line]
+                    lines_no_comments = [
+                        COMMENT_PATTERN.sub("", line)
+                        for line in f.read().split("\n")
+                    ]
+                    patterns += [
+                        re.compile(line) for line in lines_no_comments if line
+                    ]
 
             # If we can ignore any subdirs entirely we should - fewer paths
             # to walk is better. We have to modify the ``dirs`` array in
             # place for this to affect os.walk
             dirs[:] = [
-                d
-                for d in dirs
+                d for d in dirs
                 if not any(p.search(os.path.join(root, d)) for p in patterns)
             ]
 
@@ -367,8 +372,9 @@ def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVE
                     if safe_mode and not zipfile.is_zipfile(file_path):
                         with open(file_path, 'rb') as fp:
                             content = fp.read()
-                            might_contain_dag = all(
-                                s in content for s in (b'DAG', b'airflow'))
+                            might_contain_dag = all(s in content
+                                                    for s in (b'DAG',
+                                                              b'airflow'))
 
                     if not might_contain_dag:
                         continue
@@ -380,7 +386,8 @@ def list_py_file_paths(directory, safe_mode=conf.getboolean('core', 'DAG_DISCOVE
     if include_examples:
         import airflow.example_dags
         example_dag_folder = airflow.example_dags.__path__[0]
-        file_paths.extend(list_py_file_paths(example_dag_folder, safe_mode, False))
+        file_paths.extend(
+            list_py_file_paths(example_dag_folder, safe_mode, False))
     return file_paths
 
 
@@ -462,11 +469,9 @@ class AbstractDagFileProcessor(object):
         raise NotImplementedError()
 
 
-DagParsingStat = NamedTuple('DagParsingStat', [
-    ('file_paths', Iterable[str]),
-    ('done', bool),
-    ('all_files_processed', bool)
-])
+DagParsingStat = NamedTuple('DagParsingStat', [('file_paths', Iterable[str]),
+                                               ('done', bool),
+                                               ('all_files_processed', bool)])
 DagFileStat = NamedTuple('DagFileStat', [
     ('num_dags', int),
     ('import_errors', int),
@@ -491,14 +496,8 @@ class DagFileProcessorAgent(LoggingMixin):
 
     This class runs in the main `airflow scheduler` process.
     """
-
-    def __init__(self,
-                 dag_directory,
-                 file_paths,
-                 max_runs,
-                 processor_factory,
-                 processor_timeout,
-                 async_mode):
+    def __init__(self, dag_directory, file_paths, max_runs, processor_factory,
+                 processor_timeout, async_mode):
         """
         :param dag_directory: Directory where DAG definitions are kept. All
             files in file_paths should be under this directory
@@ -549,11 +548,11 @@ class DagFileProcessorAgent(LoggingMixin):
                 self._processor_timeout,
                 child_signal_conn,
                 self._async_mode,
-            )
-        )
+            ))
         self._process.start()
 
-        self.log.info("Launched DagFileProcessorManager with pid: %s", self._process.pid)
+        self.log.info("Launched DagFileProcessorManager with pid: %s",
+                      self._process.pid)
 
     def heartbeat(self):
         """
@@ -587,13 +586,9 @@ class DagFileProcessorAgent(LoggingMixin):
                 return
 
     @staticmethod
-    def _run_processor_manager(dag_directory,
-                               file_paths,
-                               max_runs,
-                               processor_factory,
-                               processor_timeout,
-                               signal_conn,
-                               async_mode):
+    def _run_processor_manager(dag_directory, file_paths, max_runs,
+                               processor_factory, processor_timeout,
+                               signal_conn, async_mode):
 
         # Make this process start as a new process group - that makes it easy
         # to kill all sub-process of this at the OS-level, rather than having
@@ -609,17 +604,17 @@ class DagFileProcessorAgent(LoggingMixin):
         os.environ['AIRFLOW__CORE__COLORED_CONSOLE_LOG'] = 'False'
         # Replicating the behavior of how logging module was loaded
         # in logging_config.py
-        reload_module(import_module(airflow.settings.LOGGING_CLASS_PATH.rsplit('.', 1)[0]))
+        reload_module(
+            import_module(
+                airflow.settings.LOGGING_CLASS_PATH.rsplit('.', 1)[0]))
         reload_module(airflow.settings)
         airflow.settings.initialize()
         del os.environ['CONFIG_PROCESSOR_MANAGER_LOGGER']
-        processor_manager = DagFileProcessorManager(dag_directory,
-                                                    file_paths,
+        processor_manager = DagFileProcessorManager(dag_directory, file_paths,
                                                     max_runs,
                                                     processor_factory,
                                                     processor_timeout,
-                                                    signal_conn,
-                                                    async_mode)
+                                                    signal_conn, async_mode)
 
         processor_manager.start()
 
@@ -660,8 +655,7 @@ class DagFileProcessorAgent(LoggingMixin):
             if not self.done:
                 self.log.warning(
                     "DagFileProcessorManager (PID=%d) exited with exit code %d - re-launching",
-                    self._process.pid, self._process.exitcode
-                )
+                    self._process.pid, self._process.exitcode)
                 self.start()
 
     def _sync_metadata(self, stat):
@@ -692,7 +686,8 @@ class DagFileProcessorAgent(LoggingMixin):
         if self._process and self._process.is_alive():
             self.log.info("Sending termination message to manager.")
             try:
-                self._parent_signal_conn.send(DagParsingSignal.TERMINATE_MANAGER)
+                self._parent_signal_conn.send(
+                    DagParsingSignal.TERMINATE_MANAGER)
             except ConnectionError:
                 pass
 
@@ -734,7 +729,6 @@ class DagFileProcessorManager(LoggingMixin):
     :param async_mode: whether to start the manager in async mode
     :type async_mode: bool
     """
-
     def __init__(self,
                  dag_directory,
                  file_paths,
@@ -752,11 +746,12 @@ class DagFileProcessorManager(LoggingMixin):
         self._async_mode = async_mode
 
         self._parallelism = conf.getint('scheduler', 'max_threads')
-        if 'sqlite' in conf.get('core', 'sql_alchemy_conn') and self._parallelism > 1:
+        if 'sqlite' in conf.get('core',
+                                'sql_alchemy_conn') and self._parallelism > 1:
             self.log.warning(
                 "Because we cannot use more than 1 thread (max_threads = {}) "
-                "when using sqlite. So we set parallelism to 1.".format(self._parallelism)
-            )
+                "when using sqlite. So we set parallelism to 1.".format(
+                    self._parallelism))
             self._parallelism = 1
 
         # Parse and schedule each file no faster than this interval.
@@ -767,8 +762,8 @@ class DagFileProcessorManager(LoggingMixin):
         self.print_stats_interval = conf.getint('scheduler',
                                                 'print_stats_interval')
         # How many seconds do we wait for tasks to heartbeat before mark them as zombies.
-        self._zombie_threshold_secs = (
-            conf.getint('scheduler', 'scheduler_zombie_task_threshold'))
+        self._zombie_threshold_secs = (conf.getint(
+            'scheduler', 'scheduler_zombie_task_threshold'))
         # Map from file path to the processor
         self._processors = {}
 
@@ -818,11 +813,12 @@ class DagFileProcessorManager(LoggingMixin):
         # Start a new process group
         os.setpgid(0, 0)
 
-        self.log.info("Processing files using up to %s processes at a time ", self._parallelism)
-        self.log.info("Process each file at most once every %s seconds", self._file_process_interval)
-        self.log.info(
-            "Checking for new files in %s every %s seconds", self._dag_directory, self.dag_dir_list_interval
-        )
+        self.log.info("Processing files using up to %s processes at a time ",
+                      self._parallelism)
+        self.log.info("Process each file at most once every %s seconds",
+                      self._file_process_interval)
+        self.log.info("Checking for new files in %s every %s seconds",
+                      self._dag_directory, self.dag_dir_list_interval)
 
         # In sync mode we want timeout=None -- wait forever until a message is received
         if self._async_mode:
@@ -837,7 +833,8 @@ class DagFileProcessorManager(LoggingMixin):
 
             if self._signal_conn.poll(poll_time):
                 agent_signal = self._signal_conn.recv()
-                self.log.debug("Received %s signal from DagFileProcessorAgent", agent_signal)
+                self.log.debug("Received %s signal from DagFileProcessorAgent",
+                               agent_signal)
                 if agent_signal == DagParsingSignal.TERMINATE_MANAGER:
                     self.terminate()
                     break
@@ -862,7 +859,8 @@ class DagFileProcessorManager(LoggingMixin):
 
             if not self._async_mode:
                 self.log.debug(
-                    "Waiting for processors to finish since we're using sqlite")
+                    "Waiting for processors to finish since we're using sqlite"
+                )
                 # Wait until the running DAG processors are finished before
                 # sending a DagParsingStat message back. This means the Agent
                 # can tell we've got to the end of this iteration when it sees
@@ -876,18 +874,22 @@ class DagFileProcessorManager(LoggingMixin):
 
             self._print_stat()
 
-            all_files_processed = all(self.get_last_finish_time(x) is not None for x in self.file_paths)
+            all_files_processed = all(
+                self.get_last_finish_time(x) is not None
+                for x in self.file_paths)
             max_runs_reached = self.max_runs_reached()
 
-            dag_parsing_stat = DagParsingStat(self._file_paths,
-                                              max_runs_reached,
-                                              all_files_processed,
-                                              )
+            dag_parsing_stat = DagParsingStat(
+                self._file_paths,
+                max_runs_reached,
+                all_files_processed,
+            )
             self._signal_conn.send(dag_parsing_stat)
 
             if max_runs_reached:
-                self.log.info("Exiting dag parsing loop as all files "
-                              "have been processed %s times", self._max_runs)
+                self.log.info(
+                    "Exiting dag parsing loop as all files "
+                    "have been processed %s times", self._max_runs)
                 break
 
             if self._async_mode:
@@ -902,13 +904,15 @@ class DagFileProcessorManager(LoggingMixin):
         Refresh file paths from dag dir if we haven't done it for too long.
         """
         now = timezone.utcnow()
-        elapsed_time_since_refresh = (now - self.last_dag_dir_refresh_time).total_seconds()
+        elapsed_time_since_refresh = (
+            now - self.last_dag_dir_refresh_time).total_seconds()
         if elapsed_time_since_refresh > self.dag_dir_list_interval:
             # Build up a list of Python files that could contain DAGs
             self.log.info("Searching for files in %s", self._dag_directory)
             self._file_paths = list_py_file_paths(self._dag_directory)
             self.last_dag_dir_refresh_time = now
-            self.log.info("There are %s files in %s", len(self._file_paths), self._dag_directory)
+            self.log.info("There are %s files in %s", len(self._file_paths),
+                          self._dag_directory)
             self.set_file_paths(self._file_paths)
 
             try:
@@ -932,8 +936,8 @@ class DagFileProcessorManager(LoggingMixin):
         Occasionally print out stats about how fast the files are getting processed
         """
         if self.print_stats_interval > 0 and (
-                timezone.utcnow() -
-                self.last_stat_print_time).total_seconds() > self.print_stats_interval:
+                timezone.utcnow() - self.last_stat_print_time
+        ).total_seconds() > self.print_stats_interval:
             if self._file_paths:
                 self._log_file_processing_stats(self._file_paths)
             self.last_stat_print_time = timezone.utcnow()
@@ -949,8 +953,7 @@ class DagFileProcessorManager(LoggingMixin):
         query = session.query(errors.ImportError)
         if self._file_paths:
             query = query.filter(
-                ~errors.ImportError.filename.in_(self._file_paths)
-            )
+                ~errors.ImportError.filename.in_(self._file_paths))
         query.delete(synchronize_session='fetch')
         session.commit()
 
@@ -972,13 +975,10 @@ class DagFileProcessorManager(LoggingMixin):
         # Last Runtime: If the process ran before, how long did it take to
         # finish in seconds
         # Last Run: When the file finished processing in the previous run.
-        headers = ["File Path",
-                   "PID",
-                   "Runtime",
-                   "# DAGs",
-                   "# Errors",
-                   "Last Runtime",
-                   "Last Run"]
+        headers = [
+            "File Path", "PID", "Runtime", "# DAGs", "# Errors",
+            "Last Runtime", "Last Run"
+        ]
 
         rows = []
         now = timezone.utcnow()
@@ -991,44 +991,39 @@ class DagFileProcessorManager(LoggingMixin):
 
             processor_pid = self.get_pid(file_path)
             processor_start_time = self.get_start_time(file_path)
-            runtime = ((now - processor_start_time).total_seconds() if processor_start_time else None)
+            runtime = ((now - processor_start_time).total_seconds()
+                       if processor_start_time else None)
             last_run = self.get_last_finish_time(file_path)
             if last_run:
                 seconds_ago = (now - last_run).total_seconds()
-                Stats.gauge('dag_processing.last_run.seconds_ago.{}'.format(file_name), seconds_ago)
+                Stats.gauge(
+                    'dag_processing.last_run.seconds_ago.{}'.format(file_name),
+                    seconds_ago)
             if runtime:
-                Stats.timing('dag_processing.last_duration.{}'.format(file_name), runtime)
+                Stats.timing(
+                    'dag_processing.last_duration.{}'.format(file_name),
+                    runtime)
                 # TODO: Remove before Airflow 2.0
-                Stats.timing('dag_processing.last_runtime.{}'.format(file_name), runtime)
+                Stats.timing(
+                    'dag_processing.last_runtime.{}'.format(file_name),
+                    runtime)
 
-            rows.append((file_path,
-                         processor_pid,
-                         runtime,
-                         num_dags,
-                         num_errors,
-                         last_runtime,
-                         last_run))
+            rows.append((file_path, processor_pid, runtime, num_dags,
+                         num_errors, last_runtime, last_run))
 
         # Sort by longest last runtime. (Can't sort None values in python3)
         rows = sorted(rows, key=lambda x: x[3] or 0.0)
 
         formatted_rows = []
         for file_path, pid, runtime, num_dags, num_errors, last_runtime, last_run in rows:
-            formatted_rows.append((file_path,
-                                   pid,
-                                   "{:.2f}s".format(runtime) if runtime else None,
-                                   num_dags,
-                                   num_errors,
-                                   "{:.2f}s".format(last_runtime) if last_runtime else None,
-                                   last_run.strftime("%Y-%m-%dT%H:%M:%S") if last_run else None
-                                   ))
-        log_str = ("\n" +
-                   "=" * 80 +
-                   "\n" +
-                   "DAG File Processing Stats\n\n" +
-                   tabulate(formatted_rows, headers=headers) +
-                   "\n" +
-                   "=" * 80)
+            formatted_rows.append(
+                (file_path, pid,
+                 "{:.2f}s".format(runtime) if runtime else None, num_dags,
+                 num_errors,
+                 "{:.2f}s".format(last_runtime) if last_runtime else None,
+                 last_run.strftime("%Y-%m-%dT%H:%M:%S") if last_run else None))
+        log_str = ("\n" + "=" * 80 + "\n" + "DAG File Processing Stats\n\n" +
+                   tabulate(formatted_rows, headers=headers) + "\n" + "=" * 80)
 
         self.log.info(log_str)
 
@@ -1130,8 +1125,9 @@ class DagFileProcessorManager(LoggingMixin):
         :return: None
         """
         self._file_paths = new_file_paths
-        self._file_path_queue = [x for x in self._file_path_queue
-                                 if x in new_file_paths]
+        self._file_path_queue = [
+            x for x in self._file_path_queue if x in new_file_paths
+        ]
         # Stop processors that are working on deleted files
         filtered_processors = {}
         for file_path, processor in self._processors.items():
@@ -1175,8 +1171,10 @@ class DagFileProcessorManager(LoggingMixin):
                 finished_processors[file_path] = processor
 
                 stat = DagFileStat(
-                    len(processor.result[0]) if processor.result is not None else 0,
-                    processor.result[1] if processor.result is not None else -1,
+                    len(processor.result[0])
+                    if processor.result is not None else 0,
+                    processor.result[1]
+                    if processor.result is not None else -1,
                     now,
                     (now - processor.start_time).total_seconds(),
                     self.get_run_count(file_path) + 1,
@@ -1196,10 +1194,8 @@ class DagFileProcessorManager(LoggingMixin):
         simple_dags = []
         for file_path, processor in finished_processors.items():
             if processor.result is None:
-                self.log.error(
-                    "Processor for %s exited with return code %s.",
-                    processor.file_path, processor.exit_code
-                )
+                self.log.error("Processor for %s exited with return code %s.",
+                               processor.file_path, processor.exit_code)
             else:
                 for simple_dag in processor.result[0]:
                     simple_dags.append(simple_dag)
@@ -1231,40 +1227,39 @@ class DagFileProcessorManager(LoggingMixin):
             file_paths_recently_processed = []
             for file_path in self._file_paths:
                 last_finish_time = self.get_last_finish_time(file_path)
-                if (last_finish_time is not None and
-                    (now - last_finish_time).total_seconds() <
+                if (last_finish_time is not None
+                        and (now - last_finish_time).total_seconds() <
                         self._file_process_interval):
                     file_paths_recently_processed.append(file_path)
 
-            files_paths_at_run_limit = [file_path
-                                        for file_path, stat in self._file_stats.items()
-                                        if stat.run_count == self._max_runs]
+            files_paths_at_run_limit = [
+                file_path for file_path, stat in self._file_stats.items()
+                if stat.run_count == self._max_runs
+            ]
 
-            files_paths_to_queue = list(set(self._file_paths) -
-                                        set(file_paths_in_progress) -
-                                        set(file_paths_recently_processed) -
-                                        set(files_paths_at_run_limit))
+            files_paths_to_queue = list(
+                set(self._file_paths) - set(file_paths_in_progress) -
+                set(file_paths_recently_processed) -
+                set(files_paths_at_run_limit))
 
             for file_path, processor in self._processors.items():
                 self.log.debug(
                     "File path %s is still being processed (started: %s)",
-                    processor.file_path, processor.start_time.isoformat()
-                )
+                    processor.file_path, processor.start_time.isoformat())
 
-            self.log.debug(
-                "Queuing the following files for processing:\n\t%s",
-                "\n\t".join(files_paths_to_queue)
-            )
+            self.log.debug("Queuing the following files for processing:\n\t%s",
+                           "\n\t".join(files_paths_to_queue))
 
             for file_path in files_paths_to_queue:
                 if file_path not in self._file_stats:
-                    self._file_stats[file_path] = DagFileStat(0, 0, None, None, 0)
+                    self._file_stats[file_path] = DagFileStat(
+                        0, 0, None, None, 0)
 
             self._file_path_queue.extend(files_paths_to_queue)
 
         # Start more processors if we have enough slots and files to process
-        while (self._parallelism - len(self._processors) > 0 and
-               len(self._file_path_queue) > 0):
+        while (self._parallelism - len(self._processors) > 0
+               and len(self._file_path_queue) > 0):
             file_path = self._file_path_queue.pop(0)
             processor = self._processor_factory(file_path, self._zombies)
             Stats.incr('dag_processing.processes')
@@ -1272,8 +1267,7 @@ class DagFileProcessorManager(LoggingMixin):
             processor.start()
             self.log.debug(
                 "Started a process (PID: %s) to generate tasks for %s",
-                processor.pid, file_path
-            )
+                processor.pid, file_path)
             self._processors[file_path] = processor
 
         # Update heartbeat count.
@@ -1297,19 +1291,16 @@ class DagFileProcessorManager(LoggingMixin):
             TI = airflow.models.TaskInstance
             limit_dttm = timezone.utcnow() - timedelta(
                 seconds=self._zombie_threshold_secs)
-            self.log.info("Failing jobs without heartbeat after %s", limit_dttm)
+            self.log.info("Failing jobs without heartbeat after %s",
+                          limit_dttm)
 
-            tis = (
-                session.query(TI)
-                .join(LJ, TI.job_id == LJ.id)
-                .filter(TI.state == State.RUNNING)
-                .filter(
+            tis = (session.query(TI).join(
+                LJ,
+                TI.job_id == LJ.id).filter(TI.state == State.RUNNING).filter(
                     or_(
                         LJ.state != State.RUNNING,
                         LJ.latest_heartbeat < limit_dttm,
-                    )
-                ).all()
-            )
+                    )).all())
             self._last_zombie_query_time = timezone.utcnow()
             for ti in tis:
                 sti = SimpleTaskInstance(ti)
@@ -1330,8 +1321,8 @@ class DagFileProcessorManager(LoggingMixin):
             if duration > self._processor_timeout:
                 self.log.error(
                     "Processor for %s with PID %s started at %s has timed out, "
-                    "killing it.",
-                    processor.file_path, processor.pid, processor.start_time.isoformat())
+                    "killing it.", processor.file_path, processor.pid,
+                    processor.start_time.isoformat())
                 Stats.decr('dag_processing.processes')
                 Stats.incr('dag_processing.processor_timeouts')
                 # TODO: Remove ater Airflow 2.0
@@ -1372,26 +1363,34 @@ class DagFileProcessorManager(LoggingMixin):
             # Only check child processes to ensure that we don't have a case
             # where we kill the wrong process because a child process died
             # but the PID got reused.
-            child_processes = [x for x in this_process.children(recursive=True)
-                               if x.is_running() and x.pid in pids_to_kill]
+            child_processes = [
+                x for x in this_process.children(recursive=True)
+                if x.is_running() and x.pid in pids_to_kill
+            ]
             for child in child_processes:
                 self.log.info("Terminating child PID: %s", child.pid)
                 child.terminate()
             # TODO: Remove magic number
             timeout = 5
-            self.log.info("Waiting up to %s seconds for processes to exit...", timeout)
+            self.log.info("Waiting up to %s seconds for processes to exit...",
+                          timeout)
             try:
-                psutil.wait_procs(
-                    child_processes, timeout=timeout,
-                    callback=lambda x: self.log.info('Terminated PID %s', x.pid))
+                psutil.wait_procs(child_processes,
+                                  timeout=timeout,
+                                  callback=lambda x: self.log.info(
+                                      'Terminated PID %s', x.pid))
             except psutil.TimeoutExpired:
-                self.log.debug("Ran out of time while waiting for processes to exit")
+                self.log.debug(
+                    "Ran out of time while waiting for processes to exit")
 
             # Then SIGKILL
-            child_processes = [x for x in this_process.children(recursive=True)
-                               if x.is_running() and x.pid in pids_to_kill]
+            child_processes = [
+                x for x in this_process.children(recursive=True)
+                if x.is_running() and x.pid in pids_to_kill
+            ]
             if len(child_processes) > 0:
-                self.log.info("SIGKILL processes that did not terminate gracefully")
+                self.log.info(
+                    "SIGKILL processes that did not terminate gracefully")
                 for child in child_processes:
                     self.log.info("Killing child PID: %s", child.pid)
                     child.kill()
@@ -1405,12 +1404,17 @@ class DagFileProcessorManager(LoggingMixin):
         all files have been parsed.
         """
 
-        parse_time = (timezone.utcnow() - self._parsing_start_time).total_seconds()
+        parse_time = (timezone.utcnow() -
+                      self._parsing_start_time).total_seconds()
         Stats.gauge('dag_processing.total_parse_time', parse_time)
-        Stats.gauge('dagbag_size', sum(stat.num_dags for stat in self._file_stats.values()))
-        Stats.gauge('dag_processing.import_errors',
-                    sum(stat.import_errors for stat in self._file_stats.values()))
+        Stats.gauge('dagbag_size',
+                    sum(stat.num_dags for stat in self._file_stats.values()))
+        Stats.gauge(
+            'dag_processing.import_errors',
+            sum(stat.import_errors for stat in self._file_stats.values()))
 
         # TODO: Remove before Airflow 2.0
         Stats.gauge('collect_dags', parse_time)
-        Stats.gauge('dagbag_import_errors', sum(stat.import_errors for stat in self._file_stats.values()))
+        Stats.gauge(
+            'dagbag_import_errors',
+            sum(stat.import_errors for stat in self._file_stats.values()))

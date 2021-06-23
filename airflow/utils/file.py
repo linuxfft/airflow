@@ -103,7 +103,9 @@ def open_maybe_zipped(fileloc, mode='r'):
 
 
 def list_py_file_paths(directory,
-                       safe_mode=conf.getboolean('core', 'DAG_DISCOVERY_SAFE_MODE', fallback=True),
+                       safe_mode=conf.getboolean('core',
+                                                 'DAG_DISCOVERY_SAFE_MODE',
+                                                 fallback=True),
                        include_examples=None):
     """
     Traverse a directory and look for Python files.
@@ -136,16 +138,20 @@ def list_py_file_paths(directory,
                 with open(ignore_file, 'r') as file:
                     # If we have new patterns create a copy so we don't change
                     # the previous list (which would affect other subdirs)
-                    lines_no_comments = [COMMENT_PATTERN.sub("", line) for line in file.read().split("\n")]
-                    patterns += [re.compile(line) for line in lines_no_comments if line]
+                    lines_no_comments = [
+                        COMMENT_PATTERN.sub("", line)
+                        for line in file.read().split("\n")
+                    ]
+                    patterns += [
+                        re.compile(line) for line in lines_no_comments if line
+                    ]
 
             # If we can ignore any subdirs entirely we should - fewer paths
             # to walk is better. We have to modify the ``dirs`` array in
             # place for this to affect os.walk
             dirs[:] = [
-                subdir
-                for subdir in dirs
-                if not any(p.search(os.path.join(root, subdir)) for p in patterns)
+                subdir for subdir in dirs if not any(
+                    p.search(os.path.join(root, subdir)) for p in patterns)
             ]
 
             # We want patterns defined in a parent folder's .airflowignore to
@@ -157,7 +163,8 @@ def list_py_file_paths(directory,
     if include_examples:
         from airflow import example_dags
         example_dag_folder = example_dags.__path__[0]  # type: ignore
-        file_paths.extend(list_py_file_paths(example_dag_folder, safe_mode, False))
+        file_paths.extend(
+            list_py_file_paths(example_dag_folder, safe_mode, False))
     return file_paths
 
 
