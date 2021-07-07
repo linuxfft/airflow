@@ -133,11 +133,9 @@ def isValidParams(test_mode, **kwargs):
 def trigger_push_result_dag(params):
     _logger.info('pushing result to mq...')
     push_result_dat_id = 'publish_result_dag'
-    conf = {
-        'data': params,
-        'data_type': 'tightening_result'
-    }
-    trigger.trigger_dag(push_result_dat_id, conf=conf,
+    conf = {'data': params, 'data_type': 'tightening_result'}
+    trigger.trigger_dag(push_result_dat_id,
+                        conf=conf,
                         replace_microseconds=False)
 
 
@@ -177,8 +175,9 @@ def prepare_trigger_params(params: Dict, task_instance):
     bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
     line_code, full_name = get_line_code_by_controller_name(controller_name)
     ti_type = get_task_instance_type(new_param)
-    _logger.info("type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
-                 .format(ti_type, entity_id, line_code, bolt_number, factory_code))
+    _logger.info(
+        "type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
+        .format(ti_type, entity_id, line_code, bolt_number, factory_code))
     measure_result = result_body.get('measure_result', None)
 
     def modifier(ti):
@@ -197,12 +196,10 @@ def prepare_trigger_params(params: Dict, task_instance):
             ti.should_analyze = params_should_anaylze
         _logger.debug("vin: {}".format(ti.car_code))
 
-    modify_task_instance(
-        task_instance.dag_id,
-        task_instance.task_id,
-        task_instance.execution_date,
-        modifier=modifier
-    )
+    modify_task_instance(task_instance.dag_id,
+                         task_instance.task_id,
+                         task_instance.execution_date,
+                         modifier=modifier)
 
     try:
         craft_type = get_craft_type(bolt_number)
@@ -215,12 +212,10 @@ def prepare_trigger_params(params: Dict, task_instance):
     def store_craft_type(ti):
         ti.craft_type = craft_type
 
-    modify_task_instance(
-        task_instance.dag_id,
-        task_instance.task_id,
-        task_instance.execution_date,
-        modifier=store_craft_type
-    )
+    modify_task_instance(task_instance.dag_id,
+                         task_instance.task_id,
+                         task_instance.execution_date,
+                         modifier=store_craft_type)
 
     try:
         curve_params = get_curve_params(bolt_number)
@@ -280,9 +275,7 @@ async def push_result_to_training_server(new_params):
         'Accept': 'application/json',
         'Content-type': 'application/json'
     }
-    data = {
-        'conf': new_params
-    }
+    data = {'conf': new_params}
     try:
         url = get_trigger_training_endpoint()
         if not new_params:
@@ -291,15 +284,18 @@ async def push_result_to_training_server(new_params):
             raise Exception(u'未提供曲线参数')
         _logger.info('参数验证通过，触发分析...')
         async with RetryClient(timeout=ClientTimeout(30)) as client:
-            async with client.post(headers=headers, url=url, retry_attempts=5, json=data) as r:
+            async with client.post(headers=headers,
+                                   url=url,
+                                   retry_attempts=5,
+                                   json=data) as r:
                 r.raise_for_status()
                 resp = await r.read()
                 _logger.debug("trigger training: {}, resp: {}".format(
                     json.dumps(data), resp))
                 return resp
     except BaseException as e:
-        _logger.error(
-            "push_result_to_training_server except: {}".format(repr(e)))
+        _logger.error("push_result_to_training_server except: {}".format(
+            repr(e)))
         raise e
 
 
@@ -316,20 +312,22 @@ def doTriggerAnayTask(test_mode, **kwargs):
     return result
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析',
-    schedule_interval=schedule_interval,
-    default_args=desoutter_default_args,
-    concurrency=100,
-    max_active_runs=MAX_ACTIVE_ANALYSIS)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线分析',
+          schedule_interval=schedule_interval,
+          default_args=desoutter_default_args,
+          concurrency=100,
+          max_active_runs=MAX_ACTIVE_ANALYSIS)
 
 store_task = PythonOperator(provide_context=True,
-                            task_id=STORE_TASK, dag=dag, priority_weight=2,
+                            task_id=STORE_TASK,
+                            dag=dag,
+                            priority_weight=2,
                             python_callable=doStoreTask)
 
 trigger_anay_task = PythonOperator(provide_context=True,
-                                   task_id=TRIGGER_ANAY_TASK, dag=dag,
+                                   task_id=TRIGGER_ANAY_TASK,
+                                   dag=dag,
                                    python_callable=doTriggerAnayTask)
 
 # [store_task, trigger_anay_task]

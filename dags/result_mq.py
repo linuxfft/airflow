@@ -32,7 +32,8 @@ else:
 
 _logger = generate_logger(__name__)
 
-PUSH_ANALYSIS_RESULT_MODE = os.environ.get('PUSH_ANALYSIS_RESULT_MODE', 'ALL')  # 'OK', 'NOK', 'ALL'
+PUSH_ANALYSIS_RESULT_MODE = os.environ.get('PUSH_ANALYSIS_RESULT_MODE',
+                                           'ALL')  # 'OK', 'NOK', 'ALL'
 
 DAG_ID = 'publish_result_dag'
 TASK_ID = 'publish_result_task'
@@ -64,7 +65,8 @@ desoutter_default_args = {
 }
 
 
-def format_analysis_result(entity_id: str, factory_code: str, result: str, verify_error: int, curve_mode: list) -> Dict:
+def format_analysis_result(entity_id: str, factory_code: str, result: str,
+                           verify_error: int, curve_mode: list) -> Dict:
     if curve_mode is None:
         curve_mode = []
     return {
@@ -77,7 +79,8 @@ def format_analysis_result(entity_id: str, factory_code: str, result: str, verif
     }
 
 
-def format_final_result(entity_id: str, factory_code: str, result: str, verify_error: int, curve_mode: list):
+def format_final_result(entity_id: str, factory_code: str, result: str,
+                        verify_error: int, curve_mode: list):
     if curve_mode is None:
         curve_mode = []
     return {
@@ -155,10 +158,14 @@ def format_template_data(template_name, template_data):
         try:
             data = json.loads(template_data)
         except Exception:
-            _logger.log('cannot decode template data as json string, sending original data...')
+            _logger.log(
+                'cannot decode template data as json string, sending original data...'
+            )
     data.update({
-        'curve_param': json.dumps(data.get('curve_param', {})),
-        'template_cluster': json.dumps(data.get('template_cluster', {}))
+        'curve_param':
+        json.dumps(data.get('curve_param', {})),
+        'template_cluster':
+        json.dumps(data.get('template_cluster', {}))
     })
     return {
         'template_name': gen_template_key(template_name),
@@ -183,10 +190,7 @@ def do_push(data, queue):
     queue_config = Variable.get(queue, deserialize_json=True)
     if queue_config is None:
         raise Exception('config for queue "{}" missing'.format(queue))
-    mq.send_message(
-        json.dumps(data),
-        **queue_config
-    )
+    mq.send_message(json.dumps(data), **queue_config)
 
 
 def format_analysis_result_to_mq(trigger_data) -> Optional[Dict]:
@@ -202,8 +206,7 @@ def format_analysis_result_to_mq(trigger_data) -> Optional[Dict]:
             factory_code=ti.factory_code,
             result=result,
             verify_error=trigger_data.get('verify_error'),
-            curve_mode=trigger_data.get('curve_mode')
-        )
+            curve_mode=trigger_data.get('curve_mode'))
         return data
     except Exception as e:
         _logger.error("format_analysis_result_to_mq Error", e)
@@ -214,11 +217,13 @@ def send_analysis_result_to_mq(data):
     try:
         result: str = data.get('result', '')
         if PUSH_ANALYSIS_RESULT_MODE != 'ALL' and PUSH_ANALYSIS_RESULT_MODE != result:
-            _logger.info('PUSH_ANALYSIS_RESULT_MODE is set to {}, skipping {} analysis results.'.format(
-                PUSH_ANALYSIS_RESULT_MODE, result))
+            _logger.info(
+                'PUSH_ANALYSIS_RESULT_MODE is set to {}, skipping {} analysis results.'
+                .format(PUSH_ANALYSIS_RESULT_MODE, result))
             return
         _logger.info('pushing analysis result to mq...')
-        _logger.debug('pushing analysis result to mq Data: {}'.format(pprint.pformat(data, indent=4)))
+        _logger.debug('pushing analysis result to mq Data: {}'.format(
+            pprint.pformat(data, indent=4)))
 
         do_push(data, 'analysis_result_mq_queue')
         _logger.info('pushing analysis result to mq success')
@@ -241,8 +246,7 @@ def send_final_result_to_mq(trigger_data):
             factory_code=ti.factory_code,
             result=result,
             verify_error=trigger_data.get('verify_error'),
-            curve_mode=trigger_data.get('curve_mode')
-        )
+            curve_mode=trigger_data.get('curve_mode'))
         do_push(data, 'final_result_mq_queue')
         _logger.info('pushing final result to mq success')
     except Exception as e:
@@ -257,7 +261,8 @@ def send_curve_template_to_mq(data):
         if not template_name or not template_data:
             raise Exception('empty template name or template data')
         _logger.info('pushing curve_template: {}...'.format(template_name))
-        do_push(format_template_data(template_name, template_data), 'curve_template_mq_queue')
+        do_push(format_template_data(template_name, template_data),
+                'curve_template_mq_queue')
         _logger.info('pushing curve template to mq success.')
     except Exception as e:
         _logger.error("push curve template to mq failed: ".format(repr(e)))
@@ -298,7 +303,9 @@ def send_templates_dict_to_mq(data):
             'template_data': value
         })
 
-def get_channel(mq, queue, **kwargs) -> pika.adapters.blocking_connection.BlockingChannel:
+
+def get_channel(mq, queue,
+                **kwargs) -> pika.adapters.blocking_connection.BlockingChannel:
     if queue in mq.channels.keys():
         return mq.channels.get(queue)
     mq._connect()
@@ -309,31 +316,34 @@ def get_channel(mq, queue, **kwargs) -> pika.adapters.blocking_connection.Blocki
     exclusive = kwargs.get('exclusive', False)
     auto_delete = kwargs.get('auto_delete', False)
     arguments = kwargs.get('arguments', None)
-    channel.queue_declare(
-        queue,
-        passive=passive,
-        durable=durable,
-        exclusive=exclusive,
-        auto_delete=auto_delete,
-        arguments=arguments
-    )
+    channel.queue_declare(queue,
+                          passive=passive,
+                          durable=durable,
+                          exclusive=exclusive,
+                          auto_delete=auto_delete,
+                          arguments=arguments)
     exchange = kwargs.get('exchange', None)
     exchange_type = kwargs.get('exchange_type', 'fanout')
     exchange_durable = kwargs.get('exchange_durable', None)
 
     if exchange and exchange_type:
-        channel.exchange_declare(exchange=exchange, exchange_type=exchange_type, durable=exchange_durable)
+        channel.exchange_declare(exchange=exchange,
+                                 exchange_type=exchange_type,
+                                 durable=exchange_durable)
         channel.queue_bind(exchange=exchange,
                            queue=queue,
-                           routing_key=kwargs.get('routing_key', '#'))  # 匹配python.后所有单词
+                           routing_key=kwargs.get('routing_key',
+                                                  '#'))  # 匹配python.后所有单词
     mq.channels[queue] = channel  # 将channel加入到字典对象中
     return channel
 
 
-
 class SendResultHMIMixin(object):
     @classmethod
-    def do_send_tightening_result_to_hmi_nd(cls, tightening_result: Dict, queue: str = 'tightening_result_mq_queue_nd'):
+    def do_send_tightening_result_to_hmi_nd(
+            cls,
+            tightening_result: Dict,
+            queue: str = 'tightening_result_mq_queue_nd'):
         md = cls.get_nd_mq_args()
         mq = ClsResultMQ(**md)
         if not queue:
@@ -343,15 +353,17 @@ class SendResultHMIMixin(object):
             raise Exception('config for queue "{}" missing'.format(queue))
         channel = get_channel(mq, **queue_config)
         exchange = queue_config.get('exchange', None)
-        channel.basic_publish(exchange=exchange, routing_key=queue_config.get('routing_key', ''),
-                              body=json.dumps([tightening_result]),
-                              properties=pika.BasicProperties(
-                                  headers={'msgType': queue_config.get('msgType', '')},
-                                  content_type="application/json"
-                              ))
+        channel.basic_publish(
+            exchange=exchange,
+            routing_key=queue_config.get('routing_key', ''),
+            body=json.dumps([tightening_result]),
+            properties=pika.BasicProperties(
+                headers={'msgType': queue_config.get('msgType', '')},
+                content_type="application/json"))
 
     @classmethod
-    def do_send_analysis_result_to_hmi_nd(cls, data: Dict, queue: str = 'analysis_result_mq_queue_nd'):
+    def do_send_analysis_result_to_hmi_nd(
+            cls, data: Dict, queue: str = 'analysis_result_mq_queue_nd'):
         md = cls.get_nd_mq_args()
         mq = ClsResultMQ(**md)
         if not queue:
@@ -361,12 +373,13 @@ class SendResultHMIMixin(object):
             raise Exception('config for queue "{}" missing'.format(queue))
         channel = get_channel(mq, **queue_config)
         exchange = queue_config.get('exchange', None)
-        channel.basic_publish(exchange=exchange, routing_key=queue_config.get('routing_key', ''),
-                              body=json.dumps([data]),
-                              properties=pika.BasicProperties(
-                                  headers={'msgType': queue_config.get('msgType', '')},
-                                  content_type="application/json"
-                              ))
+        channel.basic_publish(
+            exchange=exchange,
+            routing_key=queue_config.get('routing_key', ''),
+            body=json.dumps([data]),
+            properties=pika.BasicProperties(
+                headers={'msgType': queue_config.get('msgType', '')},
+                content_type="application/json"))
 
     @classmethod
     def get_nd_mq_args(cls):
@@ -382,7 +395,8 @@ class SendResultHMIMixin(object):
 
 
 def send_tightening_result_to_hmi(tightening_result: Dict):
-    _logger.info("Sending tightening result to hmi, data: {}".format(tightening_result))
+    _logger.info(
+        "Sending tightening result to hmi, data: {}".format(tightening_result))
     factory_code: str = tightening_result.get('factory_code', '')
     if not factory_code:
         _logger.error("Can Not Found Factory Code To Push To HMI")
@@ -419,7 +433,8 @@ def doPushResult(**kwargs):
         result = format_tightening_result(data)
         send_tightening_result_to_mq(result)
         if ENV_PUSH_HMI_ENABLE:
-            send_tightening_result_to_hmi(format_tightening_result_for_hmi(data))
+            send_tightening_result_to_hmi(
+                format_tightening_result_for_hmi(data))
         return
     if data_type == 'analysis_result':
         format_data = format_analysis_result_to_mq(data)
@@ -440,14 +455,14 @@ def doPushResult(**kwargs):
         return
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析结果推送',
-    schedule_interval=schedule_interval,
-    default_args=desoutter_default_args,
-    max_active_runs=64,
-    concurrency=64)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线分析结果推送',
+          schedule_interval=schedule_interval,
+          default_args=desoutter_default_args,
+          max_active_runs=64,
+          concurrency=64)
 
 store_task = PythonOperator(provide_context=True,
-                            task_id=TASK_ID, dag=dag,
+                            task_id=TASK_ID,
+                            dag=dag,
                             python_callable=doPushResult)

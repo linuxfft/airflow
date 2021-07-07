@@ -21,9 +21,12 @@ class TestDoStoreTask(TestCase):
 
     def setUp(self):
         self.dag = self.dagbag.get_dag(dag_id=upgrade_curve_template.DAG_ID)
-        self.upgradeCurveTmplTask = self.dag.get_task(upgrade_curve_template.CURVE_TEMPLATE_UPGRADE_TASK)
-        self.upgradeCurveTmplTaskTi = TaskInstance(task=self.dag.task_dict.get(upgrade_curve_template.CURVE_TEMPLATE_UPGRADE_TASK),
-                                                   execution_date=datetime.datetime.now())
+        self.upgradeCurveTmplTask = self.dag.get_task(
+            upgrade_curve_template.CURVE_TEMPLATE_UPGRADE_TASK)
+        self.upgradeCurveTmplTaskTi = TaskInstance(
+            task=self.dag.task_dict.get(
+                upgrade_curve_template.CURVE_TEMPLATE_UPGRADE_TASK),
+            execution_date=datetime.datetime.now())
 
     def test_loadSCurveAnayDag(self):
         self.assertDictEqual(self.dagbag.import_errors, {})

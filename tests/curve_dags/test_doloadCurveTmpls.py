@@ -22,7 +22,8 @@ class TestDoStoreTask(TestCase):
     def setUp(self):
         self.dag = self.dagbag.get_dag(dag_id=load_all_curve_template.DAG_ID)
         self.storeTask = self.dag.get_task(load_all_curve_template.STORE_TASK)
-        self.storeTaskTi = TaskInstance(task=self.dag.task_dict.get(load_all_curve_template.STORE_TASK),
+        self.storeTaskTi = TaskInstance(task=self.dag.task_dict.get(
+            load_all_curve_template.STORE_TASK),
                                         execution_date=datetime.datetime.now())
 
     def test_loadSCurveAnayDag(self):

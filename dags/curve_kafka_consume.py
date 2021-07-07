@@ -13,23 +13,31 @@ _logger = generate_logger(__name__)
 
 retry_delay = 10
 
-dag = DAG(
-    dag_id='curve_kafka_consume',
-    description=u'消费Kafka拧紧结果',
-    schedule_interval=timedelta(seconds=1),
-    default_args={
-        'owner': 'desoutter',
-        'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 0,
-        'trigger_rule': 'all_success'
-    },
-    concurrency=1,
-    max_active_runs=1
-)
+dag = DAG(dag_id='curve_kafka_consume',
+          description=u'消费Kafka拧紧结果',
+          schedule_interval=timedelta(seconds=1),
+          default_args={
+              'owner':
+              'desoutter',
+              'depends_on_past':
+              False,
+              'start_date':
+              dt.datetime(2020,
+                          1,
+                          1,
+                          tzinfo=pendulum.timezone("Asia/Shanghai")),
+              'email': ['support@desoutter.cn'],
+              'email_on_failure':
+              False,
+              'email_on_retry':
+              False,
+              'retries':
+              0,
+              'trigger_rule':
+              'all_success'
+          },
+          concurrency=1,
+          max_active_runs=1)
 
 
 def curve_data_handler(msg):
@@ -57,10 +65,8 @@ def get_kafka_config():
 def watch_kafka_curve(*args, **kwargs):
     while True:
         try:
-            consumer = ClsKafkaConsumer(
-                **get_kafka_config(),
-                handler=curve_data_handler
-            )
+            consumer = ClsKafkaConsumer(**get_kafka_config(),
+                                        handler=curve_data_handler)
             consumer.read()
             return
         except Exception as e:
@@ -70,10 +76,8 @@ def watch_kafka_curve(*args, **kwargs):
             continue
 
 
-kafka_store_task = PythonOperator(
-    provide_context=True,
-    task_id='kafka_store_task',
-    dag=dag,
-    priority_weight=9,
-    python_callable=watch_kafka_curve
-)
+kafka_store_task = PythonOperator(provide_context=True,
+                                  task_id='kafka_store_task',
+                                  dag=dag,
+                                  priority_weight=9,
+                                  python_callable=watch_kafka_curve)

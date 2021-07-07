@@ -4,8 +4,7 @@ from unittest import TestCase
 from test.test_data import curve_param, curve, cluster_data
 
 CURVE_LIB_PATH = os.environ.get(
-    'CURVE_LIB_PATH',
-    '../TrainingServer/lib/libcurve_analysis_platform.so')
+    'CURVE_LIB_PATH', '../TrainingServer/lib/libcurve_analysis_platform.so')
 
 bolt_number = 'W1-021R_1_1'
 craft_type = 1
@@ -35,13 +34,10 @@ class TestSDK(TestCase):
 
     def test_curve_template(self):
         c_template_cluster = structs.templateData2CStructure(cluster_data)
-        sdk.doCALoadCurveTemplate(
-            bolt_number,
-            craft_type,
-            0,
-            curve_param,
-            c_template_cluster)
+        sdk.doCALoadCurveTemplate(bolt_number, craft_type, 0, curve_param,
+                                  c_template_cluster)
         assert sdk.doCAGetCurveTemplate(bolt_number, 0)
+
 
 # if __name__ == '__main__':
 #     create_logger()

@@ -14,7 +14,8 @@ from airflow.utils.db import get_connection
 file_ok_report = "ok_report.pdf"
 file_task = "task.pdf"
 file_diff = "diff.pdf"
-file_path = os.path.join(os.environ.get('AIRFLOW_USER_HOME', '/usr/local/airflow'))
+file_path = os.path.join(
+    os.environ.get('AIRFLOW_USER_HOME', '/usr/local/airflow'))
 if not os.path.exists(os.path.dirname(file_path)):
     try:
         os.makedirs(os.path.dirname(file_path))
@@ -55,8 +56,11 @@ task_report_task = 'task_report_task'
 task_report_diff = 'task_report_diff'
 line_code = 'All'
 
-dag = DAG(dag_id, description=u'日报表推送',
-          schedule_interval='@daily', default_args=desoutter_default_args, catchup=False)
+dag = DAG(dag_id,
+          description=u'日报表推送',
+          schedule_interval='@daily',
+          default_args=desoutter_default_args,
+          catchup=False)
 
 
 def do_load_file(**kwargs):
@@ -64,46 +68,41 @@ def do_load_file(**kwargs):
     reporter_url = '{}:{}'.format(report.host, report.port) if report else ''
     grafana_token = report.get_password() if report else ''
 
-    report_ok_rate_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_ok_rate,
-                                                                                      grafana_token, line_code)
-    report_task_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_task,
-                                                                                   grafana_token, line_code)
-    report_diff_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_diff,
-                                                                                   grafana_token, line_code)
+    report_ok_rate_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(
+        reporter_url, dashboard_ok_rate, grafana_token, line_code)
+    report_task_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(
+        reporter_url, dashboard_task, grafana_token, line_code)
+    report_diff_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(
+        reporter_url, dashboard_diff, grafana_token, line_code)
     save_pdf_file(report_ok_rate_url, target_file_ok_report)
     save_pdf_file(report_task_url, target_file_task_report)
     save_pdf_file(report_diff_url, target_file_diff)
 
 
 load_file_task = PythonOperator(provide_context=True,
-                                task_id=task_load_file, dag=dag,
+                                task_id=task_load_file,
+                                dag=dag,
                                 python_callable=do_load_file)
 
-report_ok_rate = EmailOperator(
-    task_id=task_report_ok_rate,
-    to=mails_ok_rate,
-    subject=u'日拧紧合格率报表',
-    html_content=u"""<h3>SAIC OK Report</h3>""",
-    files=[target_file_ok_report],
-    dag=dag
-)
+report_ok_rate = EmailOperator(task_id=task_report_ok_rate,
+                               to=mails_ok_rate,
+                               subject=u'日拧紧合格率报表',
+                               html_content=u"""<h3>SAIC OK Report</h3>""",
+                               files=[target_file_ok_report],
+                               dag=dag)
 
-report_task = EmailOperator(
-    task_id=task_report_task,
-    to=mails_task,
-    subject=u'日分析任务报表',
-    html_content=u"""<h3>SAIC Task Report</h3>""",
-    files=[target_file_task_report],
-    dag=dag
-)
+report_task = EmailOperator(task_id=task_report_task,
+                            to=mails_task,
+                            subject=u'日分析任务报表',
+                            html_content=u"""<h3>SAIC Task Report</h3>""",
+                            files=[target_file_task_report],
+                            dag=dag)
 
-report_diff = EmailOperator(
-    task_id=task_report_diff,
-    to=mails_diff,
-    subject=u'日分析差异报表',
-    html_content=u"""<h3>SAIC Diff Report</h3>""",
-    files=[target_file_diff],
-    dag=dag
-)
+report_diff = EmailOperator(task_id=task_report_diff,
+                            to=mails_diff,
+                            subject=u'日分析差异报表',
+                            html_content=u"""<h3>SAIC Diff Report</h3>""",
+                            files=[target_file_diff],
+                            dag=dag)
 
 load_file_task >> [report_ok_rate, report_task, report_diff]

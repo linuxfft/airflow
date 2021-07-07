@@ -18,8 +18,9 @@ class TestQueryMinioData(TestCase):
     def setUp(self):
         self.dag = self.dagbag.get_dag(dag_id=curve_store_dag.DAG_ID)
         self.task = self.dag.get_task(curve_store_dag.TRIGGER_ANAY_TASK)
-        self.taskInstance = TaskInstance(task=self.dag.task_dict.get(curve_store_dag.TRIGGER_ANAY_TASK),
-                                         execution_date=datetime.datetime.now())
+        self.taskInstance = TaskInstance(
+            task=self.dag.task_dict.get(curve_store_dag.TRIGGER_ANAY_TASK),
+            execution_date=datetime.datetime.now())
 
     def test_loadSCurveAnayDag(self):
         self.assertDictEqual(self.dagbag.import_errors, {})

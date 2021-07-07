@@ -22,8 +22,8 @@ from airflow.utils.db import get_connection
 
 CURVE_TEMPLATE_UPGRADE_TASK = 'curve_template_upgrade'
 
-CURVE_TEMPLATE_KEY_PREFIX = os.environ.get(
-    "CURVE_TEMPLATE_KEY_PREFIX", "templates")
+CURVE_TEMPLATE_KEY_PREFIX = os.environ.get("CURVE_TEMPLATE_KEY_PREFIX",
+                                           "templates")
 
 DAG_ID = 'curve_template_upgrade'
 
@@ -71,7 +71,9 @@ mq_connection: Optional[ClsResultMQ] = None
 redis_connection: Optional[ClsRedisConnection] = None
 
 
-def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
+def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver,
+                             properties: pika.spec.BasicProperties,
+                             body: bytes):
     try:
         if not body:
             return
@@ -84,36 +86,43 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         template: Dict = json.loads(data)
-        _logger.debug("Recv Template Data, key:{}, data: {}".format(channel, pprint.pformat(template, indent=4)))
+        _logger.debug("Recv Template Data, key:{}, data: {}".format(
+            channel, pprint.pformat(template, indent=4)))
         template_name = parse_template_name(channel)
     except Exception as e:
         _logger.error("template_upgrade_handler error: {}".format(repr(e)))
         raise e
     try:
-        key, val = Variable.get_fuzzy_active(key=template_name, deserialize_json=True)
+        key, val = Variable.get_fuzzy_active(key=template_name,
+                                             deserialize_json=True)
         _logger.debug("Get Template Var: {}".format(key))
-        windows = val.get('curve_param').get('windows', None) if val.get('curve_param', False) else None
+        windows = val.get('curve_param').get('windows', None) if val.get(
+            'curve_param', False) else None
         if windows:
             template.update({'windows': windows})
         template.update({'version': val.get('version', 0) + 1})
-        Variable.set(key=key, value=template, serialize_json=True,
+        Variable.set(key=key,
+                     value=template,
+                     serialize_json=True,
                      is_curve_template=True)  # 此业务场景下 params不会变化故覆盖现有的variable
 
     except KeyError as e:
         # 没有这个key 重新创建这个key
         key = "{}@@{}".format(template_name, str(uuid.uuid4()))
-        Variable.set(key=key, value=template, serialize_json=True, is_curve_template=True)
+        Variable.set(key=key,
+                     value=template,
+                     serialize_json=True,
+                     is_curve_template=True)
     except Exception as e:
         _logger.error("template_upgrade_handler error: {}".format(repr(e)))
     try:
         global redis_connection
         if redis_connection is None:
             raise Exception('redis not connected')
-        redis_connection.store_templates({
-            template_name: json.dumps(template)
-        })
+        redis_connection.store_templates({template_name: json.dumps(template)})
     except Exception as e:
-        _logger.error('store curve template to redis error: {}'.format(repr(e)))
+        _logger.error('store curve template to redis error: {}'.format(
+            repr(e)))
 
 
 def get_result_mq_args():
@@ -130,27 +139,32 @@ def get_result_mq_args():
 
 def curve_template_upgrade_task(**kwargs):
     global mq_connection, redis_connection
-    _logger.debug("{} context: {}".format('curve_template_upgrade_task', kwargs))
+    _logger.debug("{} context: {}".format('curve_template_upgrade_task',
+                                          kwargs))
     mq_connection = ClsResultMQ(**get_result_mq_args())
     redis_connection = ClsRedisConnection()
     queue = os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow')
     exchange = os.environ.get('MQ_TEMPLATE_EXCHANGE', 'qcos_templates')
     routing_key = gen_template_key('*')
 
-    mq_connection.doSubscribe(queue=queue, message_handler=template_upgrade_handler, exchange=exchange,
-                              exchange_type='fanout', routing_key=routing_key)
+    mq_connection.doSubscribe(queue=queue,
+                              message_handler=template_upgrade_handler,
+                              exchange=exchange,
+                              exchange_type='fanout',
+                              routing_key=routing_key)
     mq_connection.run(queue=queue)
     mq_connection.doUnsubscribe(queue)
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析-曲线模板更新',
-    start_date=dt.datetime(2020, 1, 1, tzinfo=local_tz),
-    max_active_runs=1,
-    schedule_interval='*/1 * * * *',
-    catchup=True
-)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线分析-曲线模板更新',
+          start_date=dt.datetime(2020, 1, 1, tzinfo=local_tz),
+          max_active_runs=1,
+          schedule_interval='*/1 * * * *',
+          catchup=True)
 
-upgrade_curve_template_task = PythonOperator(dag=dag, provide_context=True, task_id=CURVE_TEMPLATE_UPGRADE_TASK,
-                                             python_callable=curve_template_upgrade_task)
+upgrade_curve_template_task = PythonOperator(
+    dag=dag,
+    provide_context=True,
+    task_id=CURVE_TEMPLATE_UPGRADE_TASK,
+    python_callable=curve_template_upgrade_task)

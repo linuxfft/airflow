@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 
-
 from unittest import TestCase
 import aioredis
 from aioredis import Redis
@@ -27,33 +26,33 @@ tempalte_data = {
 
         # 停止模式 （0: 正常停止 1:软停止）
         "stop_mode": 0,
-
     },
     'template_cluster': {
-        'algorithm_version': 0,
+        'algorithm_version':
+        0,
         'curve_template_group_array': [{
-            'template_centroid_index': 0,
-            'template_data_array': [
-                {
-                    # 曲线角度模板
-                    'template_angle': [0.0],
+            'template_centroid_index':
+            0,
+            'template_data_array': [{
+                # 曲线角度模板
+                'template_angle': [0.0],
 
-                    # 曲线扭矩模板
-                    'template_torque': [0.0],
+                # 曲线扭矩模板
+                'template_torque': [0.0],
 
-                    # 曲线启动点
-                    'start_point': 0
-                }
-            ]
+                # 曲线启动点
+                'start_point': 0
+            }]
         }]
     }
 }
 
 
 class TestPublishCurveTemplate(TestCase):
-
     async def do_publish(self):
-        redis: Redis = await aioredis.create_redis_pool('redis://localhost', db=1, password=None)
+        redis: Redis = await aioredis.create_redis_pool('redis://localhost',
+                                                        db=1,
+                                                        password=None)
         time.sleep(1)
         i = 0
         template_prefix = os.environ.get('TEMPLATE_PREFIX', 'qcos_templates')

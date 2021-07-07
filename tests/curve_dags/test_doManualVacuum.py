@@ -22,8 +22,10 @@ class TestDoVacuumTask(TestCase):
     def setUp(self):
         self.dag = self.dagbag.get_dag(dag_id=data_retention_policy.DAG_ID)
         self.task = self.dag.get_task(data_retention_policy.AUTO_VACUUM_TASK)
-        self.taskInstance = TaskInstance(task=self.dag.task_dict.get(data_retention_policy.AUTO_VACUUM_TASK),
-                                        execution_date=datetime.datetime.now())
+        self.taskInstance = TaskInstance(
+            task=self.dag.task_dict.get(
+                data_retention_policy.AUTO_VACUUM_TASK),
+            execution_date=datetime.datetime.now())
 
     def test_loadSCurveAnayDag(self):
         self.assertDictEqual(self.dagbag.import_errors, {})
