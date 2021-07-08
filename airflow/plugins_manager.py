@@ -120,12 +120,13 @@ def register_inbuilt_operator_links():
 
     try:
         from airflow.contrib.operators.bigquery_operator import BigQueryConsoleLink, BigQueryConsoleIndexableLink  # noqa E501 # pylint: disable=R0401,line-too-long
-        inbuilt_operator_links.update([BigQueryConsoleLink, BigQueryConsoleIndexableLink])
+        inbuilt_operator_links.update(
+            [BigQueryConsoleLink, BigQueryConsoleIndexableLink])
     except ImportError:
         pass
 
     try:
-        from airflow.contrib.operators.qubole_operator import QDSLink   # pylint: disable=R0401
+        from airflow.contrib.operators.qubole_operator import QDSLink  # pylint: disable=R0401
         inbuilt_operator_links.update([QDSLink])
     except ImportError:
         pass
@@ -146,11 +147,8 @@ def is_valid_plugin(plugin_obj, existing_plugins):
     :return: Whether or not the obj is a valid subclass of
         AirflowPlugin
     """
-    if (
-        inspect.isclass(plugin_obj) and
-        issubclass(plugin_obj, AirflowPlugin) and
-        (plugin_obj is not AirflowPlugin)
-    ):
+    if (inspect.isclass(plugin_obj) and issubclass(plugin_obj, AirflowPlugin)
+            and (plugin_obj is not AirflowPlugin)):
         plugin_obj.validate()
         return plugin_obj not in existing_plugins
     return False
@@ -170,8 +168,7 @@ for root, dirs, files in os.walk(settings.PLUGINS_FOLDER, followlinks=True):
             filepath = os.path.join(root, f)
             if not os.path.isfile(filepath):
                 continue
-            mod_name, file_ext = os.path.splitext(
-                os.path.split(filepath)[-1])
+            mod_name, file_ext = os.path.splitext(os.path.split(filepath)[-1])
             if file_ext != '.py':
                 continue
 
@@ -193,9 +190,7 @@ for root, dirs, files in os.walk(settings.PLUGINS_FOLDER, followlinks=True):
             import_errors[filepath] = str(e)
 
 plugins = load_entrypoint_plugins(
-    pkg_resources.iter_entry_points('airflow.plugins'),
-    plugins
-)
+    pkg_resources.iter_entry_points('airflow.plugins'), plugins)
 
 
 def make_module(name, objects):
@@ -224,7 +219,7 @@ flask_appbuilder_menu_links = []  # type: List[Any]
 global_operator_extra_links = []  # type: List[BaseOperatorLink]
 operator_extra_links = []  # type: List[BaseOperatorLink]
 
-registered_operator_link_classes = {}   # type: Dict[str, Type]
+registered_operator_link_classes = {}  # type: Dict[str, Type]
 """Mapping of class names to class of OperatorLinks registered by plugins.
 
 Used by the DAG serialization code to only allow specific classes to be created
@@ -234,9 +229,7 @@ during deserialization
 for p in plugins:
     operators_modules.append(
         make_module('airflow.operators.' + p.name, p.operators + p.sensors))
-    sensors_modules.append(
-        make_module('airflow.sensors.' + p.name, p.sensors)
-    )
+    sensors_modules.append(make_module('airflow.sensors.' + p.name, p.sensors))
     hooks_modules.append(make_module('airflow.hooks.' + p.name, p.hooks))
     executors_modules.append(
         make_module('airflow.executors.' + p.name, p.executors))
@@ -255,7 +248,7 @@ for p in plugins:
     operator_extra_links.extend([ope for ope in p.operator_extra_links])
 
     registered_operator_link_classes.update({
-        "{}.{}".format(link.__class__.__module__,
-                       link.__class__.__name__): link.__class__
+        "{}.{}".format(link.__class__.__module__, link.__class__.__name__):
+        link.__class__
         for link in p.operator_extra_links
     })
