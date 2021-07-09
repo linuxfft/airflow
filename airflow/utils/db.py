@@ -58,7 +58,6 @@ def provide_session(func):
     database transaction, you pass it to the function, if not this wrapper
     will create one and close it for you.
     """
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         arg_session = 'session'
@@ -81,7 +80,8 @@ def provide_session(func):
 @provide_session
 def merge_conn(conn, session=None):
     from airflow.models import Connection
-    if not session.query(Connection).filter(Connection.conn_id == conn.conn_id).first():
+    if not session.query(Connection).filter(
+            Connection.conn_id == conn.conn_id).first():
         session.add(conn)
         session.commit()
 
@@ -92,7 +92,8 @@ def add_default_pool_if_not_exists(session=None):
     if not Pool.get_pool(Pool.DEFAULT_POOL_NAME, session=session):
         default_pool = Pool(
             pool=Pool.DEFAULT_POOL_NAME,
-            slots=conf.getint(section='core', key='non_pooled_task_slot_count',
+            slots=conf.getint(section='core',
+                              key='non_pooled_task_slot_count',
                               fallback=128),
             description="Default pool",
         )
@@ -105,136 +106,159 @@ def create_default_connections(session=None):
     from airflow.models import Connection
 
     merge_conn(
-        Connection(
-            conn_id='airflow_db', conn_type='mysql',
-            host='mysql', login='root', password='',
-            schema='airflow'), session)
+        Connection(conn_id='airflow_db',
+                   conn_type='mysql',
+                   host='mysql',
+                   login='root',
+                   password='',
+                   schema='airflow'), session)
+    merge_conn(
+        Connection(conn_id='beeline_default',
+                   conn_type='beeline',
+                   port=10000,
+                   host='localhost',
+                   extra="{\"use_beeline\": true, \"auth\": \"\"}",
+                   schema='default'), session)
+    merge_conn(
+        Connection(conn_id='bigquery_default',
+                   conn_type='google_cloud_platform',
+                   schema='default'), session)
+    merge_conn(
+        Connection(conn_id='local_mysql',
+                   conn_type='mysql',
+                   host='localhost',
+                   login='airflow',
+                   password='airflow',
+                   schema='airflow'), session)
+    merge_conn(
+        Connection(conn_id='presto_default',
+                   conn_type='presto',
+                   host='localhost',
+                   schema='hive',
+                   port=3400), session)
     merge_conn(
         Connection(
-            conn_id='beeline_default', conn_type='beeline', port=10000,
-            host='localhost', extra="{\"use_beeline\": true, \"auth\": \"\"}",
-            schema='default'), session)
+            conn_id='google_cloud_default',
+            conn_type='google_cloud_platform',
+            schema='default',
+        ), session)
     merge_conn(
         Connection(
-            conn_id='bigquery_default', conn_type='google_cloud_platform',
-            schema='default'), session)
+            conn_id='hive_cli_default',
+            conn_type='hive_cli',
+            schema='default',
+        ), session)
     merge_conn(
         Connection(
-            conn_id='local_mysql', conn_type='mysql',
-            host='localhost', login='airflow', password='airflow',
-            schema='airflow'), session)
+            conn_id='pig_cli_default',
+            conn_type='pig_cli',
+            schema='default',
+        ), session)
     merge_conn(
-        Connection(
-            conn_id='presto_default', conn_type='presto',
-            host='localhost',
-            schema='hive', port=3400), session)
+        Connection(conn_id='hiveserver2_default',
+                   conn_type='hiveserver2',
+                   host='localhost',
+                   schema='default',
+                   port=10000))
     merge_conn(
-        Connection(
-            conn_id='google_cloud_default', conn_type='google_cloud_platform',
-            schema='default', ), session)
+        Connection(conn_id='metastore_default',
+                   conn_type='hive_metastore',
+                   host='localhost',
+                   extra="{\"authMechanism\": \"PLAIN\"}",
+                   port=9083), session)
     merge_conn(
-        Connection(
-            conn_id='hive_cli_default', conn_type='hive_cli',
-            schema='default', ), session)
+        Connection(conn_id='mongo_default',
+                   conn_type='mongo',
+                   host='mongo',
+                   port=27017), session)
     merge_conn(
-        Connection(
-            conn_id='pig_cli_default', conn_type='pig_cli',
-            schema='default', ), session)
+        Connection(conn_id='mysql_default',
+                   conn_type='mysql',
+                   login='root',
+                   schema='airflow',
+                   host='mysql'), session)
     merge_conn(
-        Connection(
-            conn_id='hiveserver2_default', conn_type='hiveserver2',
-            host='localhost',
-            schema='default', port=10000))
+        Connection(conn_id='postgres_default',
+                   conn_type='postgres',
+                   login='postgres',
+                   password='airflow',
+                   schema='airflow',
+                   host='postgres'), session)
     merge_conn(
-        Connection(
-            conn_id='metastore_default', conn_type='hive_metastore',
-            host='localhost', extra="{\"authMechanism\": \"PLAIN\"}",
-            port=9083), session)
+        Connection(conn_id='sqlite_default',
+                   conn_type='sqlite',
+                   host='/tmp/sqlite_default.db'), session)
     merge_conn(
-        Connection(
-            conn_id='mongo_default', conn_type='mongo',
-            host='mongo', port=27017), session)
+        Connection(conn_id='http_default',
+                   conn_type='http',
+                   host='https://www.httpbin.org/'), session)
     merge_conn(
-        Connection(
-            conn_id='mysql_default', conn_type='mysql',
-            login='root',
-            schema='airflow',
-            host='mysql'), session)
+        Connection(conn_id='mssql_default',
+                   conn_type='mssql',
+                   host='localhost',
+                   port=1433), session)
     merge_conn(
-        Connection(
-            conn_id='postgres_default', conn_type='postgres',
-            login='postgres',
-            password='airflow',
-            schema='airflow',
-            host='postgres'), session)
+        Connection(conn_id='vertica_default',
+                   conn_type='vertica',
+                   host='localhost',
+                   port=5433), session)
     merge_conn(
-        Connection(
-            conn_id='sqlite_default', conn_type='sqlite',
-            host='/tmp/sqlite_default.db'), session)
+        Connection(conn_id='wasb_default',
+                   conn_type='wasb',
+                   extra='{"sas_token": null}'), session)
     merge_conn(
-        Connection(
-            conn_id='http_default', conn_type='http',
-            host='https://www.httpbin.org/'), session)
+        Connection(conn_id='webhdfs_default',
+                   conn_type='hdfs',
+                   host='localhost',
+                   port=50070), session)
     merge_conn(
-        Connection(
-            conn_id='mssql_default', conn_type='mssql',
-            host='localhost', port=1433), session)
+        Connection(conn_id='ssh_default', conn_type='ssh', host='localhost'),
+        session)
     merge_conn(
-        Connection(
-            conn_id='vertica_default', conn_type='vertica',
-            host='localhost', port=5433), session)
-    merge_conn(
-        Connection(
-            conn_id='wasb_default', conn_type='wasb',
-            extra='{"sas_token": null}'), session)
-    merge_conn(
-        Connection(
-            conn_id='webhdfs_default', conn_type='hdfs',
-            host='localhost', port=50070), session)
-    merge_conn(
-        Connection(
-            conn_id='ssh_default', conn_type='ssh',
-            host='localhost'), session)
-    merge_conn(
-        Connection(
-            conn_id='sftp_default', conn_type='sftp',
-            host='localhost', port=22, login='airflow',
-            extra='''
+        Connection(conn_id='sftp_default',
+                   conn_type='sftp',
+                   host='localhost',
+                   port=22,
+                   login='airflow',
+                   extra='''
                     {"key_file": "~/.ssh/id_rsa", "no_host_key_check": true}
                 '''), session)
     merge_conn(
-        Connection(
-            conn_id='fs_default', conn_type='fs',
-            extra='{"path": "/"}'), session)
+        Connection(conn_id='fs_default', conn_type='fs',
+                   extra='{"path": "/"}'), session)
+    merge_conn(Connection(conn_id='aws_default', conn_type='aws'), session)
     merge_conn(
-        Connection(
-            conn_id='aws_default', conn_type='aws'), session)
+        Connection(conn_id='spark_default',
+                   conn_type='spark',
+                   host='yarn',
+                   extra='{"queue": "root.default"}'), session)
     merge_conn(
-        Connection(
-            conn_id='spark_default', conn_type='spark',
-            host='yarn', extra='{"queue": "root.default"}'), session)
+        Connection(conn_id='druid_broker_default',
+                   conn_type='druid',
+                   host='druid-broker',
+                   port=8082,
+                   extra='{"endpoint": "druid/v2/sql"}'), session)
     merge_conn(
-        Connection(
-            conn_id='druid_broker_default', conn_type='druid',
-            host='druid-broker', port=8082, extra='{"endpoint": "druid/v2/sql"}'), session)
+        Connection(conn_id='druid_ingest_default',
+                   conn_type='druid',
+                   host='druid-overlord',
+                   port=8081,
+                   extra='{"endpoint": "druid/indexer/v1/task"}'), session)
     merge_conn(
-        Connection(
-            conn_id='druid_ingest_default', conn_type='druid',
-            host='druid-overlord', port=8081,
-            extra='{"endpoint": "druid/indexer/v1/task"}'), session)
+        Connection(conn_id='redis_default',
+                   conn_type='redis',
+                   host='redis',
+                   port=6379,
+                   extra='{"db": 0}'), session)
     merge_conn(
-        Connection(
-            conn_id='redis_default', conn_type='redis',
-            host='redis', port=6379,
-            extra='{"db": 0}'), session)
+        Connection(conn_id='sqoop_default',
+                   conn_type='sqoop',
+                   host='rmdbs',
+                   extra=''), session)
     merge_conn(
-        Connection(
-            conn_id='sqoop_default', conn_type='sqoop',
-            host='rmdbs', extra=''), session)
-    merge_conn(
-        Connection(
-            conn_id='emr_default', conn_type='emr',
-            extra='''
+        Connection(conn_id='emr_default',
+                   conn_type='emr',
+                   extra='''
                     {   "Name": "default_job_flow_name",
                         "LogUri": "s3://my-emr-log-bucket/default_job_flow_location",
                         "ReleaseLabel": "emr-4.6.0",
@@ -279,43 +303,52 @@ def create_default_connections(session=None):
                     }
                 '''), session)
     merge_conn(
-        Connection(
-            conn_id='databricks_default', conn_type='databricks',
-            host='localhost'), session)
+        Connection(conn_id='databricks_default',
+                   conn_type='databricks',
+                   host='localhost'), session)
+    merge_conn(
+        Connection(conn_id='qubole_default',
+                   conn_type='qubole',
+                   host='localhost'), session)
+    merge_conn(
+        Connection(conn_id='segment_default',
+                   conn_type='segment',
+                   extra='{"write_key": "my-segment-write-key"}'), session),
     merge_conn(
         Connection(
-            conn_id='qubole_default', conn_type='qubole',
-            host='localhost'), session)
+            conn_id='azure_data_lake_default',
+            conn_type='azure_data_lake',
+            extra='{"tenant": "<TENANT>", "account_name": "<ACCOUNTNAME>" }'),
+        session)
     merge_conn(
         Connection(
-            conn_id='segment_default', conn_type='segment',
-            extra='{"write_key": "my-segment-write-key"}'), session),
+            conn_id='azure_cosmos_default',
+            conn_type='azure_cosmos',
+            extra=
+            '{"database_name": "<DATABASE_NAME>", "collection_name": "<COLLECTION_NAME>" }'
+        ), session)
     merge_conn(
         Connection(
-            conn_id='azure_data_lake_default', conn_type='azure_data_lake',
-            extra='{"tenant": "<TENANT>", "account_name": "<ACCOUNTNAME>" }'), session)
+            conn_id='azure_container_instances_default',
+            conn_type='azure_container_instances',
+            extra=
+            '{"tenantId": "<TENANT>", "subscriptionId": "<SUBSCRIPTION ID>" }'
+        ), session)
     merge_conn(
-        Connection(
-            conn_id='azure_cosmos_default', conn_type='azure_cosmos',
-            extra='{"database_name": "<DATABASE_NAME>", "collection_name": "<COLLECTION_NAME>" }'),
-        session
-    )
+        Connection(conn_id='cassandra_default',
+                   conn_type='cassandra',
+                   host='cassandra',
+                   port=9042), session)
     merge_conn(
-        Connection(
-            conn_id='azure_container_instances_default', conn_type='azure_container_instances',
-            extra='{"tenantId": "<TENANT>", "subscriptionId": "<SUBSCRIPTION ID>" }'), session)
+        Connection(conn_id='dingding_default',
+                   conn_type='http',
+                   host='',
+                   password=''), session)
     merge_conn(
-        Connection(
-            conn_id='cassandra_default', conn_type='cassandra',
-            host='cassandra', port=9042), session)
-    merge_conn(
-        Connection(
-            conn_id='dingding_default', conn_type='http',
-            host='', password=''), session)
-    merge_conn(
-        Connection(
-            conn_id='opsgenie_default', conn_type='http',
-            host='', password=''), session)
+        Connection(conn_id='opsgenie_default',
+                   conn_type='http',
+                   host='',
+                   password=''), session)
 
 
 def get_connection(conn_id):
@@ -335,56 +368,64 @@ def initdb(rbac=False):
         create_default_connections()
 
     merge_conn(
-        Connection(
-            conn_id='qcos_rabbitmq', conn_type='rabbitmq',
-            login='admin',
-            password='admin',
-            schema='amqp',
-            extra=json.dumps({
-                'vhost': '/',
-                'heartbeat': '0',
-                'exchange': ''
-            }),
-            host='172.17.0.1', port=5672), session)
+        Connection(conn_id='qcos_rabbitmq',
+                   conn_type='rabbitmq',
+                   login='admin',
+                   password='admin',
+                   schema='amqp',
+                   extra=json.dumps({
+                       'vhost': '/',
+                       'heartbeat': '0',
+                       'exchange': ''
+                   }),
+                   host='172.17.0.1',
+                   port=5672), session)
 
     merge_conn(
         Connection(
-            conn_id='qcos_kafka', conn_type='kafka',
+            conn_id='qcos_kafka',
+            conn_type='kafka',
             login='admin',
             password='admin',
-            schema= 'qcos_{}'.format(os.environ.get('FACTORY_CODE', '')), # topic
-            host='localhost:9092', # bootstrap_servers, 服务器或者服务器列表(cluster)
+            schema='qcos_{}'.format(os.environ.get('FACTORY_CODE',
+                                                   '')),  # topic
+            host='localhost:9092',  # bootstrap_servers, 服务器或者服务器列表(cluster)
             extra=json.dumps({
                 # 为空会创建失败
-                'group_id': 'qcos_{}'.format(os.environ.get('FACTORY_CODE', '')),
-                'security_protocol': 'SSL_PLAINTEXT',
-                'auth_type': 'SCRAM-SHA-256',
-            })
-        ), session)
+                'group_id':
+                'qcos_{}'.format(os.environ.get('FACTORY_CODE', '')),
+                'security_protocol':
+                'SSL_PLAINTEXT',
+                'auth_type':
+                'SCRAM-SHA-256',
+            })),
+        session)
 
     merge_conn(
-        Connection(
-            conn_id='qcos_redis', conn_type='redis',
-            host='172.17.0.1', port=6379,
-            extra='{"db": 0}'), session)
+        Connection(conn_id='qcos_redis',
+                   conn_type='redis',
+                   host='172.17.0.1',
+                   port=6379,
+                   extra='{"db": 0}'), session)
 
     merge_conn(
-        Connection(
-            conn_id='qcos_influxdb', conn_type='http',
-            host='172.17.0.1', port=9999, password=""
-        ), session)
+        Connection(conn_id='qcos_influxdb',
+                   conn_type='http',
+                   host='172.17.0.1',
+                   port=9999,
+                   password=""), session)
 
     merge_conn(
-        Connection(
-            conn_id='qcos_minio', conn_type='http',
-            host='172.17.0.1', port=9000
-        ), session)
+        Connection(conn_id='qcos_minio',
+                   conn_type='http',
+                   host='172.17.0.1',
+                   port=9000), session)
 
     merge_conn(
-        Connection(
-            conn_id='qcos_report', conn_type='http',
-            host='172.17.0.1', port=8686
-        ), session)
+        Connection(conn_id='qcos_report',
+                   conn_type='http',
+                   host='172.17.0.1',
+                   port=8686), session)
 
     create_default_users()
 
@@ -418,11 +459,10 @@ def initdb(rbac=False):
             conn_id='airflow_db',
             chart_type='bar',
             x_is_date=False,
-            sql=(
-                "SELECT state, COUNT(1) as number "
-                "FROM task_instance "
-                "WHERE dag_id LIKE 'example%' "
-                "GROUP BY state"),
+            sql=("SELECT state, COUNT(1) as number "
+                 "FROM task_instance "
+                 "WHERE dag_id LIKE 'example%' "
+                 "GROUP BY state"),
         )
         session.add(chart)
         session.commit()
@@ -445,8 +485,8 @@ def upgradedb():
     directory = os.path.join(package_dir, 'migrations')
     config = Config(os.path.join(package_dir, 'alembic.ini'))
     config.set_main_option('script_location', directory.replace('%', '%%'))
-    config.set_main_option(
-        'sqlalchemy.url', settings.SQL_ALCHEMY_CONN.replace('%', '%%'))
+    config.set_main_option('sqlalchemy.url',
+                           settings.SQL_ALCHEMY_CONN.replace('%', '%%'))
     command.upgrade(config, 'heads')
     add_default_pool_if_not_exists()
 
