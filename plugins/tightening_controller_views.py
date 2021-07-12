@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
 
 from flask import (
-    Markup, Response, escape, flash, jsonify, make_response, redirect, render_template, request,
-    session as flask_session, url_for,
+    Markup,
+    Response,
+    escape,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session as flask_session,
+    url_for,
 )
 import json
 from flask_babel import lazy_gettext, gettext
@@ -15,7 +24,7 @@ from plugins import AirflowModelView
 from airflow.plugins_manager import AirflowPlugin
 from airflow.settings import TIMEZONE
 from airflow.models.tightening_controller import TighteningController, DeviceTypeModel
-from airflow.www_rbac.decorators import has_dag_access,action_logging
+from airflow.www_rbac.decorators import has_dag_access, action_logging
 from airflow.www_rbac.forms import TighteningControllerForm
 from airflow.www_rbac.widgets import AirflowControllerListWidget
 from flask_wtf.csrf import CSRFProtect
@@ -35,12 +44,19 @@ class TighteningControllerView(AirflowModelView):
 
     datamodel = AirflowModelView.CustomSQLAInterface(TighteningController)
 
-    base_permissions = ['can_show', 'can_add', 'can_list', 'can_edit', 'can_delete']
+    base_permissions = [
+        'can_show', 'can_add', 'can_list', 'can_edit', 'can_delete'
+    ]
 
     extra_fields = []
-    list_columns = ['controller_name', 'line_code', 'line_name', 'work_center_code', 'work_center_name', 'device_type']
-    add_columns = edit_columns = ['controller_name', 'line_code', 'line_name', 'work_center_code',
-                                  'work_center_name', 'device_type'] + extra_fields
+    list_columns = [
+        'controller_name', 'line_code', 'line_name', 'work_center_code',
+        'work_center_name', 'device_type'
+    ]
+    add_columns = edit_columns = [
+        'controller_name', 'line_code', 'line_name', 'work_center_code',
+        'work_center_name', 'device_type'
+    ] + extra_fields
     add_form = edit_form = TighteningControllerForm
     add_template = 'airflow/tightening_controller_create.html'
     edit_template = 'airflow/tightening_controller_edit.html'
@@ -58,38 +74,44 @@ class TighteningControllerView(AirflowModelView):
 
     def post_add(self, item):
         super(TighteningControllerView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '增加控制器')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['ADD'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'], '增加控制器')
         logging.info(msg)
 
     def post_update(self, item):
         super(TighteningControllerView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '修改控制器')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['UPDATE'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'], '修改控制器')
         logging.info(msg)
 
     def post_delete(self, item):
         super(TighteningControllerView, self).post_delete(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '删除控制器')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'], '删除控制器')
         logging.info(msg)
 
-    @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
+    @action('muldelete',
+            'Delete',
+            'Are you sure you want to delete selected records?',
             single=False)
     @has_dag_access(can_dag_edit=True)
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '删除选中控制器')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'], '删除选中控制器')
         logging.info(msg)
         return redirect(self.get_redirect())
 
@@ -121,7 +143,8 @@ class TighteningControllerView(AirflowModelView):
                 suc_count += 1
         flash("{} controller(s) successfully updated.".format(suc_count))
         if fail_count:
-            flash("{} controller(s) failed to be updated.".format(fail_count), 'error')
+            flash("{} controller(s) failed to be updated.".format(fail_count),
+                  'error')
         self.update_redirect()
         return redirect(self.get_redirect())
 
@@ -135,18 +158,21 @@ class TighteningControllerView(AirflowModelView):
                 val = str(controller)
             ret.append(val)
 
-        response = make_response(json.dumps(ret, sort_keys=True, indent=4, ensure_ascii=False))
-        response.headers["Content-Disposition"] = "attachment; filename=controller.json"
+        response = make_response(
+            json.dumps(ret, sort_keys=True, indent=4, ensure_ascii=False))
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=controller.json"
         response.headers["Content-Type"] = "application/json; charset=utf-8"
         return response
 
     @expose("/list/")
     @has_access
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '查看控制器')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['VIEW'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'], '查看控制器')
         logging.info(msg)
         return super(TighteningControllerView, self).list()
 
@@ -157,14 +183,18 @@ class DeviceTypeView(ModelView):
 
 
 tightening_controller_view = TighteningControllerView()
-tightening_controller_package = {"name": gettext("Equipments"),
-                                 "category": gettext("Master Data Management"),
-                                 "view": tightening_controller_view}
+tightening_controller_package = {
+    "name": gettext("Equipments"),
+    "category": gettext("Master Data Management"),
+    "view": tightening_controller_view
+}
 
 device_type_view = DeviceTypeView()
-device_type_package = {"name": gettext("Device Type"),
-                       "category": gettext("Master Data Management"),
-                       "view": device_type_view}
+device_type_package = {
+    "name": gettext("Device Type"),
+    "category": gettext("Master Data Management"),
+    "view": device_type_view
+}
 
 
 class TighteningControllerViewPlugin(AirflowPlugin):

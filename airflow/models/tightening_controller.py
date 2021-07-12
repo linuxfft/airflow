@@ -35,10 +35,17 @@ class TighteningController(Base):
     work_center_code = Column(String(1000), nullable=False)
     work_center_name = Column(String(1000), nullable=True)
     device_type = relationship('DeviceTypeModel')
-    device_type_id = Column(Integer, ForeignKey('device_type.id'), nullable=False)
+    device_type_id = Column(Integer,
+                            ForeignKey('device_type.id'),
+                            nullable=False)
 
-    def __init__(self, controller_name=None, line_code=None, line_name=None, work_center_code=None,
-                 work_center_name=None, device_type_id=None):
+    def __init__(self,
+                 controller_name=None,
+                 line_code=None,
+                 line_name=None,
+                 work_center_code=None,
+                 work_center_name=None,
+                 device_type_id=None):
         self.controller_name = controller_name
         self.line_code = line_code
         self.line_name = line_name
@@ -56,7 +63,8 @@ class TighteningController(Base):
     @classmethod
     @provide_session
     def find_controller(cls, controller_name, session=None):
-        obj = session.query(cls).filter(cls.controller_name == controller_name).first()
+        obj = session.query(cls).filter(
+            cls.controller_name == controller_name).first()
         if obj is None:
             return {}
         return {
@@ -76,14 +84,18 @@ class TighteningController(Base):
 
     @classmethod
     @provide_session
-    def add_controller(cls, controller_name, line_code, work_center_code, line_name=None, work_center_name=None,
+    def add_controller(cls,
+                       controller_name,
+                       line_code,
+                       work_center_code,
+                       line_name=None,
+                       work_center_name=None,
                        device_type_id=None,
                        session=None):
-        session.add(TighteningController(
-            controller_name=controller_name,
-            line_code=line_code,
-            work_center_code=work_center_code,
-            line_name=line_name,
-            work_center_name=work_center_name,
-            device_type_id=device_type_id
-        ))
+        session.add(
+            TighteningController(controller_name=controller_name,
+                                 line_code=line_code,
+                                 work_center_code=work_center_code,
+                                 line_name=line_name,
+                                 work_center_name=work_center_name,
+                                 device_type_id=device_type_id))

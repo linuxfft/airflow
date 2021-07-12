@@ -17,9 +17,11 @@ class CurveAnalysisControllerView(TighteningControllerView):
 
 
 curve_ana_controller_view = CurveAnalysisControllerView()
-curve_ana_controller_package = {"name": gettext("Analysis Via Controller"),
-                                "category": gettext("Analysis"),
-                                "view": curve_ana_controller_view}
+curve_ana_controller_package = {
+    "name": gettext("Analysis Via Controller"),
+    "category": gettext("Analysis"),
+    "view": curve_ana_controller_view
+}
 
 
 class CurveAnalysisControllerViewPlugin(AirflowPlugin):
