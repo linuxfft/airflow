@@ -51,19 +51,32 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
     global app, appbuilder
     app = Flask(__name__)
     if conf.getboolean('webserver', 'ENABLE_PROXY_FIX'):
-        app.wsgi_app = ProxyFix(
-            app.wsgi_app,
-            num_proxies=conf.get("webserver", "PROXY_FIX_NUM_PROXIES", fallback=None),
-            x_for=conf.getint("webserver", "PROXY_FIX_X_FOR", fallback=1),
-            x_proto=conf.getint("webserver", "PROXY_FIX_X_PROTO", fallback=1),
-            x_host=conf.getint("webserver", "PROXY_FIX_X_HOST", fallback=1),
-            x_port=conf.getint("webserver", "PROXY_FIX_X_PORT", fallback=1),
-            x_prefix=conf.getint("webserver", "PROXY_FIX_X_PREFIX", fallback=1)
-        )
+        app.wsgi_app = ProxyFix(app.wsgi_app,
+                                num_proxies=conf.get("webserver",
+                                                     "PROXY_FIX_NUM_PROXIES",
+                                                     fallback=None),
+                                x_for=conf.getint("webserver",
+                                                  "PROXY_FIX_X_FOR",
+                                                  fallback=1),
+                                x_proto=conf.getint("webserver",
+                                                    "PROXY_FIX_X_PROTO",
+                                                    fallback=1),
+                                x_host=conf.getint("webserver",
+                                                   "PROXY_FIX_X_HOST",
+                                                   fallback=1),
+                                x_port=conf.getint("webserver",
+                                                   "PROXY_FIX_X_PORT",
+                                                   fallback=1),
+                                x_prefix=conf.getint("webserver",
+                                                     "PROXY_FIX_X_PREFIX",
+                                                     fallback=1))
     app.secret_key = conf.get('webserver', 'SECRET_KEY')
 
-    session_lifetime_days = conf.getint('webserver', 'SESSION_LIFETIME_DAYS', fallback=30)
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=session_lifetime_days)
+    session_lifetime_days = conf.getint('webserver',
+                                        'SESSION_LIFETIME_DAYS',
+                                        fallback=30)
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(
+        days=session_lifetime_days)
 
     app.config.from_pyfile(settings.WEBSERVER_CONFIG, silent=True)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -71,20 +84,43 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
     app.config['TESTING'] = testing
 
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SECURE'] = conf.getboolean('webserver', 'COOKIE_SECURE')
-    app.config['SESSION_COOKIE_SAMESITE'] = conf.get('webserver', 'COOKIE_SAMESITE')
+    app.config['SESSION_COOKIE_SECURE'] = conf.getboolean(
+        'webserver', 'COOKIE_SECURE')
+    app.config['SESSION_COOKIE_SAMESITE'] = conf.get('webserver',
+                                                     'COOKIE_SAMESITE')
 
     # for i18n
     app.config['BABEL_DEFAULT_LOCALE'] = "zh"
     app.config['BABEL_DEFAULT_FOLDER'] = "translations"
     app.config['LANGUAGES'] = {
-        "en": {"flag": "gb", "name": "English"},
-        "pt": {"flag": "pt", "name": "Portuguese"},
-        "pt_BR": {"flag": "br", "name": "Pt Brazil"},
-        "es": {"flag": "es", "name": "Spanish"},
-        "de": {"flag": "de", "name": "German"},
-        "zh": {"flag": "cn", "name": "Chinese"},
-        "ru": {"flag": "ru", "name": "Russian"},
+        "en": {
+            "flag": "gb",
+            "name": "English"
+        },
+        "pt": {
+            "flag": "pt",
+            "name": "Portuguese"
+        },
+        "pt_BR": {
+            "flag": "br",
+            "name": "Pt Brazil"
+        },
+        "es": {
+            "flag": "es",
+            "name": "Spanish"
+        },
+        "de": {
+            "flag": "de",
+            "name": "German"
+        },
+        "zh": {
+            "flag": "cn",
+            "name": "Chinese"
+        },
+        "ru": {
+            "flag": "ru",
+            "name": "Russian"
+        },
     }
 
     if config:
@@ -99,7 +135,11 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
     api.API_AUTH.api_auth.init_app(app)
 
     # flake8: noqa: F841
-    cache = Cache(app=app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/tmp'})
+    cache = Cache(app=app,
+                  config={
+                      'CACHE_TYPE': 'filesystem',
+                      'CACHE_DIR': '/tmp'
+                  })
 
     from airflow.www_rbac.blueprints import routes
     app.register_blueprint(routes)
@@ -117,21 +157,23 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
                 """Your CUSTOM_SECURITY_MANAGER must now extend AirflowSecurityManager,
                  not FAB's security manager.""")
 
-        appbuilder = AppBuilder(
-            app,
-            db.session if not session else session,
-            security_manager_class=security_manager_class,
-            base_template='airflow/master.html',
-            update_perms=conf.getboolean('webserver', 'UPDATE_FAB_PERMS'))
+        appbuilder = AppBuilder(app,
+                                db.session if not session else session,
+                                security_manager_class=security_manager_class,
+                                base_template='airflow/master.html',
+                                update_perms=conf.getboolean(
+                                    'webserver', 'UPDATE_FAB_PERMS'))
 
         @appbuilder.sm.oauth_user_info_getter
         def suc_user_info_getter(sm, provider, response=None):
             if provider == 'SUC' or provider == 'suc':
                 me = sm.oauth_remotes[provider].get('userinfo')
                 data = me.data
-                return {'username': data.get('preferred_username') or data.get('name'),
-                        'email': data.get('email')
-                        }
+                return {
+                    'username': data.get('preferred_username')
+                    or data.get('name'),
+                    'email': data.get('email')
+                }
             else:
                 return {}
 
@@ -189,7 +231,8 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
             if "dev" in version.version:
                 airflow_doc_site = "https://airflow.readthedocs.io/en/latest"
             else:
-                airflow_doc_site = 'https://airflow.apache.org/docs/{}'.format(version.version)
+                airflow_doc_site = 'https://airflow.apache.org/docs/{}'.format(
+                    version.version)
 
             # appbuilder.add_link("Documentation",
             #                     href=airflow_doc_site,
@@ -206,15 +249,15 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
             def integrate_plugins():
                 """Integrate plugins to the context"""
                 from airflow.plugins_manager import (
-                    flask_appbuilder_views, flask_appbuilder_menu_links
-                )
+                    flask_appbuilder_views, flask_appbuilder_menu_links)
 
                 for v in flask_appbuilder_views:
                     log.debug("Adding view %s", v["name"])
                     appbuilder.add_view(v["view"],
                                         v["name"],
                                         category=v["category"])
-                for ml in sorted(flask_appbuilder_menu_links, key=lambda x: x["name"]):
+                for ml in sorted(flask_appbuilder_menu_links,
+                                 key=lambda x: x["name"]):
                     log.debug("Adding menu link %s", ml["name"])
                     appbuilder.add_link(ml["name"],
                                         href=ml["href"],
@@ -231,7 +274,8 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
             from airflow.plugins_manager import flask_blueprints
 
             for bp in flask_blueprints:
-                log.debug("Adding blueprint %s:%s", bp["name"], bp["blueprint"].import_name)
+                log.debug("Adding blueprint %s:%s", bp["name"],
+                          bp["blueprint"].import_name)
                 app.register_blueprint(bp["blueprint"])
 
         init_views(appbuilder)
@@ -251,7 +295,8 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
                 import importlib
                 importlib.reload(e)
 
-        app.register_blueprint(e.api_experimental, url_prefix='/api/experimental')
+        app.register_blueprint(e.api_experimental,
+                               url_prefix='/api/experimental')
 
         server_timezone = conf.get('core', 'default_timezone')
         if server_timezone == "system":
@@ -271,23 +316,32 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
         def jinja_globals():  # pylint: disable=unused-variable
 
             globals = {
-                'server_timezone': server_timezone,
-                'default_ui_timezone': default_ui_timezone,
-                'hostname': socket.getfqdn() if conf.getboolean(
-                    'webserver', 'EXPOSE_HOSTNAME', fallback=True) else 'redact',
-                'navbar_color': conf.get('webserver', 'NAVBAR_COLOR'),
-                'log_fetch_delay_sec': conf.getint(
-                    'webserver', 'log_fetch_delay_sec', fallback=2),
-                'log_auto_tailing_offset': conf.getint(
-                    'webserver', 'log_auto_tailing_offset', fallback=30),
-                'log_animation_speed': conf.getint(
-                    'webserver', 'log_animation_speed', fallback=1000)
+                'server_timezone':
+                server_timezone,
+                'default_ui_timezone':
+                default_ui_timezone,
+                'hostname':
+                socket.getfqdn() if conf.getboolean(
+                    'webserver', 'EXPOSE_HOSTNAME', fallback=True) else
+                'redact',
+                'navbar_color':
+                conf.get('webserver', 'NAVBAR_COLOR'),
+                'log_fetch_delay_sec':
+                conf.getint('webserver', 'log_fetch_delay_sec', fallback=2),
+                'log_auto_tailing_offset':
+                conf.getint('webserver',
+                            'log_auto_tailing_offset',
+                            fallback=30),
+                'log_animation_speed':
+                conf.getint('webserver', 'log_animation_speed', fallback=1000)
             }
 
             if 'analytics_tool' in conf.getsection('webserver'):
                 globals.update({
-                    'analytics_tool': conf.get('webserver', 'ANALYTICS_TOOL'),
-                    'analytics_id': conf.get('webserver', 'ANALYTICS_ID')
+                    'analytics_tool':
+                    conf.get('webserver', 'ANALYTICS_TOOL'),
+                    'analytics_id':
+                    conf.get('webserver', 'ANALYTICS_ID')
                 })
 
             return globals
@@ -298,16 +352,21 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
 
         @app.before_request
         def before_request():
-            _force_log_out_after = conf.getint('webserver', 'FORCE_LOG_OUT_AFTER', fallback=0)
+            _force_log_out_after = conf.getint('webserver',
+                                               'FORCE_LOG_OUT_AFTER',
+                                               fallback=0)
             if _force_log_out_after > 0:
                 flask.session.permanent = True
-                app.permanent_session_lifetime = datetime.timedelta(minutes=_force_log_out_after)
+                app.permanent_session_lifetime = datetime.timedelta(
+                    minutes=_force_log_out_after)
                 flask.session.modified = True
                 flask.g.user = flask_login.current_user
 
         @app.after_request
         def apply_caching(response):
-            _x_frame_enabled = conf.getboolean('webserver', 'X_FRAME_ENABLED', fallback=True)
+            _x_frame_enabled = conf.getboolean('webserver',
+                                               'X_FRAME_ENABLED',
+                                               fallback=True)
             if not _x_frame_enabled:
                 response.headers["X-Frame-Options"] = "DENY"
             return response

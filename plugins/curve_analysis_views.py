@@ -18,14 +18,16 @@ class CurveAnalysisListWidget(AirflowModelListWidget):
 class TrackNoNotNullFilter(BaseFilter):
     def apply(self, query, func):  # noqa
         ti = self.model
-        ret = query.filter(ti.car_code.isnot(None)).distinct(ti.car_code).group_by(ti)
+        ret = query.filter(ti.car_code.isnot(None)).distinct(
+            ti.car_code).group_by(ti)
         return ret
 
 
 class BoltNoNotNullFilter(BaseFilter):
     def apply(self, query, func):  # noqa
         ti = self.model
-        return query.filter(ti.bolt_number.isnot(None)).distinct(ti.bolt_number).group_by(ti)
+        return query.filter(ti.bolt_number.isnot(None)).distinct(
+            ti.bolt_number).group_by(ti)
 
 
 class CurveAnalysisControllerView(TighteningControllerView):
@@ -55,9 +57,7 @@ class CurveAnalysisTrackNoView(AirflowModelView):
 
     search_columns = ['car_code']
 
-    label_columns = {
-        'car_code': lazy_gettext('Car Code')
-    }
+    label_columns = {'car_code': lazy_gettext('Car Code')}
 
     base_filters = [['car_code', TrackNoNotNullFilter, lambda: []]]
 
@@ -73,9 +73,7 @@ class CurveAnalysisBoltNoView(CurveAnalysisTrackNoView):
 
     search_columns = ['bolt_number']
 
-    label_columns = {
-        'bolt_number': lazy_gettext('Bolt Number')
-    }
+    label_columns = {'bolt_number': lazy_gettext('Bolt Number')}
 
     base_filters = [['bolt_number', BoltNoNotNullFilter, lambda: []]]
 
@@ -83,21 +81,30 @@ class CurveAnalysisBoltNoView(CurveAnalysisTrackNoView):
 
 
 curve_ana_controller_view = CurveAnalysisControllerView()
-curve_ana_controller_package = {"name": gettext("Analysis Via Controller"),
-                                "category": gettext("Analysis"),
-                                "view": curve_ana_controller_view}
+curve_ana_controller_package = {
+    "name": gettext("Analysis Via Controller"),
+    "category": gettext("Analysis"),
+    "view": curve_ana_controller_view
+}
 
 curve_ana_track_no_view = CurveAnalysisTrackNoView()
-curve_ana_track_no_package = {"name": gettext("Analysis Via Track No"),
-                              "category": gettext("Analysis"),
-                              "view": curve_ana_track_no_view}
+curve_ana_track_no_package = {
+    "name": gettext("Analysis Via Track No"),
+    "category": gettext("Analysis"),
+    "view": curve_ana_track_no_view
+}
 
 curve_ana_bolt_no_view = CurveAnalysisBoltNoView()
-curve_ana_bolt_no_package = {"name": gettext("Analysis Via Bolt No"),
-                             "category": gettext("Analysis"),
-                             "view": curve_ana_bolt_no_view}
+curve_ana_bolt_no_package = {
+    "name": gettext("Analysis Via Bolt No"),
+    "category": gettext("Analysis"),
+    "view": curve_ana_bolt_no_view
+}
 
 
 class CurveAnalysisControllerViewPlugin(AirflowPlugin):
     name = "curve_analysis_controller_view"
-    appbuilder_views = [curve_ana_controller_package, curve_ana_track_no_package, curve_ana_bolt_no_package]
+    appbuilder_views = [
+        curve_ana_controller_package, curve_ana_track_no_package,
+        curve_ana_bolt_no_package
+    ]
