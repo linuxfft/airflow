@@ -118,7 +118,9 @@ def get_templates_from_variables(template_names=None) -> Dict:
     # 加载指定模板
     templates = {}
     for t in template_names:
-        key, val = Variable.get_fuzzy_active(t, deserialize_json=True, default_var=None)
+        key, val = Variable.get_fuzzy_active(t,
+                                             deserialize_json=True,
+                                             default_var=None)
         template_name = get_curve_template_name(key)
         templates[template_name] = val
     return templates
@@ -129,7 +131,8 @@ def training_server_update_templates():
     cas_training = CasHook(role='training')
     cas_all = CasHook(role='all')
     loop = asyncio.get_event_loop()
-    for cas in filter(lambda x: x.connection is not None, [cas_analysis, cas_training, cas_all]):
+    for cas in filter(lambda x: x.connection is not None,
+                      [cas_analysis, cas_training, cas_all]):
         loop.run_until_complete(cas.training_server_update_templates())
     loop.close()
 
@@ -146,15 +149,14 @@ def doLoadCurveTmplsTask(**kwargs):
     _logger.debug("task finished")
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析加载模板曲线',
-    schedule_interval=schedule_interval,
-    default_args=desoutter_default_args,
-    max_active_runs=100,
-    catchup=False
-)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线分析加载模板曲线',
+          schedule_interval=schedule_interval,
+          default_args=desoutter_default_args,
+          max_active_runs=100,
+          catchup=False)
 
 load_curve_tmpl_task = PythonOperator(provide_context=True,
-                                      task_id=STORE_TASK, dag=dag,
+                                      task_id=STORE_TASK,
+                                      dag=dag,
                                       python_callable=doLoadCurveTmplsTask)

@@ -7,8 +7,10 @@ import json
 from http import HTTPStatus
 import requests
 
-CAS_ANALYSIS_BASE_URL = os.environ.get("CAS_ANALYSIS_BASE_URL", "http://localhost:9095")
-CAS_TRAINING_BASE_URL = os.environ.get("CAS_TRAINING_BASE_URL", "http://localhost:9095")
+CAS_ANALYSIS_BASE_URL = os.environ.get("CAS_ANALYSIS_BASE_URL",
+                                       "http://localhost:9095")
+CAS_TRAINING_BASE_URL = os.environ.get("CAS_TRAINING_BASE_URL",
+                                       "http://localhost:9095")
 
 
 class CasHook(BaseHook):
@@ -33,8 +35,8 @@ class CasHook(BaseHook):
             self.uri = '{scheme}://{host}{port}'.format(
                 scheme='http',
                 host=self.connection.host,
-                port='' if self.connection.port is None else ':{}'.format(self.connection.port)
-            )
+                port='' if self.connection.port is None else ':{}'.format(
+                    self.connection.port))
         else:
             if role == 'analysis':
                 self.uri = CAS_ANALYSIS_BASE_URL
@@ -55,14 +57,15 @@ class CasHook(BaseHook):
     def trigger_training_endpoint(self):
         return "{}/cas/invalid-curve".format(self.uri)
 
-    async def trigger_analyze(self, params, timeout=ClientTimeout(total=30), retry_attempts=5):
+    async def trigger_analyze(self,
+                              params,
+                              timeout=ClientTimeout(total=30),
+                              retry_attempts=5):
         headers = {
             'Accept': 'application/json',
             'Content-type': 'application/json'
         }
-        data = {
-            'conf': params
-        }
+        data = {'conf': params}
         try:
             url = self.trigger_analyze_endpoint
             if not params:
@@ -71,39 +74,45 @@ class CasHook(BaseHook):
                 raise Exception(u'未提供曲线参数')
             self.log.info('参数验证通过，触发分析...')
             async with RetryClient(timeout=timeout) as client:
-                async with client.post(headers=headers, url=url, retry_attempts=retry_attempts, json=data) as r:
+                async with client.post(headers=headers,
+                                       url=url,
+                                       retry_attempts=retry_attempts,
+                                       json=data) as r:
                     r.raise_for_status()
                     resp = await r.read()
                     self.log.debug("trigger training: {}, resp: {}".format(
                         json.dumps(data), resp))
                     return resp
         except BaseException as e:
-            self.log.error(
-                "push_result_to_training_server except: {}".format(repr(e)))
+            self.log.error("push_result_to_training_server except: {}".format(
+                repr(e)))
             raise e
 
-    async def training_server_update_templates(self, timeout=ClientTimeout(total=300), retry_attempts=5):
+    async def training_server_update_templates(self,
+                                               timeout=ClientTimeout(
+                                                   total=300),
+                                               retry_attempts=5):
         headers = {
             'Accept': 'application/json',
             'Content-type': 'application/json'
         }
         async with RetryClient(timeout=timeout) as client:
-            async with client.post(headers=headers, url=self.load_templates_endpoint,
+            async with client.post(headers=headers,
+                                   url=self.load_templates_endpoint,
                                    retry_attempts=retry_attempts) as r:
                 r.raise_for_status()
                 resp = await r.read()
                 self.log.debug(
-                    "training_server_update_templates called, url: {} resp: {}".format(self.load_templates_endpoint,
-                                                                                       resp))
+                    "training_server_update_templates called, url: {} resp: {}"
+                    .format(self.load_templates_endpoint, resp))
 
     def trigger_training(self, data):
-        json_data = {
-            'conf': data
-        }
+        json_data = {'conf': data}
         try:
             self.log.info('posting to training server')
             self.log.debug('data:{}'.format(json.dumps(json_data, indent=4)))
-            resp = requests.post(headers={'Content-Type': 'application/json'}, url=self.trigger_training_endpoint,
+            resp = requests.post(headers={'Content-Type': 'application/json'},
+                                 url=self.trigger_training_endpoint,
                                  json=json_data,
                                  timeout=(3.05, 27))
             self.log.info('training server response')

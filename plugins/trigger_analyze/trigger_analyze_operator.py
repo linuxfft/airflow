@@ -16,11 +16,9 @@ _logger = LoggingMixin().log
 def trigger_push_result_dag(params):
     _logger.info('pushing result to mq...')
     push_result_dat_id = 'publish_result_dag'
-    conf = {
-        'data': params,
-        'data_type': 'tightening_result'
-    }
-    trigger.trigger_dag(push_result_dat_id, conf=conf,
+    conf = {'data': params, 'data_type': 'tightening_result'}
+    trigger.trigger_dag(push_result_dat_id,
+                        conf=conf,
                         replace_microseconds=False)
 
 
@@ -53,7 +51,6 @@ def get_task_instance_type(params: Dict) -> str:
 
 
 class TriggerAnalyzeOperator(BaseOperator):
-
     def prepare_trigger_params(self, params, task_instance):
         result_body = params.get('result', None)
         vin = result_body.get('vin', None)
@@ -67,11 +64,14 @@ class TriggerAnalyzeOperator(BaseOperator):
         job = result_body.get('job', None)
         batch_count = result_body.get('batch_count', None)
         pset = result_body.get('pset', None)
-        bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
-        line_code, full_name = get_line_code_by_controller_name(controller_name)
+        bolt_number = generate_bolt_number(controller_name, job, batch_count,
+                                           pset)
+        line_code, full_name = get_line_code_by_controller_name(
+            controller_name)
         ti_type = get_task_instance_type(new_param)
-        _logger.info("type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
-                     .format(ti_type, entity_id, line_code, bolt_number, factory_code))
+        _logger.info(
+            "type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
+            .format(ti_type, entity_id, line_code, bolt_number, factory_code))
         measure_result = result_body.get('measure_result', None)
 
         def modifier(ti):
@@ -90,12 +90,10 @@ class TriggerAnalyzeOperator(BaseOperator):
                 ti.should_analyze = params_should_anaylze
             _logger.debug("vin: {}".format(ti.car_code))
 
-        modify_task_instance(
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date,
-            modifier=modifier
-        )
+        modify_task_instance(task_instance.dag_id,
+                             task_instance.task_id,
+                             task_instance.execution_date,
+                             modifier=modifier)
 
         try:
             craft_type = get_craft_type(bolt_number)
@@ -108,12 +106,10 @@ class TriggerAnalyzeOperator(BaseOperator):
         def store_craft_type(ti):
             ti.craft_type = craft_type
 
-        modify_task_instance(
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date,
-            modifier=store_craft_type
-        )
+        modify_task_instance(task_instance.dag_id,
+                             task_instance.task_id,
+                             task_instance.execution_date,
+                             modifier=store_craft_type)
 
         try:
             curve_params = get_curve_params(bolt_number)

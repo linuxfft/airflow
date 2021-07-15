@@ -58,13 +58,8 @@ desoutter_default_args = {
 
 def update_confirm_data(task_data, verify_error, curve_mode):
     data = task_data.get('task', {})
-    data.update({
-        "curve_mode": curve_mode,
-        "verify_error": verify_error
-    })
-    return {
-        'task': data
-    }
+    data.update({"curve_mode": curve_mode, "verify_error": verify_error})
+    return {'task': data}
 
 
 def do_trigger_training(task_instance, final_state):
@@ -75,10 +70,8 @@ def do_trigger_training(task_instance, final_state):
     curve = get_curve(entity_id)
     task_data = get_task_params(task_instance, entity_id)
     curve_mode = get_curve_mode(final_state, task_instance.error_tag)
-    task_param = update_confirm_data(task_data,
-                                     task_instance.verify_error,
-                                     curve_mode
-                                     )
+    task_param = update_confirm_data(task_data, task_instance.verify_error,
+                                     curve_mode)
     controller_name = result.get('controller_name', None)
     job = result.get('job', None)
     batch_count = result.get('batch_count', None)
@@ -118,7 +111,8 @@ def verify_params(**kwargs):
 
 def trigger_training_task(task_instance, **kwargs):
     """触发训练任务"""
-    dag_id, task_id, execution_date, final_state, error_tags = verify_params(**kwargs)
+    dag_id, task_id, execution_date, final_state, error_tags = verify_params(
+        **kwargs)
     date = timezone.parse(execution_date)
     _logger.info('locating task instance.')
     ana_ti = get_task_instance(dag_id, task_id, execution_date=date)
@@ -128,52 +122,47 @@ def trigger_training_task(task_instance, **kwargs):
         ti.entity_id = ana_ti.entity_id
         ti.line_code = ana_ti.line_code
 
-    modify_task_instance(
-        task_instance.dag_id,
-        task_instance.task_id,
-        task_instance.execution_date,
-        modifier=modifier
-    )
+    modify_task_instance(task_instance.dag_id,
+                         task_instance.task_id,
+                         task_instance.execution_date,
+                         modifier=modifier)
     date = timezone.parse(execution_date)
     task = get_task_instance(dag_id, task_id, date)
-    if should_trigger_training(task.result, final_state, task.error_tag, error_tags):
+    if should_trigger_training(task.result, final_state, task.error_tag,
+                               error_tags):
         _logger.info('trigger training...')
         do_trigger_training(ana_ti, final_state)
         _logger.info('training finished, saving error tag')
     else:
         _logger.info('training skipped, saving error tag')
-    do_save_curve_error_tag(
-        task_id=task_id,
-        dag_id=dag_id,
-        execution_date=execution_date,
-        error_tags=error_tags)
+    do_save_curve_error_tag(task_id=task_id,
+                            dag_id=dag_id,
+                            execution_date=execution_date,
+                            error_tags=error_tags)
     _logger.info('updating final state...')
-    set_dag_run_final_state(
-        task_id=task_id,
-        dag_id=dag_id,
-        execution_date=date,
-        final_state=final_state)
+    set_dag_run_final_state(task_id=task_id,
+                            dag_id=dag_id,
+                            execution_date=date,
+                            final_state=final_state)
     _logger.info('publishing result')
-    trigger_push_result_to_mq(
-        'final_result',
-        final_state,
-        ana_ti.entity_id,
-        execution_date,
-        task_id,
-        dag_id,
-        verify_error=ana_ti.verify_error,
-        curve_mode=ana_ti.error_tag
-    )
+    trigger_push_result_to_mq('final_result',
+                              final_state,
+                              ana_ti.entity_id,
+                              execution_date,
+                              task_id,
+                              dag_id,
+                              verify_error=ana_ti.verify_error,
+                              curve_mode=ana_ti.error_tag)
     _logger.info('all done.')
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线训练任务',
-    schedule_interval=schedule_interval,
-    default_args=desoutter_default_args,
-    max_active_runs=MAX_ACTIVE_TRAINING)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线训练任务',
+          schedule_interval=schedule_interval,
+          default_args=desoutter_default_args,
+          max_active_runs=MAX_ACTIVE_TRAINING)
 
 store_task = PythonOperator(provide_context=True,
-                            task_id=TASK_ID, dag=dag,
+                            task_id=TASK_ID,
+                            dag=dag,
                             python_callable=trigger_training_task)
