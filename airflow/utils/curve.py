@@ -19,11 +19,7 @@ from airflow.utils.db import provide_session
 
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
-CRAFT_TYPE_MAP = {
-    '1': 1,
-    '2': 2,
-    '4': 4
-}
+CRAFT_TYPE_MAP = {'1': 1, '2': 2, '4': 4}
 
 CURVE_MODE_MAP = {
     'OK': 0,
@@ -51,8 +47,7 @@ def ensure_int(num):
 def get_craft_type(nut_no: str) -> Optional[int]:
     template_data = Variable.get_fuzzy_active(nut_no,
                                               deserialize_json=True,
-                                              default_var=None
-                                              )[1]
+                                              default_var=None)[1]
     ret = template_data.get('craft_type', None)
     if ret:
         return ret
@@ -90,11 +85,9 @@ def generate_curve_name(nut_no):
 def get_curve_params(bolt_number):
     curve_name = generate_curve_name(bolt_number)
     try:
-        return Variable.get_fuzzy_active(
-            curve_name,
-            deserialize_json=True,
-            default_var={}
-        )[1]
+        return Variable.get_fuzzy_active(curve_name,
+                                         deserialize_json=True,
+                                         default_var={})[1]
     except Exception as e:
         _logger.error("cannot get curve params :{0} ".format(repr(e)))
         return {}
@@ -116,13 +109,13 @@ def get_result_args():
     }
 
 
-def get_kafka_consumer_args(connection_key: str ='qcos_kafka_consumer'):
+def get_kafka_consumer_args(connection_key: str = 'qcos_kafka_consumer'):
     kafka_conn = get_connection(connection_key)
     extra = kafka_conn.extra_dejson if kafka_conn else {}
     return {
         "bootstrap_servers": extra.get('bootstrap_servers', 'localhost:9092'),
         'security_protocol': extra.get('security_protocol'),
-        'auth_type':  extra.get('auth_type'),
+        'auth_type': extra.get('auth_type'),
         "user": kafka_conn.login or '',
         "password": kafka_conn.get_password() if kafka_conn else ''
     }
@@ -140,7 +133,8 @@ def get_curve_args(connection_key='qcos_minio'):
     }
 
 
-def form_analysis_result_trigger(result, entity_id, execution_date, task_id, dag_id, verify_error, curve_mode):
+def form_analysis_result_trigger(result, entity_id, execution_date, task_id,
+                                 dag_id, verify_error, curve_mode):
     return {
         'result': result,
         'entity_id': entity_id,
@@ -159,35 +153,32 @@ def get_curve_entity_ids(bolt_number=None, craft_type=None):
 
 
 def get_analysis_tasks(bolt_number=None, craft_type=None):
-    tasks = TaskInstance.query_tasks(craft_type, bolt_number).order_by(TaskInstance.execution_date.desc())
+    tasks = TaskInstance.query_tasks(craft_type, bolt_number).order_by(
+        TaskInstance.execution_date.desc())
     return tasks
 
 
-def trigger_push_result_to_mq(data_type, result, entity_id, execution_date, task_id, dag_id, verify_error, curve_mode):
+def trigger_push_result_to_mq(data_type, result, entity_id, execution_date,
+                              task_id, dag_id, verify_error, curve_mode):
     if isinstance(curve_mode, str):
         curve_mode = json.loads(curve_mode)
     if isinstance(curve_mode, int):
         curve_mode = [curve_mode]
     if curve_mode is None:
         curve_mode = []
-    analysis_result = form_analysis_result_trigger(
-        result,
-        entity_id,
-        execution_date,
-        task_id,
-        dag_id,
-        verify_error,
-        curve_mode
-    )
+    analysis_result = form_analysis_result_trigger(result, entity_id,
+                                                   execution_date, task_id,
+                                                   dag_id, verify_error,
+                                                   curve_mode)
     push_result_dag_id = 'publish_result_dag'
-    conf = {
-        'data': analysis_result,
-        'data_type': data_type
-    }
-    trigger.trigger_dag(push_result_dag_id, conf=conf, replace_microseconds=False)
+    conf = {'data': analysis_result, 'data_type': data_type}
+    trigger.trigger_dag(push_result_dag_id,
+                        conf=conf,
+                        replace_microseconds=False)
 
 
-def trigger_training_dag(dag_id, task_id, execution_date, final_state, error_tags):
+def trigger_training_dag(dag_id, task_id, execution_date, final_state,
+                         error_tags):
     trigger_training_dag_id = 'curve_training_dag'
     conf = {
         'dag_id': dag_id,
@@ -196,7 +187,9 @@ def trigger_training_dag(dag_id, task_id, execution_date, final_state, error_tag
         'final_state': final_state,
         'error_tags': error_tags
     }
-    trigger.trigger_dag(trigger_training_dag_id, conf=conf, replace_microseconds=False)
+    trigger.trigger_dag(trigger_training_dag_id,
+                        conf=conf,
+                        replace_microseconds=False)
 
 
 def get_result(entity_id):
@@ -225,17 +218,16 @@ def get_curve(entity_id):
 def get_task_instances_by_entity_ids(entity_ids, session=None):
     tis = session.query(TaskInstance).filter(
         TaskInstance.entity_id.in_(entity_ids),
-        TaskInstance.task_id == 'trigger_anay_task'
-    ).all()
+        TaskInstance.task_id == 'trigger_anay_task').all()
     return tis
 
 
 @provide_session
 def get_task_instance_by_entity_id(entity_id, session=None):
     ti = session.query(TaskInstance).filter(
-        TaskInstance.entity_id == entity_id
-    ).first()
+        TaskInstance.entity_id == entity_id).first()
     return ti
+
 
 def trigger_push_template_dag(template_name, template_data):
     push_result_dag_id = 'publish_result_dag'
@@ -246,16 +238,17 @@ def trigger_push_template_dag(template_name, template_data):
         },
         'data_type': 'curve_template'
     }
-    trigger.trigger_dag(push_result_dag_id, conf=conf, replace_microseconds=False)
+    trigger.trigger_dag(push_result_dag_id,
+                        conf=conf,
+                        replace_microseconds=False)
 
 
 def trigger_push_templates_dict_dag(templates_dict):
     push_result_dag_id = 'publish_result_dag'
-    conf = {
-        'data': templates_dict,
-        'data_type': 'curve_templates_dict'
-    }
-    trigger.trigger_dag(push_result_dag_id, conf=conf, replace_microseconds=False)
+    conf = {'data': templates_dict, 'data_type': 'curve_templates_dict'}
+    trigger.trigger_dag(push_result_dag_id,
+                        conf=conf,
+                        replace_microseconds=False)
 
 
 def do_save_curve_error_tag(dag_id, task_id, execution_date, error_tags=None):
@@ -264,8 +257,8 @@ def do_save_curve_error_tag(dag_id, task_id, execution_date, error_tags=None):
     except ValueError:
         error_message = (
             'Given execution date, {}, could not be identified '
-            'as a date. Example date format: 2015-11-16T14:34:15+00:00'
-                .format(execution_date))
+            'as a date. Example date format: 2015-11-16T14:34:15+00:00'.format(
+                execution_date))
         raise AirflowException(error_message)
     if error_tags is None:
         error_tags = []
@@ -274,7 +267,8 @@ def do_save_curve_error_tag(dag_id, task_id, execution_date, error_tags=None):
 
 
 def should_trigger_training(result, final_state, analysis_mode, train_mode):
-    ENV_TRIGGER_TRAINING_MODE = os.environ.get('TRIGGER_TRAINING_MODE', 'ANALYSIS_ERROR')
+    ENV_TRIGGER_TRAINING_MODE = os.environ.get('TRIGGER_TRAINING_MODE',
+                                               'ANALYSIS_ERROR')
     # ANALYSIS_ERROR, ALWAYS, DIFFERENT_MODE
     if ENV_TRIGGER_TRAINING_MODE == 'ALWAYS':
         return True
