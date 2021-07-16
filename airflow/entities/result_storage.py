@@ -14,7 +14,6 @@ from .entity import ClsEntity
 from plugins.result_storage.base import Base
 from plugins.result_storage.model import ResultModel
 
-
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 _logger = generate_logger(__name__)
@@ -37,7 +36,8 @@ class ClsResultStorage(ClsEntity):
         self.create_table_if_existed()
 
     def create_table_if_existed(self):
-        if not self.engine.dialect.has_table(self.engine, ResultModel.__tablename__):
+        if not self.engine.dialect.has_table(self.engine,
+                                             ResultModel.__tablename__):
             Base.metadata.create_all(self.engine)
 
     def _write(self, data: Optional[Dict]):
@@ -78,12 +78,17 @@ class ClsResultStorage(ClsEntity):
                 raise Exception("entity id Is Required!")
             result_body: Optional[Dict] = data.get('result')  # 之前验证过了 无需再验证有效性
             step_results = data.get("step_results")
-            if step_results and (isinstance(step_results, list) or isinstance(step_results, dict)):
+            if step_results and (isinstance(step_results, list)
+                                 or isinstance(step_results, dict)):
                 step_results = json.dumps(step_results, ensure_ascii=False)
-            result_body.update({"entity_id": entity_id, "step_results": step_results})
+            result_body.update({
+                "entity_id": entity_id,
+                "step_results": step_results
+            })
             return self._write(result_body)
         except Exception as err:
-            raise Exception(u"写入结果失败: {}, result: {}".format(repr(err), repr(data)))
+            raise Exception(u"写入结果失败: {}, result: {}".format(
+                repr(err), repr(data)))
 
     def query_results(self):
         if not self.entity_id:

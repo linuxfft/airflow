@@ -7,7 +7,6 @@ class ResultModel(Base):
     """
     result
     """
-
     def __repr__(self):
         return self.entity_id
 
@@ -57,5 +56,3 @@ class ResultModel(Base):
             return v
         else:
             return dict()
-
-
