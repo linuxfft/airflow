@@ -26,20 +26,16 @@ _logger = logging.getLogger(__name__)
 
 
 class ErrorTagFilter(BaseFilter):
-
     def apply(self, query, func):  # noqa
         _logger.info("ErrorTagFilter: {}".format(pprint.pformat(func)))
-        query, field = get_field_setup_query(query, self.model, self.column_name)
+        query, field = get_field_setup_query(query, self.model,
+                                             self.column_name)
         return query
 
 
 class ErrorTagForm(DynamicForm):
-    value = StringField(
-        lazy_gettext('Value'),
-        widget=BS3TextFieldWidget())
-    label = StringField(
-        lazy_gettext('Label'),
-        widget=BS3TextFieldWidget())
+    value = StringField(lazy_gettext('Value'), widget=BS3TextFieldWidget())
+    label = StringField(lazy_gettext('Label'), widget=BS3TextFieldWidget())
 
 
 class ErrorTagModelView(AirflowModelView):
@@ -56,30 +52,36 @@ class ErrorTagModelView(AirflowModelView):
     add_template = 'airflow/error_tag_create.html'
     edit_template = 'airflow/error_tag_edit.html'
     label_columns = {
-        'value': lazy_gettext('Value'), 'label': lazy_gettext('Label')
-
+        'value': lazy_gettext('Value'),
+        'label': lazy_gettext('Label')
     }
     base_order = ('id', 'asc')
 
     def post_add(self, item):
         super(ErrorTagModelView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '增加错误标签')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['ADD'],
+            CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '增加错误标签')
         logging.info(msg)
 
     def post_update(self, item):
         super(ErrorTagModelView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '修改错误标签')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['UPDATE'],
+            CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '修改错误标签')
         logging.info(msg)
 
     def post_delete(self, item):
         super(ErrorTagModelView, self).post_delete(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除错误标签')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+            CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除错误标签')
         logging.info(msg)
 
     @action('export_analysis', "Export Statistics", '', single=False)
@@ -94,20 +96,26 @@ class ErrorTagModelView(AirflowModelView):
                 val = var.val
             ret[var.key] = val
 
-        response = make_response(json.dumps(ret, sort_keys=True, indent=4, ensure_ascii=False))
-        response.headers["Content-Disposition"] = "attachment; filename=错误标签分析.json"
+        response = make_response(
+            json.dumps(ret, sort_keys=True, indent=4, ensure_ascii=False))
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=错误标签分析.json"
         response.headers["Content-Type"] = "application/json; charset=utf-8"
         return response
 
-    @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
+    @action('muldelete',
+            'Delete',
+            'Are you sure you want to delete selected records?',
             single=False)
     @has_dag_access(can_dag_edit=True)
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除选中错误标签')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+            CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除选中错误标签')
         logging.info(msg)
         return redirect(self.get_redirect())
 
@@ -115,17 +123,21 @@ class ErrorTagModelView(AirflowModelView):
     @expose("/list/")
     @has_access
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '查看错误标签')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['VIEW'],
+            CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '查看错误标签')
         logging.info(msg)
         return super(ErrorTagModelView, self).list()
 
 
 error_tag_view = ErrorTagModelView()
-error_tag_package = {"name": gettext("Error Tags"),
-                     "category": gettext("Master Data Management"),
-                     "view": error_tag_view}
+error_tag_package = {
+    "name": gettext("Error Tags"),
+    "category": gettext("Master Data Management"),
+    "view": error_tag_view
+}
 
 
 class ErrorTagViewPlugin(AirflowPlugin):
