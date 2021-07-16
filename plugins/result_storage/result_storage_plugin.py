@@ -17,7 +17,6 @@ RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 
 class ResultStorageHook(BaseHook, ABC):
-
     @staticmethod
     def do_push_to_storage(params: Dict):
         _logger.debug('start pushing result & curve...')

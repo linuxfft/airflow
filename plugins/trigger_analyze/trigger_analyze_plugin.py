@@ -24,16 +24,13 @@ except:
 
 
 class TriggerAnalyzeHook(BaseHook, ABC):
-
     @staticmethod
     def trigger_push_result_dag(params):
         _logger.info('pushing result to mq...')
         push_result_dat_id = 'publish_result_dag'
-        conf = {
-            'data': params,
-            'data_type': 'tightening_result'
-        }
-        trigger.trigger_dag(push_result_dat_id, conf=conf,
+        conf = {'data': params, 'data_type': 'tightening_result'}
+        trigger.trigger_dag(push_result_dat_id,
+                            conf=conf,
                             replace_microseconds=False)
 
     @staticmethod
@@ -91,11 +88,14 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         job = result_body.get('job', None)
         batch_count = result_body.get('batch_count', None)
         pset = result_body.get('pset', None)
-        bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
-        line_code, full_name = TriggerAnalyzeHook.get_line_code_by_controller_name(controller_name)
+        bolt_number = generate_bolt_number(controller_name, job, batch_count,
+                                           pset)
+        line_code, full_name = TriggerAnalyzeHook.get_line_code_by_controller_name(
+            controller_name)
         ti_type = TriggerAnalyzeHook.get_task_instance_type(new_param)
-        _logger.info("type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
-                     .format(ti_type, entity_id, line_code, bolt_number, factory_code))
+        _logger.info(
+            "type: {}, entity_id: {}, line_code: {}, bolt_number: {}, factory_code: {}"
+            .format(ti_type, entity_id, line_code, bolt_number, factory_code))
         measure_result = result_body.get('measure_result', None)
 
         def modifier(ti):
@@ -114,12 +114,10 @@ class TriggerAnalyzeHook(BaseHook, ABC):
                 ti.should_analyze = params_should_analyze
             _logger.debug("vin: {}".format(ti.car_code))
 
-        modify_task_instance(
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date,
-            modifier=modifier
-        )
+        modify_task_instance(task_instance.dag_id,
+                             task_instance.task_id,
+                             task_instance.execution_date,
+                             modifier=modifier)
 
         try:
             craft_type = get_craft_type(bolt_number)
@@ -132,12 +130,10 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         def store_craft_type(ti):
             ti.craft_type = craft_type
 
-        modify_task_instance(
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date,
-            modifier=store_craft_type
-        )
+        modify_task_instance(task_instance.dag_id,
+                             task_instance.task_id,
+                             task_instance.execution_date,
+                             modifier=store_craft_type)
 
         try:
             curve_params = get_curve_params(bolt_number)
@@ -157,7 +153,8 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         should_skip_analysis = TriggerAnalyzeHook.should_skip_analysis(params)
         if should_skip_analysis:
             return
-        new_param = TriggerAnalyzeHook.prepare_trigger_params(params, task_instance)
+        new_param = TriggerAnalyzeHook.prepare_trigger_params(
+            params, task_instance)
         TriggerAnalyzeHook.trigger_push_result_dag(new_param)
         from airflow.hooks.cas_plugin import CasHook
         cas = CasHook(role='analysis')
@@ -170,11 +167,12 @@ class TriggerAnalyzeHook(BaseHook, ABC):
     def trigger_analyze(params):
         # 此处未来或将不创建分析任务。
         # 添加此方法意在统一外部接口，不在不同地方调用trigger_dag，便于维护
-        trigger.trigger_dag('curve_analyze_dag', conf=params, replace_microseconds=False)
+        trigger.trigger_dag('curve_analyze_dag',
+                            conf=params,
+                            replace_microseconds=False)
 
 
 class TriggerAnalyzeOperator(BaseOperator):
-
     def execute(self, context):
         params = context['dag_run'].conf
         task_instance = context['task_instance']

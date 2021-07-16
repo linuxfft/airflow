@@ -27,36 +27,47 @@ def onCurveAnalySuccess(context):
     _logger.info("{0} Run Success".format(context))
 
 
-dag = DAG(
-    dag_id='curve_anay',
-    description=u'上汽拧紧曲线分析',
-    schedule_interval=None,
-    default_args={
-        'owner': 'desoutter',
-        'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 2,
-        'retry_delay': timedelta(minutes=2),
-        'retry_exponential_backoff': True,
-        'on_failure_callback': onCurveAnalyFail,
-        'on_success_callback': onCurveAnalySuccess,
-        'on_retry_callback': None,
-        'trigger_rule': 'all_success'
-    },
-    concurrency=100,
-    max_active_runs=MAX_ACTIVE_ANALYSIS
-)
+dag = DAG(dag_id='curve_anay',
+          description=u'上汽拧紧曲线分析',
+          schedule_interval=None,
+          default_args={
+              'owner':
+              'desoutter',
+              'depends_on_past':
+              False,
+              'start_date':
+              dt.datetime(2020,
+                          1,
+                          1,
+                          tzinfo=pendulum.timezone("Asia/Shanghai")),
+              'email': ['support@desoutter.cn'],
+              'email_on_failure':
+              False,
+              'email_on_retry':
+              False,
+              'retries':
+              2,
+              'retry_delay':
+              timedelta(minutes=2),
+              'retry_exponential_backoff':
+              True,
+              'on_failure_callback':
+              onCurveAnalyFail,
+              'on_success_callback':
+              onCurveAnalySuccess,
+              'on_retry_callback':
+              None,
+              'trigger_rule':
+              'all_success'
+          },
+          concurrency=100,
+          max_active_runs=MAX_ACTIVE_ANALYSIS)
 
-store_task = PythonOperator(
-    provide_context=True,
-    task_id='store_result_curve',
-    dag=dag,
-    priority_weight=2,
-    python_callable=on_curve_receive
-)
+store_task = PythonOperator(provide_context=True,
+                            task_id='store_result_curve',
+                            dag=dag,
+                            priority_weight=2,
+                            python_callable=on_curve_receive)
 
 # test
 # https://airflow.apache.org/docs/apache-airflow/1.10.12/executor/debug.html
