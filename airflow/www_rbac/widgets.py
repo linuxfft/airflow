@@ -31,9 +31,7 @@ class AirflowDateTimePickerWidget:
         '<span class="input-group-addon"><i class="fa fa-calendar cursor-hand"></i>'
         "</span>"
         '<input class="form-control" %(text)s />'
-        "</div>"
-
-    )
+        "</div>")
 
     def __call__(self, field, **kwargs):
         kwargs.setdefault("id", field.id)
@@ -43,5 +41,5 @@ class AirflowDateTimePickerWidget:
         template = self.data_template
 
         return HTMLString(
-            template % {"text": html_params(type="text", value=field.data, **kwargs)}
-        )
+            template %
+            {"text": html_params(type="text", value=field.data, **kwargs)})
