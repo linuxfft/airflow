@@ -16,8 +16,9 @@ import airflow
 DAG_ID = 'data_retention_policy'
 
 AUTO_VACUUM_TASK = 'auto_vacuum_task'
-START_DATE = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - relativedelta.relativedelta(
-    days=1)
+START_DATE = datetime.now(tz=TIMEZONE).replace(
+    hour=0, minute=0, second=0,
+    microsecond=0) - relativedelta.relativedelta(days=1)
 SCHEDULE_INTERVAL = "@daily"
 DAG_OWNER_NAME = "operations"
 
@@ -38,7 +39,8 @@ else:
     loggingLevel = logging.DEBUG
 
 try:
-    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION', '90'))  # 单位为天
+    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION',
+                                               '90'))  # 单位为天
 except Exception:
     DATA_STORAGE_DURATION = 90
 try:
@@ -61,12 +63,10 @@ default_args = {
     'retry_delay': timedelta(minutes=1)
 }
 
-dag = DAG(
-    DAG_ID,
-    default_args=default_args,
-    schedule_interval=SCHEDULE_INTERVAL,
-    start_date=START_DATE
-)
+dag = DAG(DAG_ID,
+          default_args=default_args,
+          schedule_interval=SCHEDULE_INTERVAL,
+          start_date=START_DATE)
 
 
 def verify_params(test_mode, **kwargs):
@@ -89,7 +89,8 @@ def verify_params(test_mode, **kwargs):
 def getAllNeedDelteTaskInstance(test_mode, **kwargs):
     delta_time = verify_params(test_mode, **kwargs) - DATA_STORAGE_MARGIN
     delta = relativedelta.relativedelta(days=delta_time)
-    end_date = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - delta
+    end_date = datetime.now(tz=TIMEZONE).replace(
+        hour=0, minute=0, second=0, microsecond=0) - delta
     _logger.info("Get End Date Time: {}".format(datetime.isoformat(end_date)))
     tasks = TaskInstance.get_all_tasks(end_date=end_date, limit=LIMIT)
     return tasks, end_date
@@ -118,12 +119,15 @@ def getAllNeedDeleteCurves(tasks):
 def doSAICDataRetentionPolicyTask(test_mode, **kwargs):
     tasks, end_date = getAllNeedDelteTaskInstance(test_mode, **kwargs)
     needDeleteCurveFiles = getAllNeedDeleteCurves(tasks)
-    _logger.info("Try To Remove Object: {}".format(','.join(needDeleteCurveFiles)))
+    _logger.info("Try To Remove Object: {}".format(
+        ','.join(needDeleteCurveFiles)))
     ret = TaskInstance.clear_tasks(end_date=end_date, limit=LIMIT)
     _logger.info("Clear Task Return: {}".format(ret))
     clearCurveFiles(needDeleteCurveFiles)
 
 
-auto_vacuum_task = PythonOperator(provide_context=True,
-                                  task_id=AUTO_VACUUM_TASK, dag=dag,
-                                  python_callable=doSAICDataRetentionPolicyTask)
+auto_vacuum_task = PythonOperator(
+    provide_context=True,
+    task_id=AUTO_VACUUM_TASK,
+    dag=dag,
+    python_callable=doSAICDataRetentionPolicyTask)

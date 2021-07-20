@@ -67,12 +67,16 @@ SPC_SIZE = int(os.getenv('ENV_SPC_SIZE', '5'))
 
 SPC_MIN_LEN = int(os.getenv('ENV_SPC_MIN_LEN', '25'))
 
-ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS', 'False') == 'True' else False
+ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS',
+                                              'False') == 'True' else False
 
-FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES', 'False') == 'True' else False
+FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES',
+                                           'False') == 'True' else False
 
-MISMATCH_RATE_RELAXATION_FACTOR = float(os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
-MISMATCH_RATE_RELAXATION_THRESHOLD = float(os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
+MISMATCH_RATE_RELAXATION_FACTOR = float(
+    os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
+MISMATCH_RATE_RELAXATION_THRESHOLD = float(
+    os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
 
 
 def is_mismatch(measure_result, curve_mode):
@@ -85,16 +89,12 @@ def get_recent_mismatch_rate(dag_id, task_id, session=None):
     delta = datetime.timedelta(days=2)
     min_date = timezone.utcnow() - delta
     total = session.query(TaskInstance).filter(
-        TaskInstance.dag_id == dag_id,
-        TaskInstance.task_id == task_id,
-        TaskInstance.execution_date > min_date
-    ).count()
+        TaskInstance.dag_id == dag_id, TaskInstance.task_id == task_id,
+        TaskInstance.execution_date > min_date).count()
     mismatches = session.query(TaskInstance).filter(
-        TaskInstance.dag_id == dag_id,
-        TaskInstance.task_id == task_id,
+        TaskInstance.dag_id == dag_id, TaskInstance.task_id == task_id,
         TaskInstance.execution_date > min_date,
-        TaskInstance.measure_result != TaskInstance.result
-    ).count()
+        TaskInstance.measure_result != TaskInstance.result).count()
     _log.info('total:{},mismatches:{}'.format(total, mismatches))
     return mismatches / (total + 1), total
 
@@ -102,13 +102,16 @@ def get_recent_mismatch_rate(dag_id, task_id, session=None):
 def mismatch_relaxation(mismatch_rate, count) -> bool:
     if mismatch_rate < MISMATCH_RATE_RELAXATION_THRESHOLD:
         return False
-    weight = MISMATCH_RATE_RELAXATION_FACTOR * (mismatch_rate - MISMATCH_RATE_RELAXATION_THRESHOLD) / (
-        mismatch_rate + MISMATCH_RATE_RELAXATION_THRESHOLD) * math.log(count, 2)
+    weight = MISMATCH_RATE_RELAXATION_FACTOR * (
+        mismatch_rate - MISMATCH_RATE_RELAXATION_THRESHOLD) / (
+            mismatch_rate + MISMATCH_RATE_RELAXATION_THRESHOLD) * math.log(
+                count, 2)
     _log.info('weight: {}'.format(weight))
     return choices([True, False], weights=[weight, 1])[0]
 
 
-def filter_mismatches(measure_result, curve_mode, dag_id, task_id, execution_date):
+def filter_mismatches(measure_result, curve_mode, dag_id, task_id,
+                      execution_date):
     if not is_mismatch(measure_result, curve_mode):
         _log.info('not mismatch')
         return curve_mode
@@ -134,7 +137,8 @@ def put_anaylysis_result():
         curve_mode = list(map(int, data.get('result')))  # List[int]
 
         if FILTER_MISMATCHES:
-            curve_mode = filter_mismatches(measure_result, curve_mode, dag_id, task_id, execution_date)
+            curve_mode = filter_mismatches(measure_result, curve_mode, dag_id,
+                                           task_id, execution_date)
 
         verify_error = int(data.get('verify_error'))  # OK, NOK
         rresult = 'OK' if curve_mode[0] is 0 else 'NOK'
@@ -153,17 +157,13 @@ def put_anaylysis_result():
             ti.verify_error = verify_error
 
         date = timezone.parse(execution_date)
-        modify_task_instance(dag_id, task_id, execution_date=date, modifier=modifier)
-        trigger_push_result_to_mq(
-            'analysis_result',
-            rresult,
-            entity_id,
-            execution_date,
-            task_id,
-            dag_id,
-            verify_error,
-            curve_mode
-        )
+        modify_task_instance(dag_id,
+                             task_id,
+                             execution_date=date,
+                             modifier=modifier)
+        trigger_push_result_to_mq('analysis_result', rresult, entity_id,
+                                  execution_date, task_id, dag_id,
+                                  verify_error, curve_mode)
         resp = jsonify({'response': 'ok'})
         resp.status_code = 200
         return resp
@@ -174,16 +174,18 @@ def put_anaylysis_result():
 
 
 @csrf.exempt
-@api_experimental.route('/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>/error_tag',
-                        methods=['POST'])
+@api_experimental.route(
+    '/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>/error_tag',
+    methods=['POST'])
 @requires_authentication
 def save_curve_error_tag(dag_id, task_id, execution_date):
     return _save_curve_error_tag(dag_id, task_id, execution_date)
 
 
 @csrf.exempt
-@api_experimental.route('/error_tag/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>',
-                        methods=['POST'])
+@api_experimental.route(
+    '/error_tag/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>',
+    methods=['POST'])
 @requires_authentication
 def save_curve_error_tag_w_csrf(dag_id, task_id, execution_date):
     return _save_curve_error_tag(dag_id, task_id, execution_date)
@@ -230,8 +232,8 @@ def trigger_dag(dag_id):
         except ValueError:
             error_message = (
                 'Given execution date, {}, could not be identified '
-                'as a date. Example date format: 2015-11-16T14:34:15+00:00'
-                    .format(execution_date))
+                'as a date. Example date format: 2015-11-16T14:34:15+00:00'.
+                format(execution_date))
             _log.info(error_message)
             response = jsonify({'error': error_message})
             response.status_code = 400
@@ -243,12 +245,8 @@ def trigger_dag(dag_id):
         replace_microseconds = to_boolean(data['replace_microseconds'])
 
     try:
-        dr = trigger.trigger_dag(
-            dag_id,
-            run_id,
-            conf,
-            execution_date,
-            replace_microseconds)
+        dr = trigger.trigger_dag(dag_id, run_id, conf, execution_date,
+                                 replace_microseconds)
     except AirflowException as err:
         _log.error(err)
         response = jsonify(error="{}".format(err))
@@ -258,11 +256,9 @@ def trigger_dag(dag_id):
     if getattr(g, 'user', None):
         _log.info("User {} created {}".format(g.user, dr))
 
-    response = jsonify(
-        message="Created {}".format(dr),
-        execution_date=dr.execution_date.isoformat(),
-        run_id=dr.run_id
-    )
+    response = jsonify(message="Created {}".format(dr),
+                       execution_date=dr.execution_date.isoformat(),
+                       run_id=dr.run_id)
     return response
 
 
@@ -307,9 +303,8 @@ def get_dag_code(dag_id):
         return response
 
 
-@api_experimental.route(
-    '/dags/<string:dag_id>/tasks/<string:task_id>',
-    methods=['GET'])
+@api_experimental.route('/dags/<string:dag_id>/tasks/<string:task_id>',
+                        methods=['GET'])
 @requires_authentication
 def task_info(dag_id, task_id):
     """Returns a JSON with a task's public instance variables. """
@@ -322,9 +317,10 @@ def task_info(dag_id, task_id):
         return response
 
     # JSONify and return.
-    fields = {k: str(v)
-              for k, v in vars(info).items()
-              if not k.startswith('_')}
+    fields = {
+        k: str(v)
+        for k, v in vars(info).items() if not k.startswith('_')
+    }
     return jsonify(fields)
 
 
@@ -334,16 +330,18 @@ def task_info(dag_id, task_id):
 @requires_authentication
 def double_confirm_task(dag_id, task_id, execution_date):
     try:
-        msg = CUSTOM_LOG_FORMAT.format(datetime.datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DOUBLE_CONFIRM'], CUSTOM_PAGE_NAME_MAP['CURVE'], '曲线二次确认')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DOUBLE_CONFIRM'],
+            CUSTOM_PAGE_NAME_MAP['CURVE'], '曲线二次确认')
         logging.info(msg)
         date = timezone.parse(execution_date)
     except ValueError:
         error_message = (
             'Given execution date, {}, could not be identified '
-            'as a date. Example date format: 2015-11-16T14:34:15+00:00'
-                .format(execution_date))
+            'as a date. Example date format: 2015-11-16T14:34:15+00:00'.format(
+                execution_date))
         _log.info(error_message)
         response = jsonify({'error': error_message})
         response.status_code = 400
@@ -359,7 +357,8 @@ def double_confirm_task(dag_id, task_id, execution_date):
             raise AirflowException(u"分析结果还没有生成，请等待分析结果生成后再进行二次确认")
         if not final_state or final_state not in ['OK', 'NOK']:
             raise AirflowException("二次确认参数未定义或数值不正确!")
-        trigger_training_dag(dag_id, task_id, execution_date, final_state, error_tags)
+        trigger_training_dag(dag_id, task_id, execution_date, final_state,
+                             error_tags)
         return jsonify({'response': 'ok'})
     except AirflowException as err:
         _log.info(err)
@@ -368,9 +367,7 @@ def double_confirm_task(dag_id, task_id, execution_date):
         return response
 
 
-@api_experimental.route(
-    '/curve-entities',
-    methods=['GET'])
+@api_experimental.route('/curve-entities', methods=['GET'])
 @requires_authentication
 def get_curves():
     try:
@@ -399,10 +396,29 @@ mm_min = {TORQUE: 'torque_min', ANGLE: 'angle_min'}
 @requires_authentication
 @profile(os.path.join(PROFILE_DIR, 'spc.profile'))
 def get_spc_by_entity_id():
-    spc = {'x-r': {"title": u"Xbar-R 控制图", "data": {TORQUE: {}, ANGLE: {}}},
-           'x-s': {"title": u"Xbar-S 控制图", "data": {TORQUE: {}, ANGLE: {}}},
-           'n-d': {"title": u"正态分布 图", "data": {TORQUE: {}, ANGLE: {}}},
-           }
+    spc = {
+        'x-r': {
+            "title": u"Xbar-R 控制图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+        'x-s': {
+            "title": u"Xbar-S 控制图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+        'n-d': {
+            "title": u"正态分布 图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+    }
     x_r_entry = spc.get('x-r').get('data')
     x_s_entry = spc.get('x-s').get('data')
     n_d_entry = spc.get('n-d').get('data')
@@ -418,7 +434,8 @@ def get_spc_by_entity_id():
         if not results or ll == 0:
             raise AirflowException(u'未找到结果!')
         if ll < SPC_MIN_LEN:
-            raise AirflowException(u'数据长度: {} 小于设定的SPC最小数据长度: {}!'.format(ll, SPC_MIN_LEN))
+            raise AirflowException(u'数据长度: {} 小于设定的SPC最小数据长度: {}!'.format(
+                ll, SPC_MIN_LEN))
         origin_data = {TORQUE: [], ANGLE: []}
         for key in origin_data.keys():
             entry = origin_data.get(key)
@@ -433,7 +450,9 @@ def get_spc_by_entity_id():
             xr_r_part = rbar(data, SPC_SIZE)
             xs_xbar_part = xbar_sbar(data, SPC_SIZE, None)
             xs_s_part = sbar(data, SPC_SIZE, None)
-            cpk_data = cpk(entry, get_first_valid_data(results, mm_max.get(key)), get_first_valid_data(results,mm_min.get(key)))
+            cpk_data = cpk(entry, get_first_valid_data(results,
+                                                       mm_max.get(key)),
+                           get_first_valid_data(results, mm_min.get(key)))
             # todo: SPC包
             # xbar-r chart
             xr_ee: dict = x_r_entry.get(key)
@@ -466,8 +485,8 @@ def get_spc_by_entity_id():
             #     _target = (first_result.get(tType+"_min") + first_result.get(tType+"_max")) / 2
             # usl = _target * (1+0.03)
             # lsl = _target * (1-0.03)
-            usl = first_result.get(tType+"_max")
-            lsl = first_result.get(tType+"_min")
+            usl = first_result.get(tType + "_max")
+            lsl = first_result.get(tType + "_min")
             spc_step = 1
             his = histogram(nd_data, usl, lsl, spc_step)
             nor = normal(nd_data, usl, lsl, spc_step)
@@ -483,13 +502,7 @@ def get_spc_by_entity_id():
                 if np.isnan(val):
                     val = 0
                 y2.append(round(val * 100, 2))
-            n_d_entry.get(tType).update(
-                {
-                    'x1': x1,
-                    'y1': y1,
-                    'y2': y2
-                }
-            )
+            n_d_entry.get(tType).update({'x1': x1, 'y1': y1, 'y2': y2})
         _log.info(spc)
         return jsonify(spc=spc)
     except AirflowException as e:
@@ -504,9 +517,7 @@ def get_spc_by_entity_id():
         return response
 
 
-@api_experimental.route(
-    '/curves',
-    methods=['GET'])
+@api_experimental.route('/curves', methods=['GET'])
 @requires_authentication
 def get_curves_by_entity_id():
     try:
@@ -521,16 +532,10 @@ def get_curves_by_entity_id():
             try:
                 curve = get_curve(entity_id)
                 if curve is not None:
-                    curves.append({
-                        'entity_id': entity_id,
-                        'curve': curve
-                    })
+                    curves.append({'entity_id': entity_id, 'curve': curve})
             except Exception as e:
                 _log.debug(e)
-                curves.append({
-                    'entity_id': entity_id,
-                    'curve': []
-                })
+                curves.append({'entity_id': entity_id, 'curve': []})
 
         return jsonify(curves=curves)
     except AirflowException as e:
@@ -541,19 +546,16 @@ def get_curves_by_entity_id():
 
 
 # ToDo: Shouldn't this be a PUT method?
-@api_experimental.route(
-    '/dags/<string:dag_id>/paused/<string:paused>',
-    methods=['GET'])
+@api_experimental.route('/dags/<string:dag_id>/paused/<string:paused>',
+                        methods=['GET'])
 @requires_authentication
 def dag_paused(dag_id, paused):
     """(Un)pauses a dag"""
 
     DagModel = models.DagModel
     with create_session() as session:
-        orm_dag = (
-            session.query(DagModel)
-                .filter(DagModel.dag_id == dag_id).first()
-        )
+        orm_dag = (session.query(DagModel).filter(
+            DagModel.dag_id == dag_id).first())
         if paused == 'true':
             orm_dag.is_paused = True
         else:
@@ -574,7 +576,11 @@ def dag_is_paused(dag_id):
     return jsonify({'is_paused': is_paused})
 
 
-def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=None, mode=None, group_center_idx=None,
+def do_remove_curve_from_curve_template(bolt_no=None,
+                                        craft_type=None,
+                                        version=None,
+                                        mode=None,
+                                        group_center_idx=None,
                                         curve_idx=None):
     if version is None or not bolt_no or not craft_type \
         or mode is None or group_center_idx is None or curve_idx is None:
@@ -582,8 +588,7 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
     template_name = '{}/{}'.format(bolt_no, craft_type)
     key, curve_template = Variable.get_fuzzy_active(template_name,
                                                     deserialize_json=True,
-                                                    default_var=None
-                                                    )
+                                                    default_var=None)
     template_version = curve_template.get('version', 0)
     if version != template_version:
         raise Exception('曲线模板信息过期，请刷新页面')
@@ -611,14 +616,13 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
         mode_cluster['curve_template_groups_k'] -= 1
     if mode_cluster['curve_template_groups_k'] == 0:
         del template_cluster[mode]
-    curve_template.update({
-        'version': template_version + 1
-    })
-    Variable.set(key, curve_template, serialize_json=True, is_curve_template=True)
+    curve_template.update({'version': template_version + 1})
+    Variable.set(key,
+                 curve_template,
+                 serialize_json=True,
+                 is_curve_template=True)
     dag_id = 'load_all_curve_tmpls'
-    conf = {
-        'template_names': [template_name]
-    }
+    conf = {'template_names': [template_name]}
     trigger.trigger_dag(dag_id, conf=conf, replace_microseconds=False)
     return curve_template
 
@@ -657,8 +661,8 @@ def task_instance_info(dag_id, execution_date, task_id):
     except ValueError:
         error_message = (
             'Given execution date, {}, could not be identified '
-            'as a date. Example date format: 2015-11-16T14:34:15+00:00'
-                .format(execution_date))
+            'as a date. Example date format: 2015-11-16T14:34:15+00:00'.format(
+                execution_date))
         _log.info(error_message)
         response = jsonify({'error': error_message})
         response.status_code = 400
@@ -674,15 +678,15 @@ def task_instance_info(dag_id, execution_date, task_id):
         return response
 
     # JSONify and return.
-    fields = {k: str(v)
-              for k, v in vars(info).items()
-              if not k.startswith('_')}
+    fields = {
+        k: str(v)
+        for k, v in vars(info).items() if not k.startswith('_')
+    }
     return jsonify(fields)
 
 
 @api_experimental.route(
-    '/dags/<string:dag_id>/dag_runs/<string:execution_date>',
-    methods=['GET'])
+    '/dags/<string:dag_id>/dag_runs/<string:execution_date>', methods=['GET'])
 @requires_authentication
 def dag_run_status(dag_id, execution_date):
     """
@@ -727,12 +731,16 @@ def latest_dag_runs():
     for dagrun in dagruns:
         if dagrun.execution_date:
             payload.append({
-                'dag_id': dagrun.dag_id,
-                'execution_date': dagrun.execution_date.isoformat(),
-                'start_date': ((dagrun.start_date or '') and
-                               dagrun.start_date.isoformat()),
-                'dag_run_url': url_for('Airflow.graph', dag_id=dagrun.dag_id,
-                                       execution_date=dagrun.execution_date)
+                'dag_id':
+                dagrun.dag_id,
+                'execution_date':
+                dagrun.execution_date.isoformat(),
+                'start_date': ((dagrun.start_date or '')
+                               and dagrun.start_date.isoformat()),
+                'dag_run_url':
+                url_for('Airflow.graph',
+                        dag_id=dagrun.dag_id,
+                        execution_date=dagrun.execution_date)
             })
     # old flask versions dont support jsonifying arrays
     return jsonify(items=payload)
