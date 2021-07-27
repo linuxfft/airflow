@@ -2,12 +2,13 @@ from abc import ABC
 from airflow.hooks.base_hook import BaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.plugins_manager import AirflowPlugin
-from typing import Dict
-from plugins.utils import get_result_args, get_curve_args
+from plugins.utils import get_curve_args
 import os
-from airflow.models.dagrun import DagRun
 from airflow.entities.curve_storage import ClsCurveStorage
 from airflow.entities.result_storage import ClsResultStorage
+from plugins.utils import generate_bolt_number
+from airflow.models.tightening_controller import TighteningController
+from plugins.utils import get_craft_type
 
 _logger = LoggingMixin().log
 SUPPORT_DEVICE_TYPE = ['tightening', 'servo_press']
@@ -19,21 +20,37 @@ RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 class ResultStorageHook(BaseHook, ABC):
 
     @staticmethod
-    def do_push_to_storage(params: Dict):
-        _logger.debug('start pushing result & curve...')
+    def get_line_code_by_controller_name(controller_name):
+        controller_data = TighteningController.find_controller(controller_name)
+        if not controller_data:
+            raise Exception('未找到控制器数据: {}'.format(controller_name))
+        controller = '{}@{}/{}'.format(controller_data.get('controller_name'),
+                                       controller_data.get('work_center_code'),
+                                       controller_data.get('work_center_name'))
+        return controller_data.get('line_code', None), controller
+
+    @staticmethod
+    def save_result(entity_id, result, **extra):
+        st = ClsResultStorage()
+        st.metadata = {
+            'entity_id': entity_id
+        }
+        if not st:
+            raise Exception('result storage not ready!')
+        _logger.debug('pushing result...')
+        result_to_write = extra.copy()
+
+        result_to_write.update(result)
+        st.write_result(result_to_write)
+
+    @staticmethod
+    def save_curve(params):
         curve_args = get_curve_args()
         if MINIO_ROOT_URL:
             curve_args.update({'endpoint': MINIO_ROOT_URL})
         ct = ClsCurveStorage(**curve_args)
         ct.metadata = params  # 必须在设置curvefile前赋值
-        result_args = get_result_args()
-        st = ClsResultStorage(**result_args)
-        st.metadata = params
         params.update({'curveFile': ct.ObjectName})
-        if not st:
-            raise Exception('result storage not ready!')
-        _logger.debug('pushing result...')
-        st.write_result(params)
         if not ct:
             raise Exception('curve storage not ready!')
         _logger.debug('pushing curve...')
@@ -68,7 +85,42 @@ class ResultStorageHook(BaseHook, ABC):
         _logger.debug('dag_run conf param: {0}'.format(params))  # 从接口中获取的参数
         should_store = True
         if should_store:
-            ResultStorageHook.do_push_to_storage(params)
+            entity_id = params.get('entity_id')
+            result = params.get('result')
+            controller_name = result.get('controller_name', None)
+            try:
+                line_code, full_name = ResultStorageHook.get_line_code_by_controller_name(controller_name)
+            except Exception as e:
+                _logger.error(e)
+                line_code = None
+
+            # 螺栓编码生成规则：控制器名称-job号-批次号
+            controller_name = result.get('controller_name', None)
+            job = result.get('job', None)
+            batch_count = result.get('batch_count', None)
+            pset = result.get('pset', None)
+            bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
+            try:
+                craft_type = get_craft_type(bolt_number)
+                _logger.info("craft_type: {}".format(craft_type))
+            except Exception as e:
+                _logger.error(e)
+                craft_type = 1
+                _logger.info('使用默认工艺类型：{}'.format(craft_type))
+            from airflow.hooks.trigger_analyze_plugin import TriggerAnalyzeHook
+            ResultStorageHook.save_result(
+                entity_id,
+                result,
+                line_code=line_code,
+                factory_code=params.get('factory_code', None),
+                should_analyze=params.get('should_analyze'),
+                bolt_number=bolt_number,
+                device_type=result.get('device_type', 'tightening'),
+                type=TriggerAnalyzeHook.get_result_type(params),
+                craft_type=craft_type
+            )
+
+            ResultStorageHook.save_curve(params)
         _logger.info(params)
         return params
 
