@@ -26,7 +26,8 @@ class ClsCurveStorage(ClsEntity):
 
     def __init__(self, endpoint, access_key, secret_key, secure, bucket):
         super(ClsCurveStorage, self).__init__()
-        if not self.is_config_changed(endpoint, access_key, secret_key, secure, bucket):
+        if not self.is_config_changed(endpoint, access_key, secret_key, secure,
+                                      bucket):
             return
         self._access_key = access_key
         self._secret_key = secret_key
@@ -42,7 +43,8 @@ class ClsCurveStorage(ClsEntity):
         }
         self._client = None  # type: Optional[Minio]
 
-    def is_config_changed(self, endpoint, access_key, secret_key, secure, bucket):
+    def is_config_changed(self, endpoint, access_key, secret_key, secure,
+                          bucket):
         try:
             if self._access_key != access_key:
                 return True
@@ -93,7 +95,10 @@ class ClsCurveStorage(ClsEntity):
     def convertCSVData(self, curve: Dict):
         data = Dataset()
         data.headers = [self._headersMap[k] for k in curve.keys()]
-        datamap = [arr if arr is not None else [] for arr in [curve.get(key, []) for key in curve.keys()]]
+        datamap = [
+            arr if arr is not None else []
+            for arr in [curve.get(key, []) for key in curve.keys()]
+        ]
         zipData = zip(*datamap)
         for d in zipData:
             data.append(d)
@@ -111,7 +116,8 @@ class ClsCurveStorage(ClsEntity):
             self.ensure_bucket(self._bucket)
             ret = self._client.remove_objects(self._bucket, curve_files)
             if not ret:
-                raise Exception('Remove Object: {} Error'.format(','.join(curve_files)))
+                raise Exception('Remove Object: {} Error'.format(
+                    ','.join(curve_files)))
         except Exception as e:
             raise e
         return ret
@@ -126,30 +132,24 @@ class ClsCurveStorage(ClsEntity):
             self.ensure_bucket(self._bucket)
             data = self.convertCSVData(curve)
             f = io.BytesIO(data)  # 必须转换成rawIO数据
-            self._client.put_object(
-                self._bucket, self.ObjectName, f, length=len(data))
+            self._client.put_object(self._bucket,
+                                    self.ObjectName,
+                                    f,
+                                    length=len(data))
 
         except Exception as err:
             raise Exception(u"写入曲线失败: {}".format(repr(err)))
 
     def csv_data_to_dict(self, data):
         f = io.StringIO(data)
-        ret = {
-            'cur_w': [],
-            'cur_m': [],
-            'cur_t': [],
-            'cur_s': []
-        }
+        ret = {'cur_w': [], 'cur_m': [], 'cur_t': [], 'cur_s': []}
         headers = f.readline().split('\r\n')[0].split(',')
         positions = []
         for key in self._headersMap.keys():
             if self._headersMap[key] not in headers:
                 continue
             pos = headers.index(self._headersMap[key])
-            positions.append({
-                'key': key,
-                'pos': pos
-            })
+            positions.append({'key': key, 'pos': pos})
         for row in f.readlines():
             row_data = row.split('\r\n')[0].split(',')
             for p in positions:
