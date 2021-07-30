@@ -58,13 +58,8 @@ desoutter_default_args = {
 def update_confirm_data(verify_error, curve_mode):
     # data = task_data.get('task', {})
     data = {}
-    data.update({
-        "curve_mode": curve_mode,
-        "verify_error": verify_error
-    })
-    return {
-        'task': data
-    }
+    data.update({"curve_mode": curve_mode, "verify_error": verify_error})
+    return {'task': data}
 
 
 def do_trigger_training(result, final_state):
@@ -72,10 +67,7 @@ def do_trigger_training(result, final_state):
     _logger.info('getting curve...')
     curve = get_curve(entity_id)
     curve_mode = get_curve_mode(final_state, result.get('error_tag'))
-    task_param = update_confirm_data(
-        result.get('verify_error'),
-        curve_mode
-    )
+    task_param = update_confirm_data(result.get('verify_error'), curve_mode)
     controller_name = result.get('controller_name', None)
     job = result.get('job', None)
     batch_count = result.get('batch_count', None)
@@ -83,7 +75,8 @@ def do_trigger_training(result, final_state):
     bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
     curve_params = get_curve_params(bolt_number)
     result.update({
-        'execution_date': result.get('execution_date').strftime("%Y-%m-%d %H:%M:%S")
+        'execution_date':
+        result.get('execution_date').strftime("%Y-%m-%d %H:%M:%S")
     })
     data = {
         'entity_id': entity_id,
@@ -124,13 +117,12 @@ def trigger_training_task(task_instance, **kwargs):
         ti.entity_id = entity_id
         ti.line_code = result.get('line_code')
 
-    modify_task_instance(
-        task_instance.dag_id,
-        task_instance.task_id,
-        task_instance.execution_date,
-        modifier=modifier
-    )
-    if should_trigger_training(result.get('result'), final_state, result.get('error_tag'), error_tags):
+    modify_task_instance(task_instance.dag_id,
+                         task_instance.task_id,
+                         task_instance.execution_date,
+                         modifier=modifier)
+    if should_trigger_training(result.get('result'), final_state,
+                               result.get('error_tag'), error_tags):
         _logger.info('trigger training...')
         do_trigger_training(result, final_state)
         _logger.info('training finished, saving error tag')
@@ -138,27 +130,27 @@ def trigger_training_task(task_instance, **kwargs):
         _logger.info('training skipped, saving error tag')
 
     from airflow.hooks.result_storage_plugin import ResultStorageHook
-    ResultStorageHook.save_final_state(entity_id, final_state, error_tag=json.dumps(error_tags))
+    ResultStorageHook.save_final_state(entity_id,
+                                       final_state,
+                                       error_tag=json.dumps(error_tags))
     _logger.info('publishing result')
-    trigger_push_result_to_mq(
-        'final_result',
-        final_state,
-        entity_id,
-        verify_error=result.get('verify_error'),
-        curve_mode=result.get('error_tag')
-    )
+    trigger_push_result_to_mq('final_result',
+                              final_state,
+                              entity_id,
+                              verify_error=result.get('verify_error'),
+                              curve_mode=result.get('error_tag'))
     _logger.info('all done.')
 
 
-dag = DAG(
-    dag_id=DAG_ID,
-    description=u'上汽拧紧曲线训练任务',
-    schedule_interval=schedule_interval,
-    default_args=desoutter_default_args,
-    max_active_runs=MAX_ACTIVE_TRAINING)
+dag = DAG(dag_id=DAG_ID,
+          description=u'上汽拧紧曲线训练任务',
+          schedule_interval=schedule_interval,
+          default_args=desoutter_default_args,
+          max_active_runs=MAX_ACTIVE_TRAINING)
 
 store_task = PythonOperator(provide_context=True,
-                            task_id=TASK_ID, dag=dag,
+                            task_id=TASK_ID,
+                            dag=dag,
                             python_callable=trigger_training_task)
 
 # test
