@@ -20,7 +20,6 @@ except:
 
 
 class TriggerAnalyzeHook(BaseHook, ABC):
-
     @staticmethod
     def trigger_push_result_dag(params):
         _logger.info('pushing result to mq...')
@@ -71,8 +70,8 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         new_param = params.copy()
         # 螺栓编码生成规则：控制器名称-job号-批次号
         result_type = TriggerAnalyzeHook.get_result_type(new_param)
-        _logger.info("type: {}, entity_id: {} bolt_number: {}"
-                     .format(result_type, entity_id, bolt_number))
+        _logger.info("type: {}, entity_id: {} bolt_number: {}".format(
+            result_type, entity_id, bolt_number))
 
         try:
             curve_params = get_curve_params(bolt_number)
@@ -91,12 +90,9 @@ class TriggerAnalyzeHook(BaseHook, ABC):
             return
         from airflow.hooks.result_storage_plugin import ResultStorageHook
         entity_id = params.get('entity_id', None)
-        ResultStorageHook.bind_analyze_task(
-            entity_id,
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date
-        )
+        ResultStorageHook.bind_analyze_task(entity_id, task_instance.dag_id,
+                                            task_instance.task_id,
+                                            task_instance.execution_date)
         new_param = TriggerAnalyzeHook.prepare_trigger_params(params)
         TriggerAnalyzeHook.trigger_push_result_dag(new_param)
         from airflow.hooks.cas_plugin import CasHook
@@ -110,11 +106,12 @@ class TriggerAnalyzeHook(BaseHook, ABC):
     def trigger_analyze(params):
         # 此处未来或将不创建分析任务。
         # 添加此方法意在统一外部接口，不在不同地方调用trigger_dag，便于维护
-        trigger.trigger_dag('curve_analyze_dag', conf=params, replace_microseconds=False)
+        trigger.trigger_dag('curve_analyze_dag',
+                            conf=params,
+                            replace_microseconds=False)
 
 
 class TriggerAnalyzeOperator(BaseOperator):
-
     def execute(self, context):
         params = context['dag_run'].conf
         task_instance = context['task_instance']

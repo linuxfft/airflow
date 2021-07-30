@@ -20,7 +20,6 @@ RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 
 class ResultStorageHook(BaseHook, ABC):
-
     @staticmethod
     def get_line_code_by_controller_name(controller_name):
         controller_data = TighteningController.find_controller(controller_name)
@@ -35,9 +34,7 @@ class ResultStorageHook(BaseHook, ABC):
     def save_result(entity_id, result, **extra):
         _logger.info('start pushing result...')
         st = ClsResultStorage()
-        st.metadata = {
-            'entity_id': entity_id
-        }
+        st.metadata = {'entity_id': entity_id}
         if not st:
             raise Exception('result storage not ready!')
         _logger.debug('pushing result...')
@@ -95,7 +92,8 @@ class ResultStorageHook(BaseHook, ABC):
         job = result.get('job', None)
         batch_count = result.get('batch_count', None)
         pset = result.get('pset', None)
-        bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
+        bolt_number = generate_bolt_number(controller_name, job, batch_count,
+                                           pset)
 
         try:
             craft_type = get_craft_type(bolt_number)
@@ -108,7 +106,8 @@ class ResultStorageHook(BaseHook, ABC):
         if should_store:
             entity_id = params.get('entity_id')
             try:
-                line_code, full_name = ResultStorageHook.get_line_code_by_controller_name(controller_name)
+                line_code, full_name = ResultStorageHook.get_line_code_by_controller_name(
+                    controller_name)
             except Exception as e:
                 _logger.error(e)
                 line_code = None
@@ -123,54 +122,36 @@ class ResultStorageHook(BaseHook, ABC):
                 bolt_number=bolt_number,
                 device_type=result.get('device_type', 'tightening'),
                 type=TriggerAnalyzeHook.get_result_type(params),
-                craft_type=craft_type
-            )
+                craft_type=craft_type)
 
             ResultStorageHook.save_curve(params)
         _logger.info(params)
-        params.update({
-            'bolt_number': bolt_number,
-            'craft_type': craft_type
-        })
+        params.update({'bolt_number': bolt_number, 'craft_type': craft_type})
         return params
 
     # 根据entity_id更新分析结果
     @staticmethod
     def save_analyze_result(entity_id, analyze_result, **extra):
         st = ClsResultStorage()
-        st.metadata = {
-            'entity_id': entity_id
-        }
-        st.update(
-            result=analyze_result,
-            **extra
-        )
+        st.metadata = {'entity_id': entity_id}
+        st.update(result=analyze_result, **extra)
         pass
 
     # 根据entity_id更新分析二次确认结果
     @staticmethod
     def save_final_state(entity_id, final_state, **extra):
         st = ClsResultStorage()
-        st.metadata = {
-            'entity_id': entity_id
-        }
-        st.update(
-            final_state=final_state,
-            **extra
-        )
+        st.metadata = {'entity_id': entity_id}
+        st.update(final_state=final_state, **extra)
 
     # 在结果中保存task相关信息
     @staticmethod
     def bind_analyze_task(entity_id, dag_id, task_id, execution_date):
         st = ClsResultStorage()
-        st.metadata = {
-            'entity_id': entity_id
-        }
-        st.update(
-            dag_id=dag_id,
-            task_id=task_id,
-            execution_date=execution_date
-        )
+        st.metadata = {'entity_id': entity_id}
+        st.update(dag_id=dag_id,
+                  task_id=task_id,
+                  execution_date=execution_date)
 
 
 # Defining the plugin class

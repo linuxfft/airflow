@@ -22,7 +22,8 @@ class ClsRedisConnection(ClsEntity):
         super(ClsEntity, self).__init__()
         self.msg_type = 'pmessage'  # for pmessage 模式匹配
         self.redis_conn_id = 'qcos_redis'
-        self._redis: Redis = RedisHook(redis_conn_id=self.redis_conn_id).get_conn()
+        self._redis: Redis = RedisHook(
+            redis_conn_id=self.redis_conn_id).get_conn()
         self._pubsub = self._redis.pubsub()
         self.end = False
         self.poke_interval = 5
@@ -52,7 +53,8 @@ class ClsRedisConnection(ClsEntity):
         self.pubsub.punsubscribe()
 
     def signal_handler(self, sig, frame):
-        _logger.info('redis connection ended by signal {}, frame: {}'.format(sig, frame))
+        _logger.info('redis connection ended by signal {}, frame: {}'.format(
+            sig, frame))
         self.end = True
 
     def set_signal_handler(self):

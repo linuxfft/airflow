@@ -17,34 +17,42 @@ except:
 
 MAX_ACTIVE_ANALYSIS = 100
 
+dag = DAG(dag_id='curve_analyze_dag',
+          description=u'上汽拧紧曲线分析',
+          schedule_interval=None,
+          default_args={
+              'owner':
+              'desoutter',
+              'depends_on_past':
+              False,
+              'start_date':
+              dt.datetime(2020,
+                          1,
+                          1,
+                          tzinfo=pendulum.timezone("Asia/Shanghai")),
+              'email': ['support@desoutter.cn'],
+              'email_on_failure':
+              False,
+              'email_on_retry':
+              False,
+              'retries':
+              0,
+              'retry_delay':
+              timedelta(minutes=2),
+              'retry_exponential_backoff':
+              True,
+              'on_retry_callback':
+              None,
+              'trigger_rule':
+              'all_success'
+          },
+          concurrency=MAX_ACTIVE_ANALYSIS,
+          max_active_runs=MAX_ACTIVE_ANALYSIS)
 
-dag = DAG(
-    dag_id='curve_analyze_dag',
-    description=u'上汽拧紧曲线分析',
-    schedule_interval=None,
-    default_args={
-        'owner': 'desoutter',
-        'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 0,
-        'retry_delay': timedelta(minutes=2),
-        'retry_exponential_backoff': True,
-        'on_retry_callback': None,
-        'trigger_rule': 'all_success'
-    },
-    concurrency=MAX_ACTIVE_ANALYSIS,
-    max_active_runs=MAX_ACTIVE_ANALYSIS)
-
-
-trigger_anay_task = TriggerAnalyzeOperator(
-            provide_context=True,
-            task_id='trigger_anay_task',
-            dag=dag,
-            priority_weight=9
-        )
+trigger_anay_task = TriggerAnalyzeOperator(provide_context=True,
+                                           task_id='trigger_anay_task',
+                                           dag=dag,
+                                           priority_weight=9)
 
 # test
 # https://airflow.apache.org/docs/apache-airflow/1.10.12/executor/debug.html
