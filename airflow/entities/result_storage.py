@@ -15,7 +15,8 @@ from plugins.result_storage.model import ResultModel
 from airflow.utils.db import provide_session
 
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
-ENV_TIMESCALE_ENABLE = strtobool(os.environ.get('ENV_TIMESCALE_ENABLE', 'false'))
+ENV_TIMESCALE_ENABLE = strtobool(
+    os.environ.get('ENV_TIMESCALE_ENABLE', 'false'))
 
 _logger = generate_logger(__name__)
 IS_DEBUG = RUNTIME_ENV != 'prod'
@@ -37,13 +38,17 @@ class ClsResultStorage(ClsEntity):
         self.create_table_if_existed()
 
     def create_table_if_existed(self):
-        if not self.engine.dialect.has_table(self.engine, ResultModel.__tablename__):
+        if not self.engine.dialect.has_table(self.engine,
+                                             ResultModel.__tablename__):
             Base.metadata.create_all(self.engine)
             if not ENV_TIMESCALE_ENABLE:
                 return
-            with self.engine.connect().execution_options(autocommit=True) as conn:
-                conn.execute(text(
-                    f'''SELECT create_hypertable('{ResultModel.__tablename__}', 'update_time','tool_sn', 4, chunk_time_interval => INTERVAL '1 month', migrate_data => TRUE);'''))
+            with self.engine.connect().execution_options(
+                    autocommit=True) as conn:
+                conn.execute(
+                    text(
+                        f'''SELECT create_hypertable('{ResultModel.__tablename__}', 'update_time','tool_sn', 4, chunk_time_interval => INTERVAL '1 month', migrate_data => TRUE);'''
+                    ))
 
     def _write(self, data: Optional[Dict]):
         try:
@@ -82,7 +87,8 @@ class ClsResultStorage(ClsEntity):
                 raise Exception("entity id Is Required!")
             result_body: Optional[Dict] = data  # 之前验证过了 无需再验证有效性
             step_results = data.get("step_results")
-            if step_results and (isinstance(step_results, list) or isinstance(step_results, dict)):
+            if step_results and (isinstance(step_results, list)
+                                 or isinstance(step_results, dict)):
                 step_results = json.dumps(step_results, ensure_ascii=False)
             update_time = data.get("update_time")
             if update_time and isinstance(update_time, str):
@@ -95,7 +101,8 @@ class ClsResultStorage(ClsEntity):
             })
             return self._write(result_body)
         except Exception as err:
-            raise Exception(u"写入结果失败: {}, result: {}".format(repr(err), repr(data)))
+            raise Exception(u"写入结果失败: {}, result: {}".format(
+                repr(err), repr(data)))
 
     def query_results(self):
         if not self.entity_id:
