@@ -8,11 +8,10 @@ class ResultModel(Base):
     """
     result
     """
-
     def __repr__(self):
         return self.entity_id
 
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.update_time = timezone.utcnow()
         super(ResultModel, self).__init__(*args, **kwargs)
 
@@ -79,5 +78,3 @@ class ResultModel(Base):
             return v
         else:
             return dict()
-
-
