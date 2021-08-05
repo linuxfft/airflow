@@ -9,6 +9,7 @@ from airflow.configuration import conf
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')
 
+
 class ResultModelView(AirflowModelView):
     route_base = '/results'
 
@@ -18,11 +19,15 @@ class ResultModelView(AirflowModelView):
 
     page_size = PAGE_SIZE
 
-    list_columns = ['entity_id', 'update_time', 'car_code', 'type', 'bolt_number', 'measure_result', 'result',
-                    'final_state']
+    list_columns = [
+        'entity_id', 'update_time', 'car_code', 'type', 'bolt_number',
+        'measure_result', 'result', 'final_state'
+    ]
 
-    search_columns = ['entity_id', 'update_time', 'car_code', 'type', 'bolt_number', 'measure_result', 'result',
-                      'final_state']
+    search_columns = [
+        'entity_id', 'update_time', 'car_code', 'type', 'bolt_number',
+        'measure_result', 'result', 'final_state'
+    ]
 
     label_columns = {
         'entity_id': lazy_gettext('Entity Id'),
@@ -62,9 +67,11 @@ class ResultModelView(AirflowModelView):
 
 
 result_view = ResultModelView()
-result_view_package = {"name": gettext("Results"),
-                     "category": gettext("Analysis"),
-                     "view": result_view}
+result_view_package = {
+    "name": gettext("Results"),
+    "category": gettext("Analysis"),
+    "view": result_view
+}
 
 
 class ResultViewPlugin(AirflowPlugin):

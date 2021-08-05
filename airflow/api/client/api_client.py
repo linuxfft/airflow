@@ -21,7 +21,6 @@
 
 class Client(object):
     """Base API client for all API clients."""
-
     def __init__(self, api_base_url, auth):
         self._api_base_url = api_base_url
         self._auth = auth

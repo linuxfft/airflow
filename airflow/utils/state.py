@@ -112,11 +112,6 @@ class State(object):
         a run or has not even started.
         """
         return [
-            cls.NONE,
-            cls.SCHEDULED,
-            cls.QUEUED,
-            cls.RUNNING,
-            cls.SHUTDOWN,
-            cls.UP_FOR_RETRY,
-            cls.UP_FOR_RESCHEDULE
+            cls.NONE, cls.SCHEDULED, cls.QUEUED, cls.RUNNING, cls.SHUTDOWN,
+            cls.UP_FOR_RETRY, cls.UP_FOR_RESCHEDULE
         ]

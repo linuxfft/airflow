@@ -15,7 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """remove results from task_instance
 
 Revision ID: 30f6f5122970
@@ -65,8 +64,11 @@ def downgrade():
     op.add_column('task_instance', sa.Column('final_state', sa.String(20)))
     op.add_column('task_instance', sa.Column('line_code', sa.String(100)))
     op.add_column('task_instance', sa.Column('factory_code', sa.String(100)))
-    op.add_column('task_instance', sa.Column('controller_name', sa.String(100)))
+    op.add_column('task_instance', sa.Column('controller_name',
+                                             sa.String(100)))
     op.add_column('task_instance', sa.Column('car_code', sa.String(1000)))
-    op.add_column('task_instance', sa.Column('type', sa.String(100), server_default='normal'))
-    op.add_column('task_instance', sa.Column('should_analyze', sa.Boolean(), default=True))
+    op.add_column('task_instance',
+                  sa.Column('type', sa.String(100), server_default='normal'))
+    op.add_column('task_instance',
+                  sa.Column('should_analyze', sa.Boolean(), default=True))
     op.add_column('task_instance', sa.Column('device_type', sa.String(100)))

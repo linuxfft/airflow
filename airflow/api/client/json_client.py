@@ -26,7 +26,6 @@ from airflow.api.client import api_client
 
 class Client(api_client.Client):
     """Json API client implementation."""
-
     def _request(self, url, method='GET', json=None):
         params = {
             'url': url,
@@ -50,7 +49,8 @@ class Client(api_client.Client):
     def trigger_dag(self, dag_id, run_id=None, conf=None, execution_date=None):
         endpoint = '/api/experimental/dags/{}/dag_runs'.format(dag_id)
         url = urljoin(self._api_base_url, endpoint)
-        data = self._request(url, method='POST',
+        data = self._request(url,
+                             method='POST',
                              json={
                                  "run_id": run_id,
                                  "conf": conf,
@@ -79,7 +79,8 @@ class Client(api_client.Client):
     def create_pool(self, name, slots, description):
         endpoint = '/api/experimental/pools'
         url = urljoin(self._api_base_url, endpoint)
-        pool = self._request(url, method='POST',
+        pool = self._request(url,
+                             method='POST',
                              json={
                                  'name': name,
                                  'slots': slots,

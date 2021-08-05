@@ -16,9 +16,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from flask import (
-    g, Blueprint, jsonify, request, url_for
-)
+from flask import (g, Blueprint, jsonify, request, url_for)
 
 import airflow.api
 from airflow.api.common.experimental import delete_dag as delete
@@ -71,8 +69,8 @@ def trigger_dag(dag_id):
         except ValueError:
             error_message = (
                 'Given execution date, {}, could not be identified '
-                'as a date. Example date format: 2015-11-16T14:34:15+00:00'.format(
-                    execution_date))
+                'as a date. Example date format: 2015-11-16T14:34:15+00:00'.
+                format(execution_date))
             _log.info(error_message)
             response = jsonify({'error': error_message})
             response.status_code = 400
@@ -84,7 +82,8 @@ def trigger_dag(dag_id):
         replace_microseconds = to_boolean(data['replace_microseconds'])
 
     try:
-        dr = trigger.trigger_dag(dag_id, run_id, conf, execution_date, replace_microseconds)
+        dr = trigger.trigger_dag(dag_id, run_id, conf, execution_date,
+                                 replace_microseconds)
     except AirflowException as err:
         _log.error(err)
         response = jsonify(error="{}".format(err))
@@ -94,11 +93,9 @@ def trigger_dag(dag_id):
     if getattr(g, 'user', None):
         _log.info("User %s created %s", g.user, dr)
 
-    response = jsonify(
-        message="Created {}".format(dr),
-        execution_date=dr.execution_date.isoformat(),
-        run_id=dr.run_id
-    )
+    response = jsonify(message="Created {}".format(dr),
+                       execution_date=dr.execution_date.isoformat(),
+                       run_id=dr.run_id)
     return response
 
 
@@ -161,7 +158,8 @@ def get_dag_code(dag_id):
         return response
 
 
-@api_experimental.route('/dags/<string:dag_id>/tasks/<string:task_id>', methods=['GET'])
+@api_experimental.route('/dags/<string:dag_id>/tasks/<string:task_id>',
+                        methods=['GET'])
 @requires_authentication
 def task_info(dag_id, task_id):
     """Returns a JSON with a task's public instance variables. """
@@ -174,23 +172,23 @@ def task_info(dag_id, task_id):
         return response
 
     # JSONify and return.
-    fields = {k: str(v)
-              for k, v in vars(info).items()
-              if not k.startswith('_')}
+    fields = {
+        k: str(v)
+        for k, v in vars(info).items() if not k.startswith('_')
+    }
     return jsonify(fields)
 
 
 # ToDo: Shouldn't this be a PUT method?
-@api_experimental.route('/dags/<string:dag_id>/paused/<string:paused>', methods=['GET'])
+@api_experimental.route('/dags/<string:dag_id>/paused/<string:paused>',
+                        methods=['GET'])
 @requires_authentication
 def dag_paused(dag_id, paused):
     """(Un)pauses a dag"""
 
     is_paused = True if paused == 'true' else False
 
-    models.DagModel.get_dagmodel(dag_id).set_is_paused(
-        is_paused=is_paused,
-    )
+    models.DagModel.get_dagmodel(dag_id).set_is_paused(is_paused=is_paused, )
 
     return jsonify({'response': 'ok'})
 
@@ -240,15 +238,15 @@ def task_instance_info(dag_id, execution_date, task_id):
         return response
 
     # JSONify and return.
-    fields = {k: str(v)
-              for k, v in vars(info).items()
-              if not k.startswith('_')}
+    fields = {
+        k: str(v)
+        for k, v in vars(info).items() if not k.startswith('_')
+    }
     return jsonify(fields)
 
 
 @api_experimental.route(
-    '/dags/<string:dag_id>/dag_runs/<string:execution_date>',
-    methods=['GET'])
+    '/dags/<string:dag_id>/dag_runs/<string:execution_date>', methods=['GET'])
 @requires_authentication
 def dag_run_status(dag_id, execution_date):
     """
@@ -293,14 +291,19 @@ def latest_dag_runs():
     for dagrun in dagruns:
         if dagrun.execution_date:
             payload.append({
-                'dag_id': dagrun.dag_id,
-                'execution_date': dagrun.execution_date.isoformat(),
-                'start_date': ((dagrun.start_date or '') and
-                               dagrun.start_date.isoformat()),
-                'dag_run_url': url_for('airflow.graph', dag_id=dagrun.dag_id,
-                                       execution_date=dagrun.execution_date)
+                'dag_id':
+                dagrun.dag_id,
+                'execution_date':
+                dagrun.execution_date.isoformat(),
+                'start_date': ((dagrun.start_date or '')
+                               and dagrun.start_date.isoformat()),
+                'dag_run_url':
+                url_for('airflow.graph',
+                        dag_id=dagrun.dag_id,
+                        execution_date=dagrun.execution_date)
             })
-    return jsonify(items=payload)  # old flask versions dont support jsonifying arrays
+    return jsonify(
+        items=payload)  # old flask versions dont support jsonifying arrays
 
 
 @api_experimental.route('/pools/<string:name>', methods=['GET'])

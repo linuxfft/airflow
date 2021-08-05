@@ -26,7 +26,6 @@ from airflow.api.common.experimental import delete_dag
 
 class Client(api_client.Client):
     """Local API client implementation."""
-
     def trigger_dag(self, dag_id, run_id=None, conf=None, execution_date=None):
         dag_run = trigger_dag.trigger_dag(dag_id=dag_id,
                                           run_id=run_id,
@@ -46,7 +45,9 @@ class Client(api_client.Client):
         return [(p.pool, p.slots, p.description) for p in pool.get_pools()]
 
     def create_pool(self, name, slots, description):
-        the_pool = pool.create_pool(name=name, slots=slots, description=description)
+        the_pool = pool.create_pool(name=name,
+                                    slots=slots,
+                                    description=description)
         return the_pool.pool, the_pool.slots, the_pool.description
 
     def delete_pool(self, name):
