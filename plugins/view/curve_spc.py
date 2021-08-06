@@ -34,10 +34,29 @@ bp = Blueprint('curve_spc', __name__)
 @bp.route('/spc', methods=['GET'])
 @profile(os.path.join(PROFILE_DIR, 'spc.profile'))
 def get_spc_by_entity_id():
-    spc = {'x-r': {"title": u"Xbar-R 控制图", "data": {TORQUE: {}, ANGLE: {}}},
-           'x-s': {"title": u"Xbar-S 控制图", "data": {TORQUE: {}, ANGLE: {}}},
-           'n-d': {"title": u"正态分布 图", "data": {TORQUE: {}, ANGLE: {}}},
-           }
+    spc = {
+        'x-r': {
+            "title": u"Xbar-R 控制图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+        'x-s': {
+            "title": u"Xbar-S 控制图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+        'n-d': {
+            "title": u"正态分布 图",
+            "data": {
+                TORQUE: {},
+                ANGLE: {}
+            }
+        },
+    }
     x_r_entry = spc.get('x-r').get('data')
     x_s_entry = spc.get('x-s').get('data')
     n_d_entry = spc.get('n-d').get('data')
@@ -53,7 +72,8 @@ def get_spc_by_entity_id():
         if not results or ll == 0:
             raise AirflowException(u'未找到结果!')
         if ll < SPC_MIN_LEN:
-            raise AirflowException(u'数据长度: {} 小于设定的SPC最小数据长度: {}!'.format(ll, SPC_MIN_LEN))
+            raise AirflowException(u'数据长度: {} 小于设定的SPC最小数据长度: {}!'.format(
+                ll, SPC_MIN_LEN))
         origin_data = {TORQUE: [], ANGLE: []}
         for key in origin_data.keys():
             entry = origin_data.get(key)
@@ -68,7 +88,8 @@ def get_spc_by_entity_id():
             xr_r_part = rbar(data, SPC_SIZE)
             xs_xbar_part = xbar_sbar(data, SPC_SIZE, None)
             xs_s_part = sbar(data, SPC_SIZE, None)
-            cpk_data = cpk(entry, get_first_valid_data(results, mm_max.get(key)),
+            cpk_data = cpk(entry, get_first_valid_data(results,
+                                                       mm_max.get(key)),
                            get_first_valid_data(results, mm_min.get(key)))
             # todo: SPC包
             # xbar-r chart
@@ -119,13 +140,7 @@ def get_spc_by_entity_id():
                 if np.isnan(val):
                     val = 0
                 y2.append(round(val * 100, 2))
-            n_d_entry.get(tType).update(
-                {
-                    'x1': x1,
-                    'y1': y1,
-                    'y2': y2
-                }
-            )
+            n_d_entry.get(tType).update({'x1': x1, 'y1': y1, 'y2': y2})
         _log.info(spc)
         return jsonify(spc=spc)
     except AirflowException as e:

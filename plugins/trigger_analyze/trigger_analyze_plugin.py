@@ -19,10 +19,14 @@ import datetime
 from random import choices
 import math
 
-ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS', 'False') == 'True' else False
-FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES', 'False') == 'True' else False
-MISMATCH_RATE_RELAXATION_FACTOR = float(os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
-MISMATCH_RATE_RELAXATION_THRESHOLD = float(os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
+ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS',
+                                              'False') == 'True' else False
+FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES',
+                                           'False') == 'True' else False
+MISMATCH_RATE_RELAXATION_FACTOR = float(
+    os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
+MISMATCH_RATE_RELAXATION_THRESHOLD = float(
+    os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
 
 _logger = LoggingMixin().log
 
@@ -34,7 +38,6 @@ except:
 
 
 class TriggerAnalyzeHook(BaseHook, ABC):
-
     @staticmethod
     def trigger_push_result_dag(params):
         _logger.info('pushing result to mq...')
@@ -85,8 +88,8 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         new_param = params.copy()
         # 螺栓编码生成规则：控制器名称-job号-批次号
         result_type = TriggerAnalyzeHook.get_result_type(new_param)
-        _logger.info("type: {}, entity_id: {} bolt_number: {}"
-                     .format(result_type, entity_id, bolt_number))
+        _logger.info("type: {}, entity_id: {} bolt_number: {}".format(
+            result_type, entity_id, bolt_number))
 
         try:
             curve_params = get_curve_params(bolt_number)
@@ -105,12 +108,9 @@ class TriggerAnalyzeHook(BaseHook, ABC):
             return
         from airflow.hooks.result_storage_plugin import ResultStorageHook
         entity_id = params.get('entity_id', None)
-        ResultStorageHook.bind_analyze_task(
-            entity_id,
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date
-        )
+        ResultStorageHook.bind_analyze_task(entity_id, task_instance.dag_id,
+                                            task_instance.task_id,
+                                            task_instance.execution_date)
         new_param = TriggerAnalyzeHook.prepare_trigger_params(params)
         TriggerAnalyzeHook.trigger_push_result_dag(new_param)
         from airflow.hooks.cas_plugin import CasHook
@@ -124,11 +124,12 @@ class TriggerAnalyzeHook(BaseHook, ABC):
     def trigger_analyze(params):
         # 此处未来或将不创建分析任务。
         # 添加此方法意在统一外部接口，不在不同地方调用trigger_dag，便于维护
-        trigger.trigger_dag('curve_analyze_dag', conf=params, replace_microseconds=False)
+        trigger.trigger_dag('curve_analyze_dag',
+                            conf=params,
+                            replace_microseconds=False)
 
 
 class TriggerAnalyzeOperator(BaseOperator):
-
     def execute(self, context):
         params = context['dag_run'].conf
         task_instance = context['task_instance']
@@ -147,12 +148,10 @@ def get_recent_mismatch_rate(session=None):
     min_date = timezone.utcnow() - delta
     from plugins.models.result import ResultModel
     total = session.query(ResultModel).filter(
-        ResultModel.execution_date > min_date
-    ).count()
+        ResultModel.execution_date > min_date).count()
     mismatches = session.query(ResultModel).filter(
         ResultModel.execution_date > min_date,
-        ResultModel.measure_result != ResultModel.result
-    ).count()
+        ResultModel.measure_result != ResultModel.result).count()
     _logger.info('total:{},mismatches:{}'.format(total, mismatches))
     return mismatches / (total + 1), total
 
@@ -160,8 +159,10 @@ def get_recent_mismatch_rate(session=None):
 def mismatch_relaxation(mismatch_rate, count) -> bool:
     if mismatch_rate < MISMATCH_RATE_RELAXATION_THRESHOLD:
         return False
-    weight = MISMATCH_RATE_RELAXATION_FACTOR * (mismatch_rate - MISMATCH_RATE_RELAXATION_THRESHOLD) / (
-        mismatch_rate + MISMATCH_RATE_RELAXATION_THRESHOLD) * math.log(count, 2)
+    weight = MISMATCH_RATE_RELAXATION_FACTOR * (
+        mismatch_rate - MISMATCH_RATE_RELAXATION_THRESHOLD) / (
+            mismatch_rate + MISMATCH_RATE_RELAXATION_THRESHOLD) * math.log(
+                count, 2)
     _logger.info('weight: {}'.format(weight))
     return choices([True, False], weights=[weight, 1])[0]
 
@@ -204,19 +205,10 @@ def put_analyze_result():
         extra['verify_error'] = int(data.get('verify_error'))  # OK, NOK
 
         from airflow.hooks.result_storage_plugin import ResultStorageHook
-        ResultStorageHook.save_analyze_result(
-            entity_id,
-            result,
-            **extra
-        )
+        ResultStorageHook.save_analyze_result(entity_id, result, **extra)
 
-        trigger_push_result_to_mq(
-            'analysis_result',
-            result,
-            entity_id,
-            extra['verify_error'],
-            curve_mode
-        )
+        trigger_push_result_to_mq('analysis_result', result, entity_id,
+                                  extra['verify_error'], curve_mode)
         resp = jsonify({'response': 'ok'})
         resp.status_code = 200
         return resp
