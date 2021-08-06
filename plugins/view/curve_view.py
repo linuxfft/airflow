@@ -35,27 +35,37 @@ class CurveView(BaseView):
             _logger.error(e)
             curve = {}
 
-        analysis_error_message_mapping = Variable.get('analysis_error_message_mapping', deserialize_json=True,
-                                                      default_var={})
+        analysis_error_message_mapping = Variable.get(
+            'analysis_error_message_mapping',
+            deserialize_json=True,
+            default_var={})
 
-        verify_error_map = Variable.get('verify_error_map', deserialize_json=True,
+        verify_error_map = Variable.get('verify_error_map',
+                                        deserialize_json=True,
                                         default_var={})
 
-        result_error_message_mapping = Variable.get('result_error_message_mapping', deserialize_json=True,
-                                                    default_var={})
+        result_error_message_mapping = Variable.get(
+            'result_error_message_mapping',
+            deserialize_json=True,
+            default_var={})
 
-        controller_name = result.get('controller_name', '').split('@')[0] if result.get('controller_name') else ''
+        controller_name = result.get(
+            'controller_name',
+            '').split('@')[0] if result.get('controller_name') else ''
         from plugins.models.tightening_controller import TighteningController
         controller = TighteningController.find_controller(controller_name)
         error_tags = ErrorTag.get_all()
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE')
-        show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
+        show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is
+                      True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access('set_final_state_ok', 'TaskInstanceModelView') \
                      and _has_access('set_final_state_nok', 'TaskInstanceModelView')
 
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['CURVE'], '查看单条曲线')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['VIEW'],
+            CUSTOM_PAGE_NAME_MAP['CURVE'], '查看单条曲线')
         _logger.info(msg)
 
         if result.get('device_type') == 'servo_press':
@@ -64,11 +74,13 @@ class CurveView(BaseView):
                 'cur_m': '压力',
                 'cur_t': '时间',
             }
-            display_keys = Variable.get('servo_press_view_curve_page_keys', deserialize_json=True,
+            display_keys = Variable.get('servo_press_view_curve_page_keys',
+                                        deserialize_json=True,
                                         default_var={})
-            result_keys_translation_mapping = Variable.get('servo_press_result_keys_translation_mapping',
-                                                           deserialize_json=True,
-                                                           default_var={})
+            result_keys_translation_mapping = Variable.get(
+                'servo_press_result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={})
         else:
             cur_key_map = {
                 'cur_w': '角度',
@@ -76,24 +88,28 @@ class CurveView(BaseView):
                 'cur_t': '时间',
                 'cur_s': '转速'
             }
-            display_keys = Variable.get('view_curve_page_keys', deserialize_json=True,
+            display_keys = Variable.get('view_curve_page_keys',
+                                        deserialize_json=True,
                                         default_var={})
-            result_keys_translation_mapping = Variable.get('result_keys_translation_mapping',
-                                                           deserialize_json=True,
-                                                           default_var={})
+            result_keys_translation_mapping = Variable.get(
+                'result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={})
 
-        return self.render_template('curve.html', result=result,
-                                    curve=curve, analysisErrorMessageMapping=analysis_error_message_mapping,
-                                    resultErrorMessageMapping=result_error_message_mapping,
-                                    resultKeysTranslationMapping=result_keys_translation_mapping,
-                                    verify_error_map=verify_error_map,
-                                    can_verify=can_verify,
-                                    controller=controller,
-                                    errorTags=error_tags,
-                                    show_range=show_range,
-                                    display_keys=display_keys,
-                                    cur_key_map=cur_key_map
-                                    )
+        return self.render_template(
+            'curve.html',
+            result=result,
+            curve=curve,
+            analysisErrorMessageMapping=analysis_error_message_mapping,
+            resultErrorMessageMapping=result_error_message_mapping,
+            resultKeysTranslationMapping=result_keys_translation_mapping,
+            verify_error_map=verify_error_map,
+            can_verify=can_verify,
+            controller=controller,
+            errorTags=error_tags,
+            show_range=show_range,
+            display_keys=display_keys,
+            cur_key_map=cur_key_map)
 
 
 curve_view = CurveView()

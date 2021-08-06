@@ -15,8 +15,7 @@ class ErrorTag(Base):
     label = Column(String(1000), nullable=False)
     value = Column(String(1000), nullable=False, unique=True)
 
-    def __init__(
-        self, *args, label=None, value=None,**kwargs):
+    def __init__(self, *args, label=None, value=None, **kwargs):
         self.label = label
         self.value = value
         super(ErrorTag, self).__init__(*args, **kwargs)

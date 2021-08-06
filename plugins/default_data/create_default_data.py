@@ -13,18 +13,20 @@ log = LoggingMixin().log
 def load_default_controller(file_dir, session=None):
     log.info("Loading default controllers")
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_dir, 'data/{}/default_controllers.csv'.format(file_dir))
+    file_path = os.path.join(
+        current_dir, 'data/{}/default_controllers.csv'.format(file_dir))
     if not os.path.exists(file_path):
         log.error("导入控制器目录不存在：{}".format(file_path))
         return
     from plugins.models.tightening_controller import TighteningController
-    val = load_data_from_csv(file_path, {
-        'controller_name': '控制器名称',
-        'line_code': '工段编号',
-        'work_center_code': '工位编号',
-        'line_name': '工段名称',
-        'work_center_name': '工位名称'
-    })
+    val = load_data_from_csv(
+        file_path, {
+            'controller_name': '控制器名称',
+            'line_code': '工段编号',
+            'work_center_code': '工位编号',
+            'line_name': '工段名称',
+            'work_center_name': '工位名称'
+        })
     controllers = TighteningController.list_controllers(session=session)
     if len(controllers) > 0:
         log.info("Controllers already exists, skipping")
@@ -36,8 +38,7 @@ def load_default_controller(file_dir, session=None):
             work_center_code=controller.get('work_center_code', None),
             line_name=controller.get('line_name', None),
             work_center_name=controller.get('work_center_name', None),
-            session=session
-        )
+            session=session)
 
 
 @provide_session
@@ -52,13 +53,18 @@ def create_default_error_tags(session=None):
     log.info("Loading default error_tags")
     from plugins.models.error_tag import ErrorTag
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    error_tags = load_data_from_csv(os.path.join(current_dir, 'data/error_tags.csv'), {
-        'value': 'value',
-        'label': 'label'
-    })
+    error_tags = load_data_from_csv(
+        os.path.join(current_dir, 'data/error_tags.csv'), {
+            'value': 'value',
+            'label': 'label'
+        })
     for error_tag in error_tags:
-        data = ErrorTag(label=error_tag.get('label'), value=error_tag.get('value'))
-        merge_data(model=ErrorTag, data=data, is_exist=ErrorTag.label == data.label, session=session)
+        data = ErrorTag(label=error_tag.get('label'),
+                        value=error_tag.get('value'))
+        merge_data(model=ErrorTag,
+                   data=data,
+                   is_exist=ErrorTag.label == data.label,
+                   session=session)
 
 
 @provide_session
@@ -67,14 +73,19 @@ def create_device_type_support(session=None):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     if not session:
         return
-    device_types = load_data_from_csv(os.path.join(current_dir, 'data/device_types.csv'), {
-        'name': 'name',
-        'view_config': 'view_config'
-    })
+    device_types = load_data_from_csv(
+        os.path.join(current_dir, 'data/device_types.csv'), {
+            'name': 'name',
+            'view_config': 'view_config'
+        })
     from plugins.models.device_type import DeviceTypeModel
     for device_type in device_types:
-        data = DeviceTypeModel(name=device_type.get('name'), view_config=device_type.get('view_config'))
-        merge_data(model=DeviceTypeModel, data=data, is_exist=DeviceTypeModel.name == data.name, session=session)
+        data = DeviceTypeModel(name=device_type.get('name'),
+                               view_config=device_type.get('view_config'))
+        merge_data(model=DeviceTypeModel,
+                   data=data,
+                   is_exist=DeviceTypeModel.name == data.name,
+                   session=session)
 
 
 # fixme: 该方法在1.10版本中不可用，2.x版本中可用，需要在升级后稍作修改
