@@ -15,7 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """remove curve template args from variable
 
 Revision ID: 7e41719a474d
@@ -40,5 +39,6 @@ def upgrade():
 
 
 def downgrade():
-    op.add_column('variable', sa.Column('is_curve_template', sa.Boolean(), default=True))
+    op.add_column('variable',
+                  sa.Column('is_curve_template', sa.Boolean(), default=True))
     op.add_column('variable', sa.Column('active', sa.Boolean(), default=True))

@@ -31,10 +31,10 @@ class CurveTemplateModel(Base):
 
     @classmethod
     def get(
-        cls,
-        key,  # type: str
-        default_var=__NO_DEFAULT_SENTINEL,  # type: Any
-        deserialize_json=False  # type: bool
+            cls,
+            key,  # type: str
+            default_var=__NO_DEFAULT_SENTINEL,  # type: Any
+            deserialize_json=False  # type: bool
     ):
         var_val = get_variable(key=key)
         if var_val is None:
@@ -51,19 +51,22 @@ class CurveTemplateModel(Base):
     @classmethod
     @provide_session
     def set(
-        cls,
-        key,  # type: str
-        value,  # type: Any
-        serialize_json=False,  # type: bool
-        session=None
-    ):
+            cls,
+            key,  # type: str
+            value,  # type: Any
+            serialize_json=False,  # type: bool
+            session=None):
         if serialize_json:
-            stored_value = json.dumps(value, indent=2, separators=(',', ': '), ensure_ascii=False)
+            stored_value = json.dumps(value,
+                                      indent=2,
+                                      separators=(',', ': '),
+                                      ensure_ascii=False)
         else:
             stored_value = str(value)
 
         cls.delete(key, session=session)
-        session.add(CurveTemplateModel(key=key, val=stored_value))  # type: ignore
+        session.add(CurveTemplateModel(key=key,
+                                       val=stored_value))  # type: ignore
         session.flush()
 
     @classmethod
@@ -74,18 +77,18 @@ class CurveTemplateModel(Base):
     @classmethod
     @provide_session
     def update(
-        cls,
-        key,  # type: str
-        value,  # type: Any
-        serialize_json=False,  # type: bool
-        session=None
-    ):
+            cls,
+            key,  # type: str
+            value,  # type: Any
+            serialize_json=False,  # type: bool
+            session=None):
 
         if serialize_json:
             stored_value = json.dumps(value, indent=2, separators=(',', ': '))
         else:
             stored_value = str(value)
-        session.query(cls).filter(cls.key == key).update({cls.val: stored_value})  # type: ignore
+        session.query(cls).filter(cls.key == key).update(
+            {cls.val: stored_value})  # type: ignore
         session.flush()
 
     @classmethod
@@ -100,14 +103,14 @@ class CurveTemplateModel(Base):
     @classmethod
     @provide_session
     def get_fuzzy_active(
-        cls,
-        key,  # type: str
-        deserialize_json=False,  # type: bool
-        session=None,
-        default_var=__NO_DEFAULT_SENTINEL
-    ):
+            cls,
+            key,  # type: str
+            deserialize_json=False,  # type: bool
+            session=None,
+            default_var=__NO_DEFAULT_SENTINEL):
         key_p = "%{}%".format(key)
-        obj = session.query(cls).filter(cls.key.like(key_p), cls.active).first()
+        obj = session.query(cls).filter(cls.key.like(key_p),
+                                        cls.active).first()
         if obj is None:
             if default_var is not cls.__NO_DEFAULT_SENTINEL:
                 return key, default_var
@@ -124,5 +127,6 @@ class CurveTemplateModelPlugin(AirflowPlugin):
     @classmethod
     def on_load(cls):
         engine = settings.engine
-        if not engine.dialect.has_table(engine, CurveTemplateModel.__tablename__):
+        if not engine.dialect.has_table(engine,
+                                        CurveTemplateModel.__tablename__):
             Base.metadata.create_all(engine)

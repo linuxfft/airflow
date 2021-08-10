@@ -73,8 +73,7 @@ class Variable(Base, LoggingMixin):
 
     @declared_attr
     def val(cls):
-        return synonym('_val',
-                       descriptor=property(cls.get_val, cls.set_val))
+        return synonym('_val', descriptor=property(cls.get_val, cls.set_val))
 
     @classmethod
     def setdefault(cls, key, default, deserialize_json=False):
@@ -91,7 +90,8 @@ class Variable(Base, LoggingMixin):
             and un-encode it when retrieving a value
         :return: Mixed
         """
-        obj = Variable.get(key, default_var=None,
+        obj = Variable.get(key,
+                           default_var=None,
                            deserialize_json=deserialize_json)
         if obj is None:
             if default is not None:
@@ -104,12 +104,11 @@ class Variable(Base, LoggingMixin):
 
     @classmethod
     def get(
-        cls,
-        key,  # type: str
-        default_var=__NO_DEFAULT_SENTINEL,  # type: Any
-        deserialize_json=False,  # type: bool
-        session=None
-    ):
+            cls,
+            key,  # type: str
+            default_var=__NO_DEFAULT_SENTINEL,  # type: Any
+            deserialize_json=False,  # type: bool
+            session=None):
         var_val = get_variable(key=key)
         if var_val is None:
             if default_var is not cls.__NO_DEFAULT_SENTINEL:
@@ -125,15 +124,17 @@ class Variable(Base, LoggingMixin):
     @classmethod
     @provide_session
     def set(
-        cls,
-        key,  # type: str
-        value,  # type: Any
-        serialize_json=False,  # type: bool
-        session=None
-    ):
+            cls,
+            key,  # type: str
+            value,  # type: Any
+            serialize_json=False,  # type: bool
+            session=None):
 
         if serialize_json:
-            stored_value = json.dumps(value, indent=2, separators=(',', ': '), ensure_ascii=False)
+            stored_value = json.dumps(value,
+                                      indent=2,
+                                      separators=(',', ': '),
+                                      ensure_ascii=False)
         else:
             stored_value = str(value)
 
