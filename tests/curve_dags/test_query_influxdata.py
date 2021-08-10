@@ -17,8 +17,9 @@ class TestQueryInfluxdata(TestCase):
     def setUp(self):
         self.dag = self.dagbag.get_dag(dag_id=curve_store_dag.DAG_ID)
         self.task = self.dag.get_task(curve_store_dag.TRIGGER_ANAY_TASK)
-        self.taskInstance = TaskInstance(task=self.dag.task_dict.get(curve_store_dag.TRIGGER_ANAY_TASK),
-                                         execution_date=datetime.datetime.now())
+        self.taskInstance = TaskInstance(
+            task=self.dag.task_dict.get(curve_store_dag.TRIGGER_ANAY_TASK),
+            execution_date=datetime.datetime.now())
 
     def test_loadSCurveAnayDag(self):
         self.assertDictEqual(self.dagbag.import_errors, {})
@@ -27,8 +28,10 @@ class TestQueryInfluxdata(TestCase):
 
     def test_QueryInfluxData(self):
         args = storeTaskArgs.get('resultArgs')
-        args.update(
-            {'token': 'ZOtYmpMWvOzsSt6CK95-NsUMAj1ZsrBKABTOgIkK88Otn0GIA_vK7omEiXSq0OvEFmHj08CK0pivDFcW-isoLg=='})
+        args.update({
+            'token':
+            'ZOtYmpMWvOzsSt6CK95-NsUMAj1ZsrBKABTOgIkK88Otn0GIA_vK7omEiXSq0OvEFmHj08CK0pivDFcW-isoLg=='
+        })
         # args.update({
         #     "url": "127.0.0.1:9999"
         # })
@@ -46,8 +49,10 @@ class TestQueryInfluxdata(TestCase):
 
     def test_QueryResult(self):
         args = storeTaskArgs.get('resultArgs')
-        args.update(
-            {'token': 'ZOtYmpMWvOzsSt6CK95-NsUMAj1ZsrBKABTOgIkK88Otn0GIA_vK7omEiXSq0OvEFmHj08CK0pivDFcW-isoLg=='})
+        args.update({
+            'token':
+            'ZOtYmpMWvOzsSt6CK95-NsUMAj1ZsrBKABTOgIkK88Otn0GIA_vK7omEiXSq0OvEFmHj08CK0pivDFcW-isoLg=='
+        })
         # args.update({
         #     "url": "127.0.0.1:9999"
         # })

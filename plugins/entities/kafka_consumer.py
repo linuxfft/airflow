@@ -85,8 +85,8 @@ class ClsKafkaConsumer(ClsEntity):
         if self._auth_type in [auth_type_options[2], auth_type_options[3]]:
             # SCRAM-SHA-256 or SCRAM-SHA-512
             if self._security_protocol not in ['SASL_PLAINTEXT', 'SASL_SSL']:
-                raise AirflowConfigException(
-                    u'认证{}类型, protocol配置错误'.format(self._auth_type))
+                raise AirflowConfigException(u'认证{}类型, protocol配置错误'.format(
+                    self._auth_type))
             config.update({
                 'security_protocol': self._security_protocol,
                 'sasl_mechanism': self._auth_type,
@@ -119,21 +119,24 @@ class ClsKafkaConsumer(ClsEntity):
                 # msg: headers, value
                 if self._handler is not None:
                     self._handler(msg)
-                _logger.debug('Kafka New Message: {}'.format(pprint.pformat(msg, indent=4)))
+                _logger.debug('Kafka New Message: {}'.format(
+                    pprint.pformat(msg, indent=4)))
         except Exception as e:
             _logger.error('Read Error', e)
             self._consumer.unsubscribe()
             self._consumer.close()
 
     def _create_consumer(self) -> KafkaConsumer:
-        _logger.info(u'Create Kafka Consume Server:{}, Topic: {}, Group: {}'.format(
-            self.servers, self.topic, self.group_id))
+        _logger.info(
+            u'Create Kafka Consume Server:{}, Topic: {}, Group: {}'.format(
+                self.servers, self.topic, self.group_id))
         consumer_config = {
             'group_id': self.group_id,
             'bootstrap_servers': self.servers,
             'auto_offset_reset': 'earliest',  # 不会收到之前重复的数据
             'client_id': 'qcos_kafka_consumer_{}'.format(FACTORY_CODE),
-            'value_deserializer': lambda data: json.loads(data),  # 数据只支持json数据包
+            'value_deserializer':
+            lambda data: json.loads(data),  # 数据只支持json数据包
         }
         if self._auth_type:
             self.consumer_add_auth_config(consumer_config)

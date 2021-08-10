@@ -18,23 +18,23 @@ from flask_appbuilder.actions import action
 from airflow.www_rbac.decorators import action_logging
 from flask_babel import gettext
 from flask._compat import PY2
-from flask import (
-    Markup, flash, make_response, redirect, request
-)
+from flask import (Markup, flash, make_response, redirect, request)
 
 _logger = logging.getLogger(__name__)
 
 
-def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=None, mode=None, group_center_idx=None,
+def do_remove_curve_from_curve_template(bolt_no=None,
+                                        craft_type=None,
+                                        version=None,
+                                        mode=None,
+                                        group_center_idx=None,
                                         curve_idx=None):
     if version is None or not bolt_no or not craft_type \
         or mode is None or group_center_idx is None or curve_idx is None:
         raise Exception('参数错误')
     template_name = '{}/{}'.format(bolt_no, craft_type)
-    key, curve_template = CurveTemplateModel.get_fuzzy_active(template_name,
-                                                              deserialize_json=True,
-                                                              default_var=None
-                                                              )
+    key, curve_template = CurveTemplateModel.get_fuzzy_active(
+        template_name, deserialize_json=True, default_var=None)
     template_version = curve_template.get('version', 0)
     if version != template_version:
         raise Exception('曲线模板信息过期，请刷新页面')
@@ -62,14 +62,10 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
         mode_cluster['curve_template_groups_k'] -= 1
     if mode_cluster['curve_template_groups_k'] == 0:
         del template_cluster[mode]
-    curve_template.update({
-        'version': template_version + 1
-    })
+    curve_template.update({'version': template_version + 1})
     CurveTemplateModel.set(key, curve_template, serialize_json=True)
     dag_id = 'load_all_curve_tmpls'
-    conf = {
-        'template_names': [template_name]
-    }
+    conf = {'template_names': [template_name]}
     trigger.trigger_dag(dag_id, conf=conf, replace_microseconds=False)
     return curve_template
 
@@ -108,22 +104,24 @@ class CurveTemplateView(AirflowModelView):
     @expose('/<string:bolt_no>/<string:craft_type>')
     @has_access
     def view_curve_template(self, bolt_no, craft_type):
-        curve_template = CurveTemplateModel.get_fuzzy_active('{}/{}'.format(bolt_no, craft_type),
-                                                         deserialize_json=True,
-                                                         default_var=None
-                                                         )[1]
+        curve_template = CurveTemplateModel.get_fuzzy_active(
+            '{}/{}'.format(bolt_no, craft_type),
+            deserialize_json=True,
+            default_var=None)[1]
         _has_access = self.appbuilder.sm.has_access
-        can_delete = _has_access('can_edit', 'CurveTemplateView') and _has_access('can_remove_curve_template',
-                                                                                  'Airflow')
+        can_delete = _has_access('can_edit',
+                                 'CurveTemplateView') and _has_access(
+                                     'can_remove_curve_template', 'Airflow')
 
         if curve_template is None:
             # todo: 不要返回错误页面
             return AirflowNotFoundException()
 
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'],
-                                       '查看曲线模板页面')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['VIEW'],
+            CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'], '查看曲线模板页面')
         logging.info(msg)
         device_type = 'tightening'  # fixme: 临时使用固定的device_type, 后续在控制器配置中添加
         if device_type == 'servo_press':
@@ -139,11 +137,16 @@ class CurveTemplateView(AirflowModelView):
                 'cur_t': '时间',
                 'cur_s': '转速'
             }
-        return self.render_template('curve_template.html', can_delete=can_delete,
-                                    curve_template=curve_template, bolt_no=bolt_no,
-                                    craft_type=craft_type, device_type=device_type, cur_key_map=cur_key_map)
+        return self.render_template('curve_template.html',
+                                    can_delete=can_delete,
+                                    curve_template=curve_template,
+                                    bolt_no=bolt_no,
+                                    craft_type=craft_type,
+                                    device_type=device_type,
+                                    cur_key_map=cur_key_map)
 
-    @expose('/<string:bolt_no>/<string:craft_type>/remove_curve', methods=['PUT'])
+    @expose('/<string:bolt_no>/<string:craft_type>/remove_curve',
+            methods=['PUT'])
     @has_access
     def remove_curve_template(self, bolt_no, craft_type):
         _has_access = self.appbuilder.sm.has_access
@@ -157,12 +160,14 @@ class CurveTemplateView(AirflowModelView):
         group_center_idx = params.get('group_center_idx', None)
         curve_idx = params.get('curve_idx', None)
         try:
-            new_template = do_remove_curve_from_curve_template(bolt_no, craft_type, version, mode, group_center_idx,
-                                                               curve_idx)
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user, getattr(current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['DELETE'],
-                                           CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'], '删除曲线模板')
+            new_template = do_remove_curve_from_curve_template(
+                bolt_no, craft_type, version, mode, group_center_idx,
+                curve_idx)
+            msg = CUSTOM_LOG_FORMAT.format(
+                datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                current_user, getattr(current_user, 'last_name',
+                                      ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+                CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'], '删除曲线模板')
             logging.info(msg)
             return {'data': new_template}
         except Exception as e:
@@ -171,10 +176,11 @@ class CurveTemplateView(AirflowModelView):
     @expose("/list/")
     @has_access
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'],
-                                       '曲线模板：查看列表')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['VIEW'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：查看列表')
         logging.info(msg)
         return super(CurveTemplateView, self).list()
 
@@ -192,10 +198,11 @@ class CurveTemplateView(AirflowModelView):
 
     def post_add(self, item):
         super(CurveTemplateView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'],
-                                       '曲线模板：增加')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['ADD'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：增加')
         logging.info(msg)
 
     def pre_update(self, item: CurveTemplateModel):
@@ -206,21 +213,25 @@ class CurveTemplateView(AirflowModelView):
 
     def post_update(self, item):
         super(CurveTemplateView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'],
-                                       CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：修改')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['UPDATE'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：修改')
         logging.info(msg)
 
-    @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
+    @action('muldelete',
+            'Delete',
+            'Are you sure you want to delete selected records?',
             single=False)
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'],
-                                       CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：删除选中变量')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['DELETE'],
+            CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：删除选中变量')
         logging.info(msg)
         return redirect(self.get_redirect())
 
@@ -235,8 +246,10 @@ class CurveTemplateView(AirflowModelView):
                 val = var.val
             var_dict[var.key] = val
 
-        response = make_response(json.dumps(var_dict, sort_keys=True, indent=4, ensure_ascii=False))
-        response.headers["Content-Disposition"] = "attachment; filename=curve_templates.json"
+        response = make_response(
+            json.dumps(var_dict, sort_keys=True, indent=4, ensure_ascii=False))
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=curve_templates.json"
         response.headers["Content-Type"] = "application/json; charset=utf-8"
         return response
 
@@ -258,15 +271,21 @@ class CurveTemplateView(AirflowModelView):
             suc_count = fail_count = 0
             for k, v in d.items():
                 try:
-                    CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+                    CurveTemplateModel.set(k,
+                                           v,
+                                           serialize_json=isinstance(v, dict))
                 except Exception as e:
-                    logging.info('Curve Template import failed: {}'.format(repr(e)))
+                    logging.info('Curve Template import failed: {}'.format(
+                        repr(e)))
                     fail_count += 1
                 else:
                     suc_count += 1
-            flash("{} Curve Template(s) successfully updated.".format(suc_count))
+            flash(
+                "{} Curve Template(s) successfully updated.".format(suc_count))
             if fail_count:
-                flash("{} Curve Template(s) failed to be updated.".format(fail_count), 'error')
+                flash(
+                    "{} Curve Template(s) failed to be updated.".format(
+                        fail_count), 'error')
             self.update_redirect()
             return redirect(self.get_redirect())
 

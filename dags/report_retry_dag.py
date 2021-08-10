@@ -12,6 +12,7 @@ from plugins.utils.logger import generate_logger
 from sqlalchemy import func
 from airflow.utils.db import provide_session
 from airflow.utils import timezone
+
 _logger = generate_logger(__name__)
 
 local_tz = pendulum.timezone("Asia/Shanghai")
@@ -24,16 +25,20 @@ desoutter_default_args = {
 dag_id = 'report_retry'
 task_report_retry = 'task_report_retry'
 
-dag = DAG(dag_id, description=u'分析任务重试数量报警推送',
-          schedule_interval='@hourly', default_args=desoutter_default_args, catchup=False)
+dag = DAG(dag_id,
+          description=u'分析任务重试数量报警推送',
+          schedule_interval='@hourly',
+          default_args=desoutter_default_args,
+          catchup=False)
 
 
 @provide_session
 def retried_tasks(delta=None, session=None):
-    tasks = session.query(func.count(TaskInstance.task_id)).filter(TaskInstance._try_number > 1)
+    tasks = session.query(func.count(
+        TaskInstance.task_id)).filter(TaskInstance._try_number > 1)
     if delta:
-        return tasks.filter(
-            TaskInstance.execution_date > (timezone.utcnow() + delta)).first()[0]
+        return tasks.filter(TaskInstance.execution_date > (timezone.utcnow() +
+                                                           delta)).first()[0]
     return tasks.first()[0]
 
 
@@ -58,25 +63,23 @@ def report_message(period, count):
 
 
 def do_report(**kwargs):
-    period = Variable.get('task_retry_period', {'hours': -1}, deserialize_json=True)
+    period = Variable.get('task_retry_period', {'hours': -1},
+                          deserialize_json=True)
     threshold = Variable.get('task_retry_threshold', 1)
     count = should_report(period, threshold)
     if not count:
-        _logger.info('未达到报警条件, period: {}, threshold: {}'.format(period, threshold))
+        _logger.info('未达到报警条件, period: {}, threshold: {}'.format(
+            period, threshold))
         return
     mails_task_retry = Variable.get('mails_task_retry', [])
     if not mails_task_retry or not len(mails_task_retry) > 0:
         raise Exception('重试报警邮箱未配置')
-    send_email(
-        to=mails_task_retry,
-        subject=u'分析任务重试数量报警',
-        html_content=report_message(period, count)
-    )
+    send_email(to=mails_task_retry,
+               subject=u'分析任务重试数量报警',
+               html_content=report_message(period, count))
 
 
-report_task = PythonOperator(
-    provide_context=True,
-    task_id=task_report_retry,
-    dag=dag,
-    python_callable=do_report
-)
+report_task = PythonOperator(provide_context=True,
+                             task_id=task_report_retry,
+                             dag=dag,
+                             python_callable=do_report)

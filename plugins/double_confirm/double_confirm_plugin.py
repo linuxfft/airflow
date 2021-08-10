@@ -21,10 +21,12 @@ class DoubleConfirmView(BaseView):
     @has_access
     def double_confirm_task(self, entity_id):
         try:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user, getattr(current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['DOUBLE_CONFIRM'], CUSTOM_PAGE_NAME_MAP['CURVE'],
-                                           '曲线二次确认')
+            msg = CUSTOM_LOG_FORMAT.format(
+                datetime.datetime.now(
+                    tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"), current_user,
+                getattr(current_user, 'last_name',
+                        ''), CUSTOM_EVENT_NAME_MAP['DOUBLE_CONFIRM'],
+                CUSTOM_PAGE_NAME_MAP['CURVE'], '曲线二次确认')
             logging.info(msg)
             params = request.get_json(force=True)  # success failed
             final_state = params.get('final_state', None)
@@ -44,13 +46,17 @@ class DoubleConfirmView(BaseView):
             return response
 
     @csrf.exempt
-    @expose('/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>/error_tag', methods=['POST'])
+    @expose(
+        '/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>/error_tag',
+        methods=['POST'])
     @has_access
     def save_curve_error_tag(self, dag_id, task_id, execution_date):
         return self._save_curve_error_tag(dag_id, task_id, execution_date)
 
     @csrf.exempt
-    @expose('/error_tag/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>', methods=['POST'])
+    @expose(
+        '/error_tag/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>',
+        methods=['POST'])
     @has_access
     def save_curve_error_tag_w_csrf(self, dag_id, task_id, execution_date):
         return self._save_curve_error_tag(dag_id, task_id, execution_date)

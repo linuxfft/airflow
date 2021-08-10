@@ -27,8 +27,9 @@ _logger.addHandler(logging.StreamHandler())
 
 _logger.setLevel(loggingLevel)
 
-START_DATE = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - relativedelta.relativedelta(
-    days=1)
+START_DATE = datetime.now(tz=TIMEZONE).replace(
+    hour=0, minute=0, second=0,
+    microsecond=0) - relativedelta.relativedelta(days=1)
 
 MINIO_ROOT_URL = os.environ.get('MINIO_ROOT_URL', None)
 
@@ -39,7 +40,8 @@ except Exception as e:
     LIMIT = 1000
 
 try:
-    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION', '90'))  # 单位为天
+    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION',
+                                               '90'))  # 单位为天
 except Exception as e:
     _logger.error(e)
     DATA_STORAGE_DURATION = 90
@@ -59,12 +61,10 @@ default_args = {
     'retry_delay': timedelta(minutes=1)
 }
 
-dag = DAG(
-    'data_retention_policy',
-    default_args=default_args,
-    schedule_interval=schedule_interval,
-    start_date=START_DATE
-)
+dag = DAG('data_retention_policy',
+          default_args=default_args,
+          schedule_interval=schedule_interval,
+          start_date=START_DATE)
 
 
 def verify_params(test_mode, **kwargs):
@@ -99,7 +99,8 @@ def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
 def get_all_need_delete_results(test_mode, **kwargs):
     delta_time = verify_params(test_mode, **kwargs) - DATA_STORAGE_MARGIN
     delta = relativedelta.relativedelta(days=delta_time)
-    end_date = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - delta
+    end_date = datetime.now(tz=TIMEZONE).replace(
+        hour=0, minute=0, second=0, microsecond=0) - delta
     _logger.info("Get End Date Time: {}".format(datetime.isoformat(end_date)))
     results = get_all_results(end_date=end_date, limit=LIMIT)
     return results, end_date
@@ -149,12 +150,15 @@ def clear_tasks(start_date=None, end_date=None, session=None):
 def do_saic_data_retention_policy_task(test_mode, **kwargs):
     results, end_date = get_all_need_delete_results(test_mode, **kwargs)
     need_delete_curve_files = get_all_need_delete_curves(results)
-    _logger.info("Try To Remove Object: {}".format(','.join(need_delete_curve_files)))
+    _logger.info("Try To Remove Object: {}".format(
+        ','.join(need_delete_curve_files)))
     ret = clear_tasks(end_date=end_date, limit=LIMIT)
     _logger.info("Clear Task Return: {}".format(ret))
     clear_curve_files(need_delete_curve_files)
 
 
-auto_vacuum_task = PythonOperator(provide_context=True,
-                                  task_id='auto_vacuum_task', dag=dag,
-                                  python_callable=do_saic_data_retention_policy_task)
+auto_vacuum_task = PythonOperator(
+    provide_context=True,
+    task_id='auto_vacuum_task',
+    dag=dag,
+    python_callable=do_saic_data_retention_policy_task)

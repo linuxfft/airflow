@@ -27,30 +27,40 @@ def on_dag_success(context):
     _logger.info("{0} Run Success".format(context))
 
 
-dag = DAG(
-    dag_id='publish_result_dag',
-    description=u'上汽拧紧曲线分析结果推送',
-    schedule_interval=schedule_interval,
-    default_args={
-        'owner': 'desoutter',
-        'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 4,
-        'retry_delay': timedelta(minutes=2),
-        'on_failure_callback': on_dag_fail,
-        'on_success_callback': on_dag_success,
-        'on_retry_callback': None,
-        'trigger_rule': 'all_success'
-    },
-    max_active_runs=64,
-    concurrency=64)
+dag = DAG(dag_id='publish_result_dag',
+          description=u'上汽拧紧曲线分析结果推送',
+          schedule_interval=schedule_interval,
+          default_args={
+              'owner':
+              'desoutter',
+              'depends_on_past':
+              False,
+              'start_date':
+              dt.datetime(2020,
+                          1,
+                          1,
+                          tzinfo=pendulum.timezone("Asia/Shanghai")),
+              'email': ['support@desoutter.cn'],
+              'email_on_failure':
+              False,
+              'email_on_retry':
+              False,
+              'retries':
+              4,
+              'retry_delay':
+              timedelta(minutes=2),
+              'on_failure_callback':
+              on_dag_fail,
+              'on_success_callback':
+              on_dag_success,
+              'on_retry_callback':
+              None,
+              'trigger_rule':
+              'all_success'
+          },
+          max_active_runs=64,
+          concurrency=64)
 
-
-publish_task = PublishResultOperator(
-    provide_context=True,
-    task_id='publish_result_task',
-    dag=dag
-)
+publish_task = PublishResultOperator(provide_context=True,
+                                     task_id='publish_result_task',
+                                     dag=dag)

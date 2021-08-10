@@ -12,8 +12,6 @@ def load_data_from_csv(file_name: str, data_keys=None) -> list:
         for row in reader:
             row_data = {}
             for k, v in data_keys.items():
-                row_data.update({
-                    k: row[v]
-                })
+                row_data.update({k: row[v]})
             data.append(row_data)
         return data

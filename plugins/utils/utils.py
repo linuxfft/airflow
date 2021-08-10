@@ -7,13 +7,10 @@ import json
 from typing import Optional
 from airflow.exceptions import AirflowNotFoundException, AirflowConfigException
 from plugins.models.curve_template import CurveTemplateModel
+
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
-CRAFT_TYPE_MAP = {
-    '1': 1,
-    '2': 2,
-    '4': 4
-}
+CRAFT_TYPE_MAP = {'1': 1, '2': 2, '4': 4}
 
 CURVE_MODE_MAP = {
     'OK': 0,
@@ -40,9 +37,8 @@ def ensure_int(num):
 
 def get_craft_type(nut_no: str) -> Optional[int]:
     template_data = CurveTemplateModel.get_fuzzy_active(nut_no,
-                                              deserialize_json=True,
-                                              default_var=None
-                                              )[1]
+                                                        deserialize_json=True,
+                                                        default_var=None)[1]
     ret = template_data.get('craft_type', None)
     if ret:
         return ret
@@ -80,11 +76,9 @@ def generate_curve_name(nut_no):
 def get_curve_params(bolt_number):
     curve_name = generate_curve_name(bolt_number)
     try:
-        return CurveTemplateModel.get_fuzzy_active(
-            curve_name,
-            deserialize_json=True,
-            default_var={}
-        )[1]
+        return CurveTemplateModel.get_fuzzy_active(curve_name,
+                                                   deserialize_json=True,
+                                                   default_var={})[1]
     except Exception as e:
         _logger.error("cannot get curve params :{0} ".format(repr(e)))
         return {}
@@ -139,7 +133,8 @@ def get_curve_entity_ids(bolt_number=None, craft_type=None):
     return list(map(lambda ti: ti.entity_id, tasks))
 
 
-def trigger_push_result_to_mq(data_type, result, entity_id, verify_error, curve_mode):
+def trigger_push_result_to_mq(data_type, result, entity_id, verify_error,
+                              curve_mode):
     if isinstance(curve_mode, str):
         curve_mode = json.loads(curve_mode)
     if isinstance(curve_mode, int):
@@ -167,7 +162,9 @@ def trigger_training_dag(entity_id, final_state, error_tags):
         'final_state': final_state,
         'error_tags': error_tags
     }
-    trigger.trigger_dag(trigger_training_dag_id, conf=conf, replace_microseconds=False)
+    trigger.trigger_dag(trigger_training_dag_id,
+                        conf=conf,
+                        replace_microseconds=False)
 
 
 def get_result(entity_id):
@@ -196,7 +193,8 @@ def get_curve(entity_id):
 
 
 def should_trigger_training(result, final_state, analysis_mode, train_mode):
-    ENV_TRIGGER_TRAINING_MODE = os.environ.get('TRIGGER_TRAINING_MODE', 'ANALYSIS_ERROR')
+    ENV_TRIGGER_TRAINING_MODE = os.environ.get('TRIGGER_TRAINING_MODE',
+                                               'ANALYSIS_ERROR')
     # ANALYSIS_ERROR, ALWAYS, DIFFERENT_MODE
     if ENV_TRIGGER_TRAINING_MODE == 'ALWAYS':
         return True

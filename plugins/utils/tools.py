@@ -25,7 +25,9 @@ class _LogTracer(object):
         if not self.deep and self.first_frame != frame.f_code:
             return self.tracer
 
-        if frame.f_code.co_name in ['<genexpr>', '__getattr__', '__iter__', '__init__']:
+        if frame.f_code.co_name in [
+                '<genexpr>', '__getattr__', '__iter__', '__init__'
+        ]:
             return
 
         if 'self' not in frame.f_locals:
@@ -76,8 +78,12 @@ class _LogTracer(object):
         return self.tracer
 
 
-def profile(method=None, whitelist=None, blacklist=(None,), files=None,
-            minimum_time=0, minimum_queries=0):
+def profile(method=None,
+            whitelist=None,
+            blacklist=(None, ),
+            files=None,
+            minimum_time=0,
+            minimum_queries=0):
     """
         Decorate an entry point method.
         If profile is used without params, log as shallow mode else, log
@@ -123,7 +129,10 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
     deep = not method
 
     def _odooProfile(method, *args, **kwargs):
-        log_tracer = _LogTracer(whitelist=whitelist, blacklist=blacklist, files=files, deep=deep)
+        log_tracer = _LogTracer(whitelist=whitelist,
+                                blacklist=blacklist,
+                                files=files,
+                                deep=deep)
         sys.settrace(log_tracer.tracer)
         try:
             result = method(*args, **kwargs)
@@ -148,14 +157,18 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
                 v['report'][call['lineno']]['nb'] += 1
 
                 n = k + 1
-                while k + 1 <= l and v['calls'][k + 1]['callno'] != call['callno']:
+                while k + 1 <= l and v['calls'][k +
+                                                1]['callno'] != call['callno']:
                     n += 1
                 if n >= l:
                     continue
                 next_call = v['calls'][n]
                 if next_call['queries'] is not None:
-                    v['report'][call['lineno']]['nb_queries'] += next_call['queries'] - call.get('queries', 0)
-                v['report'][call['lineno']]['delay'] += next_call['time'] - call['time']
+                    v['report'][call['lineno']][
+                        'nb_queries'] += next_call['queries'] - call.get(
+                            'queries', 0)
+                v['report'][call['lineno']][
+                    'delay'] += next_call['time'] - call['time']
 
             queries = 0
             delay = 0
@@ -169,25 +182,27 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
                 continue
 
             # todo: no color if output in a file
-            log.append("\033[1;33m%s %s--------------------- %s, %s\033[1;0m\n\n" % (
-            v['model'] or '', '-' * (15 - len(v['model'] or '')), v['filename'], v['firstline']))
+            log.append(
+                "\033[1;33m%s %s--------------------- %s, %s\033[1;0m\n\n" %
+                (v['model'] or '', '-' *
+                 (15 - len(v['model'] or '')), v['filename'], v['firstline']))
             for lineno, line in enumerate(v['code']):
                 if (lineno + v['firstline']) in v['report']:
                     data = v['report'][lineno + v['firstline']]
-                    log.append("%-10s%-10s%-10s%s" % (
-                        str(data['nb']) if 'nb_queries' in data else '.',
-                        str(data.get('nb_queries', '')),
-                        str(round(data['delay'] * 100000) / 100) if 'delay' in data else '',
-                        line[:-1]))
+                    log.append(
+                        "%-10s%-10s%-10s%s" %
+                        (str(data['nb']) if 'nb_queries' in data else '.',
+                         str(data.get('nb_queries', '')),
+                         str(round(data['delay'] * 100000) /
+                             100) if 'delay' in data else '', line[:-1]))
                 else:
                     log.append(" " * 30)
                     log.append(line[:-1])
                 log.append('\n')
 
-            log.append("\nTotal:\n%-10s%-10d%-10s\n\n" % (
-                str(data['nb']),
-                queries,
-                str(round(delay * 100000) / 100)))
+            log.append(
+                "\nTotal:\n%-10s%-10d%-10s\n\n" %
+                (str(data['nb']), queries, str(round(delay * 100000) / 100)))
 
         _logger.info(''.join(log))
 

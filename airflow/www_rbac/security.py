@@ -48,16 +48,8 @@ from airflow.www_rbac.utils import CustomSQLAInterface
 from airflow.settings import TIMEZONE
 
 EXISTING_ROLES = {
-    'Admin',
-    'Viewer',
-    'User',
-    'Op',
-    'Public',
-    '工段长',
-    'ME工程师',
-    '运维人员'
+    'Admin', 'Viewer', 'User', 'Op', 'Public', '工段长', 'ME工程师', '运维人员'
 }
-
 
 ENV_SUC_CRCCODE_KEY = os.getenv('ENV_SUC_CRCCODE_KEY', 'crccode')
 ENV_SUC_ROOT_URL = os.getenv('ENV_SUC_ROOT_URL', 'http://localhost:8080')
@@ -66,7 +58,9 @@ ENV_PORTAL_INDEX_URL = os.getenv(
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 
-@retry(wait=wait_exponential(multiplier=1, max=3), stop=stop_after_delay(5), retry=retry_if_exception_type())
+@retry(wait=wait_exponential(multiplier=1, max=3),
+       stop=stop_after_delay(5),
+       retry=retry_if_exception_type())
 def doGetLoginInfo(crcCode: str) -> Optional[Dict]:
     url = "{}/{}".format(ENV_SUC_ROOT_URL, "accounts/crcCodeLogin")
     try:
@@ -96,30 +90,32 @@ class CustomAuthDBView(AuthDBView):
         ret = super(CustomAuthDBView, self).login()
         msg = ''
         if not current_user.is_active:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           'null', 'null',
-                                           CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
+            msg = CUSTOM_LOG_FORMAT.format(
+                datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                'null', 'null', CUSTOM_EVENT_NAME_MAP['VIEW'],
+                CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
         else:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user,  getattr(
-                                               current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
+            msg = CUSTOM_LOG_FORMAT.format(
+                datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                current_user, getattr(current_user, 'last_name',
+                                      ''), CUSTOM_EVENT_NAME_MAP['LOGIN'],
+                CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
         logging.info(msg)
         return ret
 
     @expose("/logout/")
     def logout(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(
-                                           current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['LOGOUT'],
+            CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
         ret = super(CustomAuthDBView, self).logout()
         logging.info(msg)
         return ret
 
 
 class SUCUser(models.User):
-
     def __init__(self, user):
         self.user = user
 
@@ -156,7 +152,8 @@ class SUCUser(models.User):
 
     def __getattribute__(self, name):
         if name == 'last_name':
-            return getattr(self.user, 'last_name', '') or getattr(self.user, 'username', '')
+            return getattr(self.user, 'last_name', '') or getattr(
+                self.user, 'username', '')
         return super(SUCUser, self).__getattribute__(name)
 
 
@@ -168,14 +165,16 @@ class AuthOAuthView(AV):
     @expose("/login/<provider>/<register>")
     @provide_session
     def login(self, provider=None, register=None, session=None):
-        crc_code = request.args.get(
-            'crccode', None) or request.args.get('crcCode', None)
+        crc_code = request.args.get('crccode', None) or request.args.get(
+            'crcCode', None)
         if not crc_code:
-            return super(AuthOAuthView, self).login(provider=provider, register=register)
+            return super(AuthOAuthView, self).login(provider=provider,
+                                                    register=register)
         userinfo = doGetLoginInfo(crc_code)
         # userinfo = {'username': "1312321", 'email': "123213", 'last_name': "12312323"}
         if not userinfo:
-            return super(AuthOAuthView, self).login(provider=provider, register=register)
+            return super(AuthOAuthView, self).login(provider=provider,
+                                                    register=register)
         user = self.appbuilder.sm.auth_user_oauth(userinfo)
 
         session.merge(user)
@@ -185,14 +184,16 @@ class AuthOAuthView(AV):
         msg = ''
         try:
             if not current_user.is_active:
-                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               'null', 'null',
-                                               CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
+                msg = CUSTOM_LOG_FORMAT.format(
+                    datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                    'null', 'null', CUSTOM_EVENT_NAME_MAP['VIEW'],
+                    CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
             else:
-                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               current_user,  getattr(
-                                                   current_user, 'last_name', ''),
-                                               CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
+                msg = CUSTOM_LOG_FORMAT.format(
+                    datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                    current_user, getattr(current_user, 'last_name',
+                                          ''), CUSTOM_EVENT_NAME_MAP['LOGIN'],
+                    CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
         except AttributeError as err:
             logging.error(err)
         logging.info(msg)
@@ -200,10 +201,11 @@ class AuthOAuthView(AV):
 
     @expose("/logout/")
     def logout(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(
-                                           current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
+        msg = CUSTOM_LOG_FORMAT.format(
+            datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+            current_user, getattr(current_user, 'last_name',
+                                  ''), CUSTOM_EVENT_NAME_MAP['LOGOUT'],
+            CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
         logging.info(msg)
         logout_user()
         if ENV_PORTAL_INDEX_URL and RUNTIME_ENV == 'prod':
@@ -308,9 +310,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
     }
 
     # global view-menu for dag-level access
-    DAG_VMS = {
-        'all_dags'
-    }
+    DAG_VMS = {'all_dags'}
 
     WRITE_DAG_PERMS = {
         'can_dag_edit',
@@ -323,24 +323,13 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
     DAG_PERMS = WRITE_DAG_PERMS | READ_DAG_PERMS
 
     TIGHTENING_VMS = {
-        '管理',
-        '拧紧控制器',
-        '变量',
-        'ErrorTagModelView',
-        'VariableModelView',
+        '管理', '拧紧控制器', '变量', 'ErrorTagModelView', 'VariableModelView',
         'TighteningControllerView'
     }
 
     BASE_VMS = {
-        'Airflow',
-        'DagModelView',
-        '浏览',
-        'DAG运行',
-        'DagRunModelView',
-        '任务实例',
-        'TaskInstanceModelView',
-        'Analysis',
-        '分析'
+        'Airflow', 'DagModelView', '浏览', 'DAG运行', 'DagRunModelView', '任务实例',
+        'TaskInstanceModelView', 'Analysis', '分析'
     }
 
     BASE_PERMS = {
@@ -371,20 +360,14 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         'ErrorTagModelView',
         'VariableModelView',
         'TighteningControllerView',
-
     }
 
     TIGHTENING_PERMS = {
-        'menu_access',
-        'can_list',
-        'can_show',
-        'can_view_curve_page'
+        'menu_access', 'can_list', 'can_show', 'can_view_curve_page'
     }
 
     VERIFY_PERMS = {
-        'can_view_curves',
-        'can_view_curve_template',
-        'set_final_state_ok',
+        'can_view_curves', 'can_view_curve_template', 'set_final_state_ok',
         'set_final_state_nok'
     }
 
@@ -415,13 +398,18 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         },
         {
             'role': 'ME工程师',
-            'perms': BASE_PERMS | TIGHTENING_PERMS | READ_DAG_PERMS | VERIFY_PERMS,
+            'perms':
+            BASE_PERMS | TIGHTENING_PERMS | READ_DAG_PERMS | VERIFY_PERMS,
             'vms': BASE_VMS | DAG_VMS | TIGHTENING_VMS,
         },
         {
-            'role': '运维人员',
-            'perms': BASE_PERMS | MAINTAIN_PERMS | DAG_PERMS | VIEWER_PERMS | OP_PERMS | USER_PERMS,
-            'vms': BASE_VMS | MAINTAIN_VMS | DAG_VMS | VIEWER_VMS | OP_VMS
+            'role':
+            '运维人员',
+            'perms':
+            BASE_PERMS | MAINTAIN_PERMS | DAG_PERMS | VIEWER_PERMS | OP_PERMS
+            | USER_PERMS,
+            'vms':
+            BASE_VMS | MAINTAIN_VMS | DAG_VMS | VIEWER_VMS | OP_VMS
         },
     ]
 
@@ -460,7 +448,8 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
 
         if len(role.permissions) == 0:
             self.log.info(
-                'Initializing permissions for role:%s in the database.', role_name)
+                'Initializing permissions for role:%s in the database.',
+                role_name)
             role_pvms = set()
             for pvm in pvms:
                 if pvm.view_menu.name in role_vms and pvm.permission.name in role_perms:
@@ -469,8 +458,9 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
             self.get_session.merge(role)
             self.get_session.commit()
         else:
-            self.log.debug('Existing permissions for the role:%s '
-                           'within the database will persist.', role_name)
+            self.log.debug(
+                'Existing permissions for the role:%s '
+                'within the database will persist.', role_name)
 
     def get_user_roles(self, user=None):
         """
@@ -493,7 +483,8 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         """
         perms_views = set()
         for role in self.get_user_roles():
-            perms_views.update({(perm_view.permission.name, perm_view.view_menu.name)
+            perms_views.update({(perm_view.permission.name,
+                                 perm_view.view_menu.name)
                                 for perm_view in role.permissions})
         return perms_views
 
@@ -517,7 +508,9 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
 
         user_perms_views = self.get_all_permissions_views()
         # return a set of all dags that the user could access
-        return set([view for perm, view in user_perms_views if perm in self.DAG_PERMS])
+        return set([
+            view for perm, view in user_perms_views if perm in self.DAG_PERMS
+        ])
 
     def has_access(self, permission, view_name, user=None):
         """
@@ -572,10 +565,9 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         2. Has can_dag_read permission on all_dags view.
         3. Has can_dag_edit permission on all_dags view.
         """
-        return (
-            self._has_role(['Admin', 'Viewer', 'Op', 'User']) or
-            self._has_perm('can_dag_read', 'all_dags') or
-            self._has_perm('can_dag_edit', 'all_dags'))
+        return (self._has_role(['Admin', 'Viewer', 'Op', 'User'])
+                or self._has_perm('can_dag_read', 'all_dags')
+                or self._has_perm('can_dag_edit', 'all_dags'))
 
     def clean_perms(self):
         """
@@ -584,12 +576,11 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         self.log.info('Cleaning faulty perms')
         sesh = self.get_session
         pvms = (
-            sesh.query(sqla_models.PermissionView)
-                .filter(or_(
-                sqla_models.PermissionView.permission == None,  # NOQA
-                sqla_models.PermissionView.view_menu == None,  # NOQA
-            ))
-        )
+            sesh.query(sqla_models.PermissionView).filter(
+                or_(
+                    sqla_models.PermissionView.permission == None,  # NOQA
+                    sqla_models.PermissionView.view_menu == None,  # NOQA
+                )))
         # Since FAB doesn't define ON DELETE CASCADE on these tables, we need
         # to delete the _object_ so that SQLA knows to delete the many-to-many
         # relationship object too. :(
@@ -666,7 +657,8 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         user_role = self.find_role('User')
 
         dag_role = [
-            role for role in all_roles if role.name not in EXISTING_ROLES]
+            role for role in all_roles if role.name not in EXISTING_ROLES
+        ]
         update_perm_views = []
 
         # need to remove all_dag vm from all the existing view-menus
@@ -689,17 +681,19 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
             existing_perm_view_by_user = self.get_session.query(ab_perm_view_role) \
                 .filter(ab_perm_view_role.columns.role_id == role.id)
 
-            existing_perms_views = set([pv.permission_view_id
-                                        for pv in existing_perm_view_by_user])
+            existing_perms_views = set(
+                [pv.permission_view_id for pv in existing_perm_view_by_user])
             missing_perm_views = all_perm_views - existing_perms_views
 
             for perm_view_id in missing_perm_views:
-                update_perm_views.append({'permission_view_id': perm_view_id,
-                                          'role_id': role.id})
+                update_perm_views.append({
+                    'permission_view_id': perm_view_id,
+                    'role_id': role.id
+                })
 
         if update_perm_views:
-            self.get_session.execute(
-                ab_perm_view_role.insert(), update_perm_views)
+            self.get_session.execute(ab_perm_view_role.insert(),
+                                     update_perm_views)
         self.get_session.commit()
 
     def update_admin_perm_view(self):
@@ -711,12 +705,13 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         :return: None.
         """
         all_dag_view = self.find_view_menu('all_dags')
-        dag_perm_ids = [self.find_permission(
-            'can_dag_edit').id, self.find_permission('can_dag_read').id]
+        dag_perm_ids = [
+            self.find_permission('can_dag_edit').id,
+            self.find_permission('can_dag_read').id
+        ]
         pvms = self.get_session.query(sqla_models.PermissionView).filter(~and_(
             sqla_models.PermissionView.permission_id.in_(dag_perm_ids),
-            sqla_models.PermissionView.view_menu_id != all_dag_view.id)
-        ).all()
+            sqla_models.PermissionView.view_menu_id != all_dag_view.id)).all()
 
         pvms = [p for p in pvms if p.permission and p.view_menu]
 
@@ -780,14 +775,12 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
             {'can_dag_read'}
         :type access_control: dict
         """
-
         def _get_or_create_dag_permission(perm_name):
             dag_perm = self.find_permission_view_menu(perm_name, dag_id)
             if not dag_perm:
-                self.log.info("Creating new permission '{}' on view '{}'".format(
-                    perm_name,
-                    dag_id
-                ))
+                self.log.info(
+                    "Creating new permission '{}' on view '{}'".format(
+                        perm_name, dag_id))
                 dag_perm = self.add_permission_view_menu(perm_name, dag_id)
 
             return dag_perm
@@ -795,16 +788,15 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         def _revoke_stale_permissions(dag_view):
             existing_dag_perms = self.find_permissions_view_menu(dag_view)
             for perm in existing_dag_perms:
-                non_admin_roles = [role for role in perm.role
-                                   if role.name != 'Admin']
+                non_admin_roles = [
+                    role for role in perm.role if role.name != 'Admin'
+                ]
                 for role in non_admin_roles:
                     target_perms_for_role = access_control.get(role.name, {})
                     if perm.permission.name not in target_perms_for_role:
-                        self.log.info("Revoking '{}' on DAG '{}' for role '{}'".format(
-                            perm.permission,
-                            dag_id,
-                            role.name
-                        ))
+                        self.log.info(
+                            "Revoking '{}' on DAG '{}' for role '{}'".format(
+                                perm.permission, dag_id, role.name))
                         self.del_permission_role(role, perm)
 
         dag_view = self.find_view_menu(dag_id)
@@ -817,8 +809,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
                 raise AirflowException(
                     "The access_control mapping for DAG '{}' includes a role "
                     "named '{}', but that role does not exist".format(
-                        dag_id,
-                        rolename))
+                        dag_id, rolename))
 
             perms = set(perms)
             invalid_perms = perms - self.DAG_PERMS
@@ -826,8 +817,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
                 raise AirflowException(
                     "The access_control map for DAG '{}' includes the following "
                     "invalid permissions: {}; The set of valid permissions "
-                    "is: {}".format(dag_id,
-                                    (perms - self.DAG_PERMS),
+                    "is: {}".format(dag_id, (perms - self.DAG_PERMS),
                                     self.DAG_PERMS))
 
             for perm_name in perms:
@@ -841,5 +831,4 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         # create perm for global logical dag
         for dag_vm in self.DAG_VMS:
             for perm in self.DAG_PERMS:
-                self._merge_perm(permission_name=perm,
-                                 view_menu_name=dag_vm)
+                self._merge_perm(permission_name=perm, view_menu_name=dag_vm)
