@@ -63,7 +63,8 @@ class ClsResultStorage(ClsEntity):
                 raise Exception("entity id Is Required!")
             result_body: Optional[Dict] = data  # 之前验证过了 无需再验证有效性
             step_results = data.get("step_results")
-            if step_results and (isinstance(step_results, list) or isinstance(step_results, dict)):
+            if step_results and (isinstance(step_results, list)
+                                 or isinstance(step_results, dict)):
                 step_results = json.dumps(step_results, ensure_ascii=False)
             update_time = data.get("update_time")
             if update_time and isinstance(update_time, str):
@@ -76,7 +77,8 @@ class ClsResultStorage(ClsEntity):
             })
             return self._write(result_body)
         except Exception as err:
-            raise Exception(u"写入结果失败: {}, result: {}".format(repr(err), repr(data)))
+            raise Exception(u"写入结果失败: {}, result: {}".format(
+                repr(err), repr(data)))
 
     def query_results(self):
         if not self.entity_id:

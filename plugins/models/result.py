@@ -9,14 +9,15 @@ from airflow import settings
 from distutils.util import strtobool
 from sqlalchemy import text
 import os
-ENV_TIMESCALE_ENABLE = strtobool(os.environ.get('ENV_TIMESCALE_ENABLE', 'false'))
+
+ENV_TIMESCALE_ENABLE = strtobool(
+    os.environ.get('ENV_TIMESCALE_ENABLE', 'false'))
 
 
 class ResultModel(Base):
     """
     result
     """
-
     def __repr__(self):
         return self.entity_id
 
@@ -120,5 +121,7 @@ class ResultModelPlugin(AirflowPlugin):
             if not ENV_TIMESCALE_ENABLE:
                 return
             with engine.connect().execution_options(autocommit=True) as conn:
-                conn.execute(text(
-                    f'''SELECT create_hypertable('{ResultModel.__tablename__}', 'update_time','tool_sn', 4, chunk_time_interval => INTERVAL '1 month', migrate_data => TRUE);'''))
+                conn.execute(
+                    text(
+                        f'''SELECT create_hypertable('{ResultModel.__tablename__}', 'update_time','tool_sn', 4, chunk_time_interval => INTERVAL '1 month', migrate_data => TRUE);'''
+                    ))

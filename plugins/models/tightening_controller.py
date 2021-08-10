@@ -21,10 +21,19 @@ class TighteningController(Base):
     work_center_code = Column(String(1000), nullable=False)
     work_center_name = Column(String(1000), nullable=True)
     device_type = relationship('models.device_type.DeviceTypeModel')
-    device_type_id = Column(Integer, ForeignKey('device_type.id'), nullable=False)
+    device_type_id = Column(Integer,
+                            ForeignKey('device_type.id'),
+                            nullable=False)
 
-    def __init__(self, *args, controller_name=None, line_code=None, line_name=None, work_center_code=None,
-                 work_center_name=None, device_type_id=None, **kwargs):
+    def __init__(self,
+                 *args,
+                 controller_name=None,
+                 line_code=None,
+                 line_name=None,
+                 work_center_code=None,
+                 work_center_name=None,
+                 device_type_id=None,
+                 **kwargs):
         super(TighteningController, self).__init__(*args, **kwargs)
         self.controller_name = controller_name
         self.line_code = line_code
@@ -43,7 +52,8 @@ class TighteningController(Base):
     @classmethod
     @provide_session
     def find_controller(cls, controller_name, session=None):
-        obj = session.query(cls).filter(cls.controller_name == controller_name).first()
+        obj = session.query(cls).filter(
+            cls.controller_name == controller_name).first()
         if obj is None:
             return {}
         return {
@@ -63,17 +73,21 @@ class TighteningController(Base):
 
     @classmethod
     @provide_session
-    def add_controller(cls, controller_name, line_code, work_center_code, line_name=None, work_center_name=None,
+    def add_controller(cls,
+                       controller_name,
+                       line_code,
+                       work_center_code,
+                       line_name=None,
+                       work_center_name=None,
                        device_type_id=None,
                        session=None):
-        session.add(TighteningController(
-            controller_name=controller_name,
-            line_code=line_code,
-            work_center_code=work_center_code,
-            line_name=line_name,
-            work_center_name=work_center_name,
-            device_type_id=device_type_id
-        ))
+        session.add(
+            TighteningController(controller_name=controller_name,
+                                 line_code=line_code,
+                                 work_center_code=work_center_code,
+                                 line_name=line_name,
+                                 work_center_name=work_center_name,
+                                 device_type_id=device_type_id))
 
 
 # Defining the plugin class
@@ -83,5 +97,6 @@ class TighteningControllerModelPlugin(AirflowPlugin):
     @classmethod
     def on_load(cls):
         engine = settings.engine
-        if not engine.dialect.has_table(engine, TighteningController.__tablename__):
+        if not engine.dialect.has_table(engine,
+                                        TighteningController.__tablename__):
             Base.metadata.create_all(engine)
