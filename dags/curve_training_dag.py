@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from plugins.utils.logger import generate_logger
+from airflowplugins.utils.logger import generate_logger
 import os
 from airflow.models import DAG, DagRun
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
@@ -9,7 +9,7 @@ from datetime import timedelta
 from airflow.operators.python_operator import PythonOperator
 import datetime as dt
 import pendulum
-from plugins.utils.utils import get_craft_type, \
+from airflowplugins.utils.utils import get_craft_type, \
     generate_bolt_number, get_curve_params, get_result, get_curve, trigger_push_result_to_mq, get_curve_mode, \
     should_trigger_training
 
@@ -95,7 +95,7 @@ def do_trigger_training(result, final_state):
     }
     data.update(task_param)
     data.update(curve_params)
-    from plugins.cas.cas_plugin import CasHook
+    from airflowplugins.cas.cas_plugin import CasHook
     cas = CasHook(role='training')
     cas.trigger_training(data)
 
@@ -129,7 +129,7 @@ def trigger_training_task(task_instance, **kwargs):
     else:
         _logger.info('training skipped, saving error tag')
 
-    from plugins.result_storage.result_storage_plugin import ResultStorageHook
+    from airflowplugins.result_storage.result_storage_plugin import ResultStorageHook
     ResultStorageHook.save_final_state(
         entity_id,
         final_state,

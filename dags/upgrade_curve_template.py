@@ -11,12 +11,12 @@ import logging
 import pika
 from typing import Optional
 from airflow.models import DAG
-from plugins.models.curve_template import CurveTemplateModel
+from airflowplugins.models.curve_template import CurveTemplateModel
 from typing import Dict
 from airflow.operators.python_operator import PythonOperator
-from plugins.entities.redis import ClsRedisConnection, gen_template_key
-from plugins.entities.result_mq import ClsResultMQ
-from plugins.utils.utils import parse_template_name
+from airflowplugins.entities.redis import ClsRedisConnection, gen_template_key
+from airflowplugins.entities.result_mq import ClsResultMQ
+from airflowplugins.utils.utils import parse_template_name
 
 CURVE_TEMPLATE_UPGRADE_TASK = 'curve_template_upgrade'
 

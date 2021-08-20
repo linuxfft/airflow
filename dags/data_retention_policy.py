@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 from airflow.models import DAG, Log, TaskFail, XCom, DagRun
 from airflow.settings import TIMEZONE
-from plugins.entities.curve_storage import ClsCurveStorage
-from plugins.utils.utils import get_curve_args
+from airflowplugins.entities.curve_storage import ClsCurveStorage
+from airflowplugins.utils.utils import get_curve_args
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import TaskInstance
 from datetime import datetime, timedelta
@@ -86,7 +86,7 @@ def verify_params(test_mode, **kwargs):
 
 @provide_session
 def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
-    from plugins.models.result import ResultModel
+    from airflowplugins.models.result import ResultModel
     qry = session.query(ResultModel).limit(limit).from_self()
     if start_date:
         qry = qry.filter(ResultModel.update_time >= start_date)

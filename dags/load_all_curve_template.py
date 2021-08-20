@@ -8,12 +8,12 @@ from airflow.models import DAG
 from airflow.operators.python_operator import PythonOperator
 from typing import Dict
 import logging
-from plugins.utils.utils import get_curve_template_name
-from plugins.models.curve_template import CurveTemplateModel
+from airflowplugins.utils.utils import get_curve_template_name
+from airflowplugins.models.curve_template import CurveTemplateModel
 import asyncio
-from plugins.entities.redis import ClsRedisConnection
-from plugins.utils.utils import parse_template_name
-from plugins.cas.cas_plugin import CasHook
+from airflowplugins.entities.redis import ClsRedisConnection
+from airflowplugins.utils.utils import parse_template_name
+from airflowplugins.cas.cas_plugin import CasHook
 
 CURVE_MODE_MAP = {
     'OK': 0,

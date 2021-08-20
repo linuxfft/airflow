@@ -1,9 +1,9 @@
-from plugins.utils.logger import generate_logger
+from airflowplugins.utils.logger import generate_logger
 import os
 from airflow.models import DAG
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from datetime import timedelta
-from plugins.publish_result.publish_result_plugin import PublishResultOperator
+from airflowplugins.publish_result.publish_result_plugin import PublishResultOperator
 import datetime as dt
 import pendulum
 

@@ -4,7 +4,7 @@ from datetime import timedelta
 from airflow.models import DAG
 import pendulum
 from airflow.operators.python_operator import PythonOperator
-from plugins.utils.logger import generate_logger
+from airflowplugins.utils.logger import generate_logger
 
 # MAX_ACTIVE_ANALYSIS = os.environ.get('MAX_ACTIVE_ANALYSIS', 100)
 MAX_ACTIVE_ANALYSIS = 8
@@ -13,10 +13,10 @@ _logger = generate_logger(__name__)
 
 
 def on_curve_receive(**kwargs):
-    from plugins.result_storage.result_storage_plugin import ResultStorageHook
+    from airflowplugins.result_storage.result_storage_plugin import ResultStorageHook
     params = getattr(kwargs.get('dag_run'), 'conf')
     params = ResultStorageHook.on_curve_receive(params)
-    from plugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeHook
+    from airflowplugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeHook
     TriggerAnalyzeHook.trigger_analyze(params)
 
 

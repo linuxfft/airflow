@@ -51,7 +51,7 @@ from flask_appbuilder.security.views import AuthOAuthView as AV
 import sys
 import logging
 logging.info(sys.path)
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
+from airflowplugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 from flask_login import login_user, logout_user, current_user
 from flask import redirect, url_for
 from pprint import pformat

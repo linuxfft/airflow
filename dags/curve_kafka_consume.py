@@ -6,8 +6,8 @@ from airflow.models import DAG
 from airflow.models.connection import Connection
 import pendulum
 from airflow.operators.python_operator import PythonOperator
-from plugins.entities.kafka_consumer import ClsKafkaConsumer
-from plugins.utils.logger import generate_logger
+from airflowplugins.entities.kafka_consumer import ClsKafkaConsumer
+from airflowplugins.utils.logger import generate_logger
 
 _logger = generate_logger(__name__)
 
@@ -40,9 +40,9 @@ def curve_data_handler(msg):
                 'conf': msg
             }
         }
-        from plugins.result_storage.result_storage_plugin import ResultStorageHook
+        from airflowplugins.result_storage.result_storage_plugin import ResultStorageHook
         params = ResultStorageHook.on_curve_receive(True, data)
-        from plugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeHook
+        from airflowplugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeHook
         TriggerAnalyzeHook.trigger_analyze(params)
     except Exception as e:
         _logger.error(repr(e))

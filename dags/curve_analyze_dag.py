@@ -3,9 +3,9 @@ from airflow.models import DAG
 import datetime as dt
 from datetime import timedelta
 import pendulum
-from plugins.utils.logger import generate_logger
+from airflowplugins.utils.logger import generate_logger
 from distutils.util import strtobool
-from plugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeOperator
+from airflowplugins.trigger_analyze.trigger_analyze_plugin import TriggerAnalyzeOperator
 
 _logger = generate_logger(__name__)
 
@@ -49,7 +49,7 @@ trigger_anay_task = TriggerAnalyzeOperator(
 # https://airflow.apache.org/docs/apache-airflow/1.10.12/executor/debug.html
 if __name__ == '__main__':
     from tests.curve_dags.test_trigger import body
-    from plugins.result_storage.result_storage_plugin import ResultStorageHook
+    from airflowplugins.result_storage.result_storage_plugin import ResultStorageHook
 
     params = ResultStorageHook.on_curve_receive(body.get('conf'))
     dag.clear()
