@@ -48,10 +48,12 @@ from airflow.www.views import (
     CustomViewMenuModelView,
 )
 from flask_appbuilder.security.views import AuthOAuthView as AV
+import sys
+import logging
+logging.info(sys.path)
 from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 from flask_login import login_user, logout_user, current_user
 from flask import redirect, url_for
-import logging
 from pprint import pformat
 from tenacity import retry, wait_exponential, retry_if_exception_type, stop_after_delay
 import requests
@@ -63,7 +65,6 @@ from flask_appbuilder.security.views import expose
 from flask import g
 from flask_appbuilder.security.views import AuthDBView
 from datetime import datetime
-from airflow import models
 from airflow.utils.db import provide_session
 from airflow.settings import TIMEZONE
 
