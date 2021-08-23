@@ -821,7 +821,7 @@ PREINSTALLED_PROVIDERS = [
     'ftp',
     # 'http',
     'imap',
-    'sqlite',
+    'sqlite'
 ]
 
 
