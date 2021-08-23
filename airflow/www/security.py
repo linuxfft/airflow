@@ -63,7 +63,6 @@ from flask_appbuilder.security.views import expose
 from flask import g
 from flask_appbuilder.security.views import AuthDBView
 from datetime import datetime
-from airflow import models
 from airflow.utils.db import provide_session
 from airflow.settings import TIMEZONE
 
