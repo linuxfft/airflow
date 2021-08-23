@@ -822,6 +822,8 @@ PREINSTALLED_PROVIDERS = [
     # 'http',
     'imap',
     'sqlite',
+    'redis',
+    'kafka',
 ]
 
 
