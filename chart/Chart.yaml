@@ -24,7 +24,7 @@ appVersion: 2.0.2
 description: Helm chart to deploy Apache Airflow, a platform to
   programmatically author, schedule, and monitor workflows
 home: https://airflow.apache.org/
-icon: https://airflow.apache.org/docs/apache-airflow/stable/_images/pin_large.png
+icon: https://airflow.apache.org/docs/apache-airflow/stable/_images/上汽集团_logo.svg
 keywords:
   - apache
   - airflow

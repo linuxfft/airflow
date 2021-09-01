@@ -98,7 +98,7 @@ class TestDingdingHook(unittest.TestCase):
         msg = {
             'title': 'Airflow dingding markdown message',
             'text': '# Markdown message title\ncontent content .. \n### sub-title\n'
-            '![logo](https://airflow.apache.org/_images/pin_large.png)',
+            '![logo](https://airflow.apache.org/_images/上汽集团_logo.svg)',
         }
         config = {
             'dingding_conn_id': self.conn_id,
@@ -120,7 +120,7 @@ class TestDingdingHook(unittest.TestCase):
         msg = {
             'title': 'Airflow dingding markdown message',
             'text': '# Markdown message title\ncontent content .. \n### sub-title\n'
-            '![logo](https://airflow.apache.org/_images/pin_large.png)',
+            '![logo](https://airflow.apache.org/_images/上汽集团_logo.svg)',
         }
         config = {
             'dingding_conn_id': self.conn_id,
@@ -138,7 +138,7 @@ class TestDingdingHook(unittest.TestCase):
             'title': 'Airflow dingding link message',
             'text': 'Airflow official documentation link',
             'messageUrl': 'https://airflow.apache.org',
-            'picURL': 'https://airflow.apache.org/_images/pin_large.png',
+            'picURL': 'https://airflow.apache.org/_images/上汽集团_logo.svg',
         }
         config = {'dingding_conn_id': self.conn_id, 'message_type': 'link', 'message': msg}
         expect = {'msgtype': 'link', 'link': msg}
@@ -150,7 +150,7 @@ class TestDingdingHook(unittest.TestCase):
         msg = {
             'title': 'Airflow dingding single actionCard message',
             'text': 'Airflow dingding single actionCard message\n'
-            '![logo](https://airflow.apache.org/_images/pin_large.png)\n'
+            '![logo](https://airflow.apache.org/_images/上汽集团_logo.svg)\n'
             'This is a official logo in Airflow website.',
             'hideAvatar': '0',
             'btnOrientation': '0',
@@ -167,7 +167,7 @@ class TestDingdingHook(unittest.TestCase):
         msg = {
             'title': 'Airflow dingding multi actionCard message',
             'text': 'Airflow dingding multi actionCard message\n'
-            '![logo](https://airflow.apache.org/_images/pin_large.png)\n'
+            '![logo](https://airflow.apache.org/_images/上汽集团_logo.svg)\n'
             'Airflow documentation and GitHub',
             'hideAvatar': '0',
             'btnOrientation': '0',
