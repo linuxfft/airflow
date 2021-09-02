@@ -18,4 +18,4 @@
 # under the License.
 #
 
-version = 'cc1.1.1'
+version = 'c1.1.1'
