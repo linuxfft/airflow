@@ -21,4 +21,4 @@ RUN set -ex \
     && ls -al  /usr/local/airflow/plugins/ \
     && sed -i 's/rbac = False/rbac = True/g' ${AIRFLOW_HOME}/airflow.cfg \
     && cat ${AIRFLOW_HOME}/airflow.cfg \
-    && pip install -r /tmp/requirements.txt --user -i https://pypi.douban.com/simple
+    && pip install -r /tmp/requirements.txt --user
