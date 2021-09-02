@@ -21,7 +21,7 @@
 {% block head_css %}
   {{ super() }}
   <link href="{{ url_for('static', filename='bootstrap-theme.css') }}" rel="stylesheet">
-  <link rel="icon" type="image/png" href="{{ url_for("static", filename="pin_32.png") }}">
+  <link rel="icon" type="image/png" href="{{ url_for("static", filename="上汽集团_logo.svg") }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="main.css") }}">
 {% endblock %}
 
@@ -136,14 +136,13 @@ function convertSecsToHumanReadable(seconds) {
           <span class="icon-bar"></span>
         </button>
           <a class="navbar-brand" rel="home" href="{{ url_for('admin.index') }}" style="cursor: pointer;">
-              <img style="float: left; width:35px; margin-top: -7px;"
-                   src="{{ url_for("static", filename="pin_100.png") }}"
+              <img style="float: left; height:35px; margin-top: -7px;"
+                   src="{{ url_for("static", filename="上汽集团_中英文字组合标识（次要）.svg") }}"
                    {% if current_user.user is defined %}
                       title="{{ current_user.user.username }}"
                    {% else %}
                       title="{{ current_user.username }}"
                    {% endif %}>
-              <span>Airflow</span>
           </a>
       </div>
       <!-- navbar content -->

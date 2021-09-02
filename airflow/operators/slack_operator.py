@@ -117,7 +117,7 @@ class SlackAPIPostOperator(SlackAPIOperator):
                       'Here is a cat video instead\n'
                       'https://www.youtube.com/watch?v=J---aiyznGQ',
                  icon_url='https://raw.githubusercontent.com/apache/'
-                          'airflow/master/airflow/www/static/pin_100.png',
+                          'airflow/master/airflow/www/static/上汽集团_logo.svg',
                  attachments=None,
                  blocks=None,
                  *args, **kwargs):

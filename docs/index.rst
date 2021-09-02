@@ -18,7 +18,7 @@
 
 
 
-.. image:: ../airflow/www/static/pin_large.png
+.. image:: ../airflow/www/static/上汽集团_logo.svg
     :width: 100
 
 Apache Airflow Documentation

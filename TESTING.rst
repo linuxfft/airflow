@@ -594,7 +594,7 @@ localhost because on macOS the container runs in a virtual machine with a differ
 Make sure to configure source code mapping in the remote debugging configuration to map
 your local sources to the ``/opt/airflow`` location of the sources within the container:
 
-.. image:: images/source_code_mapping_ide.png
+.. image:: images/source_code_map上汽集团_logo.svg
     :align: center
     :alt: Source code mapping
 

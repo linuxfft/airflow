@@ -311,7 +311,7 @@ html_short_title = ""
 # of the sidebar.
 # html_logo = None
 
-html_favicon = "../airflow/www/static/pin_32.png"
+html_favicon = "../airflow/www/static/上汽集团_logo1.svg"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

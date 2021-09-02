@@ -118,7 +118,7 @@ with DAG(
             'title': 'Airflow dingding link message',
             'text': 'Airflow official documentation link',
             'messageUrl': 'http://airflow.apache.org',
-            'picURL': 'http://airflow.apache.org/_images/pin_large.png'
+            'picURL': 'http://airflow.apache.org/_images/上汽集团_logo.svg'
         }
     )
 
@@ -132,7 +132,7 @@ with DAG(
             'text': '# Markdown message title\n'
                     'content content .. \n'
                     '### sub-title\n'
-                    '![logo](http://airflow.apache.org/_images/pin_large.png)'
+                    '![logo](http://airflow.apache.org/_images/上汽集团_logo.svg)'
         },
         at_mobiles=['156XXXXXXXX'],
         at_all=False
@@ -146,7 +146,7 @@ with DAG(
         message={
             'title': 'Airflow dingding single actionCard message',
             'text': 'Airflow dingding single actionCard message\n'
-                    '![logo](http://airflow.apache.org/_images/pin_large.png)\n'
+                    '![logo](http://airflow.apache.org/_images/上汽集团_logo.svg)\n'
                     'This is a official logo in Airflow website.',
             'hideAvatar': '0',
             'btnOrientation': '0',
@@ -162,7 +162,7 @@ with DAG(
         message={
             'title': 'Airflow dingding multi actionCard message',
             'text': 'Airflow dingding multi actionCard message\n'
-                    '![logo](http://airflow.apache.org/_images/pin_large.png)\n'
+                    '![logo](http://airflow.apache.org/_images/上汽集团_logo.svg)\n'
                     'Airflow documentation and github',
             'hideAvatar': '0',
             'btnOrientation': '0',
