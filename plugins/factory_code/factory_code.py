@@ -3,6 +3,7 @@ import os
 factory_code_map = {
     'nd': ['nd', '7200', 'ND'],
     'lg': ['lg', '2200', 'LG'],
+    'nj': ['nj', 'NJ'],
 }
 
 
