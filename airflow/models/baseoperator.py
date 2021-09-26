@@ -186,8 +186,8 @@ class BaseOperatorMeta(abc.ABCMeta):
 
         return cast(T, apply_defaults)
 
-    def __new__(cls, name, bases, namespace):
-        new_cls = super().__new__(cls, name, bases, namespace)
+    def __new__(cls, name, bases, namespace, **kwargs):
+        new_cls = super().__new__(cls, name, bases, namespace, **kwargs)
         new_cls.__init__ = cls._apply_defaults(new_cls.__init__)
         return new_cls
 
@@ -586,10 +586,15 @@ class BaseOperator(Operator, LoggingMixin, TaskMixin, metaclass=BaseOperatorMeta
             if isinstance(max_retry_delay, timedelta):
                 self.max_retry_delay = max_retry_delay
             else:
-                self.log.debug("Max_retry_delay isn't timedelta object, assuming secs")
+                self.log.debug("max_retry_delay isn't a timedelta object, assuming secs")
                 self.max_retry_delay = timedelta(seconds=max_retry_delay)
 
         self.params = params or {}  # Available in templates!
+        if priority_weight is not None and not isinstance(priority_weight, int):
+            raise AirflowException(
+                f"`priority_weight` for task '{self.task_id}' only accepts integers, "
+                f"received '{type(priority_weight)}'."
+            )
         self.priority_weight = priority_weight
         if not WeightRule.is_valid(weight_rule):
             raise AirflowException(

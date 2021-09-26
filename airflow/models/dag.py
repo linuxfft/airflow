@@ -75,7 +75,7 @@ from airflow.utils.helpers import validate_key
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.session import provide_session
 from airflow.utils.sqlalchemy import Interval, UtcDateTime, skip_locked, with_row_locks
-from airflow.utils.state import State
+from airflow.utils.state import DagRunState, State
 from airflow.utils.types import DagRunType, EdgeInfoType
 
 if TYPE_CHECKING:
@@ -485,7 +485,7 @@ class DAG(LoggingMixin):
             else:
                 # absolute (e.g. 3 AM)
                 naive = cron.get_next(datetime)
-                tz = pendulum.timezone(self.timezone.name)
+                tz = self.timezone
                 following = timezone.make_aware(naive, tz)
             return timezone.convert_to_utc(following)
         elif self.normalized_schedule_interval is not None:
@@ -513,7 +513,7 @@ class DAG(LoggingMixin):
             else:
                 # absolute (e.g. 3 AM)
                 naive = cron.get_prev(datetime)
-                tz = pendulum.timezone(self.timezone.name)
+                tz = self.timezone
                 previous = timezone.make_aware(naive, tz)
             return timezone.convert_to_utc(previous)
         elif self.normalized_schedule_interval is not None:
@@ -1153,7 +1153,7 @@ class DAG(LoggingMixin):
         confirm_prompt=False,
         include_subdags=True,
         include_parentdag=True,
-        dag_run_state: str = State.RUNNING,
+        dag_run_state: DagRunState = DagRunState.QUEUED,
         dry_run=False,
         session=None,
         get_tis=False,
@@ -1369,7 +1369,7 @@ class DAG(LoggingMixin):
         confirm_prompt=False,
         include_subdags=True,
         include_parentdag=False,
-        dag_run_state=State.RUNNING,
+        dag_run_state=DagRunState.QUEUED,
         dry_run=False,
     ):
         all_tis = []
@@ -1731,7 +1731,7 @@ class DAG(LoggingMixin):
     @provide_session
     def create_dagrun(
         self,
-        state: State,
+        state: DagRunState,
         execution_date: Optional[datetime] = None,
         run_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
@@ -1753,7 +1753,7 @@ class DAG(LoggingMixin):
         :param execution_date: the execution date of this dag run
         :type execution_date: datetime.datetime
         :param state: the state of the dag run
-        :type state: airflow.utils.state.State
+        :type state: airflow.utils.state.DagRunState
         :param start_date: the date this dag run should be evaluated
         :type start_date: datetime
         :param external_trigger: whether this dag run is externally triggered
@@ -1767,15 +1767,16 @@ class DAG(LoggingMixin):
         :param dag_hash: Hash of Serialized DAG
         :type dag_hash: str
         """
-        if run_id and not run_type:
+        if run_id:  # Infer run_type from run_id if needed.
             if not isinstance(run_id, str):
                 raise ValueError(f"`run_id` expected to be a str is {type(run_id)}")
-            run_type: DagRunType = DagRunType.from_run_id(run_id)
-        elif run_type and execution_date:
+            if not run_type:
+                run_type = DagRunType.from_run_id(run_id)
+        elif run_type and execution_date is not None:  # Generate run_id from run_type and execution_date.
             if not isinstance(run_type, DagRunType):
                 raise ValueError(f"`run_type` expected to be a DagRunType is {type(run_type)}")
             run_id = DagRun.generate_run_id(run_type, execution_date)
-        elif not run_id:
+        else:
             raise AirflowException(
                 "Creating DagRun needs either `run_id` or both `run_type` and `execution_date`"
             )
@@ -1867,18 +1868,6 @@ class DAG(LoggingMixin):
             .all()
         )
 
-        # Get number of active dagruns for all dags we are processing as a single query.
-        num_active_runs = dict(
-            session.query(DagRun.dag_id, func.count('*'))
-            .filter(
-                DagRun.dag_id.in_(existing_dag_ids),
-                DagRun.state == State.RUNNING,
-                DagRun.external_trigger.is_(False),
-            )
-            .group_by(DagRun.dag_id)
-            .all()
-        )
-
         for orm_dag in sorted(orm_dags, key=lambda d: d.dag_id):
             dag = dag_by_ids[orm_dag.dag_id]
             if dag.is_subdag:
@@ -1896,12 +1885,12 @@ class DAG(LoggingMixin):
             orm_dag.description = dag.description
             orm_dag.schedule_interval = dag.schedule_interval
             orm_dag.concurrency = dag.concurrency
+            orm_dag.max_active_runs = dag.max_active_runs
             orm_dag.has_task_concurrency_limits = any(t.task_concurrency is not None for t in dag.tasks)
 
             orm_dag.calculate_dagrun_date_fields(
                 dag,
                 most_recent_dag_runs.get(dag.dag_id),
-                num_active_runs.get(dag.dag_id, 0),
             )
 
             for orm_tag in list(orm_dag.tags):
@@ -2129,6 +2118,7 @@ class DagModel(Base):
     tags = relationship('DagTag', cascade='all,delete-orphan', backref=backref('dag'))
 
     concurrency = Column(Integer, nullable=False)
+    max_active_runs = Column(Integer, nullable=True)
 
     has_task_concurrency_limits = Column(Boolean, nullable=False)
 
@@ -2148,6 +2138,8 @@ class DagModel(Base):
         super().__init__(**kwargs)
         if self.concurrency is None:
             self.concurrency = conf.getint('core', 'dag_concurrency')
+        if self.max_active_runs is None:
+            self.max_active_runs = conf.getint('core', 'max_active_runs_per_dag')
         if self.has_task_concurrency_limits is None:
             # Be safe -- this will be updated later once the DAG is parsed
             self.has_task_concurrency_limits = True
@@ -2282,26 +2274,15 @@ class DagModel(Base):
         return with_row_locks(query, of=cls, session=session, **skip_locked(session=session))
 
     def calculate_dagrun_date_fields(
-        self, dag: DAG, most_recent_dag_run: Optional[pendulum.DateTime], active_runs_of_dag: int
+        self, dag: DAG, most_recent_dag_run: Optional[pendulum.DateTime]
     ) -> None:
         """
         Calculate ``next_dagrun`` and `next_dagrun_create_after``
 
         :param dag: The DAG object
         :param most_recent_dag_run: DateTime of most recent run of this dag, or none if not yet scheduled.
-        :param active_runs_of_dag: Number of currently active runs of this dag
         """
         self.next_dagrun, self.next_dagrun_create_after = dag.next_dagrun_info(most_recent_dag_run)
-
-        if dag.max_active_runs and active_runs_of_dag >= dag.max_active_runs:
-            # Since this happens every time the dag is parsed it would be quite spammy at info
-            log.debug(
-                "DAG %s is at (or above) max_active_runs (%d of %d), not creating any more runs",
-                dag.dag_id,
-                active_runs_of_dag,
-                dag.max_active_runs,
-            )
-            self.next_dagrun_create_after = None
 
         log.info("Setting next_dagrun for %s to %s", dag.dag_id, self.next_dagrun)
 

@@ -26,6 +26,9 @@ assists users migrating to a new version.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of contents**
 
+- [Airflow 2.1.4](#airflow-214)
+- [Airflow 2.1.3](#airflow-213)
+- [Airflow 2.1.2](#airflow-212)
 - [Airflow 2.1.1](#airflow-211)
 - [Airflow 2.1.0](#airflow-210)
 - [Airflow 2.0.2](#airflow-202)
@@ -69,6 +72,18 @@ More tips can be found in the guide:
 https://developers.google.com/style/inclusive-documentation
 
 -->
+
+## Airflow 2.1.4
+
+No breaking changes.
+
+## Airflow 2.1.3
+
+No breaking changes.
+
+## Airflow 2.1.2
+
+No breaking changes.
 
 ## Airflow 2.1.1
 
@@ -1607,9 +1622,9 @@ https://cloud.google.com/compute/docs/disks/performance
 
 Hence, the default value for `master_disk_size` in `DataprocCreateClusterOperator` has been changed from 500GB to 1TB.
 
-#### `<airflow class="providers google c"></airflow>loud.operators.bigquery.BigQueryGetDatasetTablesOperator`
+#### `airflow.providers.google.cloud.operators.bigquery.BigQueryGetDatasetTablesOperator`
 
-We changed signature of BigQueryGetDatasetTablesOperator.
+We changed signature of `BigQueryGetDatasetTablesOperator`.
 
 Before:
 

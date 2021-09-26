@@ -34,7 +34,7 @@ Prerequisites
 
 Airflow is tested with:
 
-* Python: 3.6, 3.7, 3.8
+* Python: 3.6, 3.7, 3.8, 3.9
 
 * Databases:
 
@@ -50,8 +50,7 @@ running multiple schedulers -- please see: :doc:`/concepts/scheduler`. MariaDB i
 **Note:** SQLite is used in Airflow tests. Do not use it in production. We recommend
 using the latest stable version of SQLite for local development.
 
-Please note that with respect to Python 3 support, Airflow 2.0.0 has been
-tested with Python 3.6, 3.7, and 3.8, but does not yet support Python 3.9.
+Starting with Airflow 2.1.2, Airflow is tested with Python 3.6, 3.7, 3.8, and 3.9.
 
 Installation tools
 ''''''''''''''''''
@@ -259,7 +258,7 @@ If you don't want to install any extra providers, initially you can use the comm
     PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
     # For example: 3.6
     CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-no-providers-${PYTHON_VERSION}.txt"
-    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-no-providers-|version|/constraints-3.6.txt
+    # For example: https://raw.githubusercontent.com/apache/airflow/constraints-|version|/constraints-no-providers-3.6.txt
     pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
 
 
@@ -286,23 +285,6 @@ They are based on the official release schedule of Python and Kubernetes, nicely
 3. We support a new version of Python/Kubernetes in main after they are officially released, as soon as we
    make them work in our CI pipeline (which might not be immediate due to dependencies catching up with
    new versions of Python mostly) we release a new images/support in Airflow based on the working CI setup.
-
-Installing Airflow From Released Sources and packages
-'''''''''''''''''''''''''''''''''''''''''''''''''''''
-
-You can also install Airflow using the official sources and packages. Those sources and packages
-released are the "official" sources of installation that you can use if you want to verify the
-origin of the packages and want to verify checksums and signatures of the packages.
-
-The packages are available at the
-`Official Apache Software Foundations Downloads page <https://downloads.apache.org/airflow/>`_
-
-The |version| downloads are available at:
-
-* `Apache Airflow |version| sdist package <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-bin.tar.gz.sha512>`__)
-* `Apache Airflow |version| wheel package <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-py3-none-any.whl.sha512>`__)
-* `Apache Airflow |version| sources <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz>`_ (`asc <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz.asc>`__, `sha512 <https://downloads.apache.org/airflow/|version|/apache-airflow-|version|-source.tar.gz.sha512>`__)
-
 
 Set up a database
 '''''''''''''''''

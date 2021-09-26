@@ -86,12 +86,14 @@ const encodedDagIds = new URLSearchParams();
 $.each($('[id^=toggle]'), function toggleId() {
   const $input = $(this);
   const dagId = $input.data('dag-id');
-  encodedDagIds.append('dagIds', dagId);
+  encodedDagIds.append('dag_ids', dagId);
 
   $input.on('change', () => {
     const isPaused = $input.is(':checked');
     const url = `${pausedUrl}?is_paused=${isPaused}&dag_id=${encodeURIComponent(dagId)}`;
     $input.removeClass('switch-input--error');
+    // Remove focus on element so the tooltip will go away
+    $input.trigger('blur');
     $.post(url).fail(() => {
       setTimeout(() => {
         $input.prop('checked', !isPaused);
@@ -167,7 +169,7 @@ function lastDagRunsHandler(error, json) {
 function drawDagStatsForDag(dagId, states) {
   const g = d3.select(`svg#dag-run-${dagId.replace(/\./g, '__dot__')}`)
     .attr('height', diameter + (strokeWidthHover * 2))
-    .attr('width', '110px')
+    .attr('width', '120px')
     .selectAll('g')
     .data(states)
     .enter()
@@ -304,7 +306,7 @@ function taskStatsHandler(error, json) {
   });
 }
 
-if (encodedDagIds.has('dagIds')) {
+if (encodedDagIds.has('dag_ids')) {
   // dags on page fetch stats
   d3.json(blockedUrl)
     .header('X-CSRFToken', csrfToken)

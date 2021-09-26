@@ -32,7 +32,7 @@ from collections import OrderedDict
 # Ignored Mypy on configparser because it thinks the configparser module has no _UNSET attribute
 from configparser import _UNSET, ConfigParser, NoOptionError, NoSectionError  # type: ignore
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from airflow.exceptions import AirflowConfigException
 from airflow.secrets import DEFAULT_SECRETS_SEARCH_PATH, BaseSecretsBackend
@@ -92,7 +92,7 @@ def _default_config_file_path(file_name: str):
     return os.path.join(templates_dir, file_name)
 
 
-def default_config_yaml() -> List[dict]:
+def default_config_yaml() -> List[Dict[str, Any]]:
     """
     Read Airflow configs from YAML file
 
@@ -240,7 +240,7 @@ class AirflowConfigParser(ConfigParser):
             if StrictVersion(sqlite3.sqlite_version) < StrictVersion(min_sqlite_version):
                 raise AirflowConfigException(
                     f"error: sqlite C library version too old (< {min_sqlite_version}). "
-                    f"See {get_docs_url('howto/set-up-database.rst#setting-up-a-sqlite-database')}"
+                    f"See {get_docs_url('howto/set-up-database.html#setting-up-a-sqlite-database')}"
                 )
 
         if self.has_option('core', 'mp_start_method'):
@@ -454,7 +454,7 @@ class AirflowConfigParser(ConfigParser):
         """
         Reads options, imports the full qualified name, and returns the object.
 
-        In case of failure, it throws an exception a clear message with the key aad the section names
+        In case of failure, it throws an exception with the key and section names
 
         :return: The object or None, if the option is empty
         """

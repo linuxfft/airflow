@@ -329,9 +329,11 @@ class TestCeleryExecutor(unittest.TestCase):
         ti1 = TaskInstance(task=task_1, execution_date=exec_date)
         ti1.external_executor_id = '231'
         ti1.queued_dttm = queued_dttm
+        ti1.state = State.QUEUED
         ti2 = TaskInstance(task=task_2, execution_date=exec_date)
         ti2.external_executor_id = '232'
         ti2.queued_dttm = queued_dttm
+        ti2.state = State.QUEUED
 
         tis = [ti1, ti2]
         executor = celery_executor.CeleryExecutor()
@@ -378,6 +380,34 @@ class TestCeleryExecutor(unittest.TestCase):
         assert executor.tasks == {}
         assert executor.running == set()
         assert executor.adopted_task_timeouts == {}
+
+    @pytest.mark.backend("mysql", "postgres")
+    def test_check_for_stalled_adopted_tasks_goes_in_ordered_fashion(self):
+        start_date = timezone.utcnow() - timedelta(days=2)
+        queued_dttm = timezone.utcnow() - timedelta(minutes=30)
+        queued_dttm_2 = timezone.utcnow() - timedelta(minutes=4)
+
+        try_number = 1
+
+        with DAG("test_check_for_stalled_adopted_tasks") as dag:
+            task_1 = BaseOperator(task_id="task_1", start_date=start_date)
+            task_2 = BaseOperator(task_id="task_2", start_date=start_date)
+
+        key_1 = TaskInstanceKey(dag.dag_id, task_1.task_id, "runid", try_number)
+        key_2 = TaskInstanceKey(dag.dag_id, task_2.task_id, "runid", try_number)
+
+        executor = celery_executor.CeleryExecutor()
+        executor.adopted_task_timeouts = {
+            key_2: queued_dttm_2 + executor.task_adoption_timeout,
+            key_1: queued_dttm + executor.task_adoption_timeout,
+        }
+        executor.running = {key_1, key_2}
+        executor.tasks = {key_1: AsyncResult("231"), key_2: AsyncResult("232")}
+        executor.sync()
+        assert executor.event_buffer == {key_1: (State.FAILED, None)}
+        assert executor.tasks == {key_2: AsyncResult('232')}
+        assert executor.running == {key_2}
+        assert executor.adopted_task_timeouts == {key_2: queued_dttm_2 + executor.task_adoption_timeout}
 
 
 def test_operation_timeout_config():

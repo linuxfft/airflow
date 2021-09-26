@@ -425,3 +425,118 @@ def app():
     from airflow.www import app
 
     return app.create_app(testing=True)
+
+
+@pytest.fixture
+def dag_maker(request):
+    from airflow.models import DAG, DagModel
+    from airflow.utils import timezone
+    from airflow.utils.session import provide_session
+    from airflow.utils.state import State
+
+    DEFAULT_DATE = timezone.datetime(2016, 1, 1)
+
+    class DagFactory:
+        def __enter__(self):
+            self.dag.__enter__()
+            return self.dag
+
+        def __exit__(self, type, value, traceback):
+            dag = self.dag
+            dag.__exit__(type, value, traceback)
+            if type is None:
+                dag.clear()
+
+        @provide_session
+        def make_dagmodel(self, session=None, **kwargs):
+            dag = self.dag
+            defaults = dict(dag_id=dag.dag_id, next_dagrun=dag.start_date, is_active=True)
+            kwargs = {**defaults, **kwargs}
+            dag_model = DagModel(**kwargs)
+            session.add(dag_model)
+            session.flush()
+            return dag_model
+
+        def create_dagrun(self, **kwargs):
+            dag = self.dag
+            kwargs = {
+                "state": State.RUNNING,
+                "execution_date": self.start_date,
+                "start_date": self.start_date,
+                **kwargs,
+            }
+            # Need to provide run_id if the user does not either provide one
+            # explicitly, or pass run_type for inference in dag.create_dagrun().
+            if "run_id" not in kwargs and "run_type" not in kwargs:
+                kwargs["run_id"] = "test"
+            self.dag_run = dag.create_dagrun(**kwargs)
+            return self.dag_run
+
+        def __call__(self, dag_id='test_dag', **kwargs):
+            self.kwargs = kwargs
+            self.start_date = self.kwargs.get('start_date', None)
+            if not self.start_date:
+                if hasattr(request.module, 'DEFAULT_DATE'):
+                    self.start_date = getattr(request.module, 'DEFAULT_DATE')
+                else:
+                    self.start_date = DEFAULT_DATE
+            self.kwargs['start_date'] = self.start_date
+            self.dag = DAG(dag_id, **self.kwargs)
+            return self
+
+    return DagFactory()
+
+
+@pytest.fixture
+def create_dummy_dag(dag_maker):
+    """
+    This fixture creates a `DAG` with a single `DummyOperator` task.
+    DagRun and DagModel is also created.
+
+    Apart from the already existing arguments, any other argument in kwargs
+    is passed to the DAG and not to the DummyOperator task.
+
+    If you have an argument that you want to pass to the DummyOperator that
+    is not here, please use `default_args` so that the DAG will pass it to the
+    Task::
+
+        dag, task = create_dummy_dag(default_args={'start_date':timezone.datetime(2016, 1, 1)})
+
+    You cannot be able to alter the created DagRun or DagModel, use `dag_maker` fixture instead.
+    """
+    from airflow.operators.dummy import DummyOperator
+    from airflow.utils.types import DagRunType
+
+    def create_dag(
+        dag_id='dag',
+        task_id='op1',
+        task_concurrency=16,
+        pool='default_pool',
+        executor_config={},
+        trigger_rule='all_done',
+        on_success_callback=None,
+        on_execute_callback=None,
+        on_failure_callback=None,
+        on_retry_callback=None,
+        email=None,
+        with_dagrun_type=DagRunType.SCHEDULED,
+        **kwargs,
+    ):
+        with dag_maker(dag_id, **kwargs) as dag:
+            op = DummyOperator(
+                task_id=task_id,
+                task_concurrency=task_concurrency,
+                executor_config=executor_config,
+                on_success_callback=on_success_callback,
+                on_execute_callback=on_execute_callback,
+                on_failure_callback=on_failure_callback,
+                on_retry_callback=on_retry_callback,
+                email=email,
+                pool=pool,
+                trigger_rule=trigger_rule,
+            )
+        if with_dagrun_type is not None:
+            dag_maker.create_dagrun(run_type=with_dagrun_type)
+        return dag, op
+
+    return create_dag

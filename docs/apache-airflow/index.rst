@@ -97,7 +97,7 @@ unit of work and continuity.
     lineage
     dag-serialization
     modules_management
-    Release policies <release-process>
+    Release Policies <release-process>
     changelog
     best-practices
     production-deployment
@@ -117,3 +117,9 @@ unit of work and continuity.
     Configurations <configurations-ref>
     Extra packages <extra-packages-ref>
     Database Migrations <migrations-ref>
+
+.. toctree::
+    :hidden:
+    :caption: Resources
+
+    Installing from sources <installing-from-sources>

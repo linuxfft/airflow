@@ -16,21 +16,24 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
 import signal
 from typing import Optional
 
 import psutil
+from sqlalchemy.exc import OperationalError
 
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException
 from airflow.jobs.base_job import BaseJob
+from airflow.models.dagrun import DagRun
 from airflow.models.taskinstance import TaskInstance
+from airflow.sentry import Sentry
 from airflow.stats import Stats
 from airflow.task.task_runner import get_task_runner
 from airflow.utils import timezone
 from airflow.utils.net import get_hostname
 from airflow.utils.session import provide_session
+from airflow.utils.sqlalchemy import with_row_locks
 from airflow.utils.state import State
 
 
@@ -75,12 +78,9 @@ class LocalTaskJob(BaseJob):
         def signal_handler(signum, frame):
             """Setting kill signal handler"""
             self.log.error("Received SIGTERM. Terminating subprocesses")
-            self.on_kill()
-            self.task_instance.refresh_from_db()
-            if self.task_instance.state not in State.finished:
-                self.task_instance.set_state(State.FAILED)
-            self.task_instance._run_finished_callback(error="task received sigterm")
-            raise AirflowException("LocalTaskJob received SIGTERM signal")
+            self.task_runner.terminate()
+            self.handle_task_exit(128 + signum)
+            return
 
         signal.signal(signal.SIGTERM, signal_handler)
 
@@ -145,20 +145,25 @@ class LocalTaskJob(BaseJob):
             self.on_kill()
 
     def handle_task_exit(self, return_code: int) -> None:
-        """Handle case where self.task_runner exits by itself"""
+        """Handle case where self.task_runner exits by itself or is externally killed"""
+        # Without setting this, heartbeat may get us
+        self.terminating = True
         self.log.info("Task exited with return code %s", return_code)
         self.task_instance.refresh_from_db()
-        # task exited by itself, so we need to check for error file
+
+        if self.task_instance.state == State.RUNNING:
+            # This is for a case where the task received a SIGKILL
+            # while running or the task runner received a sigterm
+            self.task_instance.handle_failure(error=None)
+        # We need to check for error file
         # in case it failed due to runtime exception/error
         error = None
-        if self.task_instance.state == State.RUNNING:
-            # This is for a case where the task received a sigkill
-            # while running
-            self.task_instance.set_state(State.FAILED)
         if self.task_instance.state != State.SUCCESS:
             error = self.task_runner.deserialize_run_error()
-        self.task_instance._run_finished_callback(error=error)
+        self.task_instance._run_finished_callback(error=error)  # pylint: disable=protected-access
         if not self.task_instance.test_mode:
+            if conf.getboolean('scheduler', 'schedule_after_task_execution', fallback=True):
+                self._run_mini_scheduler_on_child_tasks()
             self._update_dagrun_state_for_paused_dag()
 
     def on_kill(self):
@@ -187,11 +192,17 @@ class LocalTaskJob(BaseJob):
                 )
                 raise AirflowException("Hostname of job runner does not match")
             current_pid = self.task_runner.process.pid
-            same_process = ti.pid == current_pid
-            if ti.run_as_user:
-                same_process = psutil.Process(ti.pid).ppid() == current_pid
-            if ti.pid is not None and not same_process:
-                self.log.warning("Recorded pid %s does not match " "the current pid %s", ti.pid, current_pid)
+            recorded_pid = ti.pid
+            same_process = recorded_pid == current_pid
+
+            if ti.run_as_user or self.task_runner.run_as_user:
+                recorded_pid = psutil.Process(ti.pid).ppid()
+                same_process = recorded_pid == current_pid
+
+            if recorded_pid is not None and not same_process:
+                self.log.warning(
+                    "Recorded pid %s does not match the current pid %s", recorded_pid, current_pid
+                )
                 raise AirflowException("PID of job runner does not match")
         elif self.task_runner.return_code() is None and hasattr(self.task_runner, 'process'):
             self.log.warning(
@@ -207,6 +218,57 @@ class LocalTaskJob(BaseJob):
                 error = self.task_runner.deserialize_run_error() or "task marked as failed externally"
             ti._run_finished_callback(error=error)
             self.terminating = True
+
+    @provide_session
+    @Sentry.enrich_errors
+    def _run_mini_scheduler_on_child_tasks(self, session=None) -> None:
+        try:
+            # Re-select the row with a lock
+            dag_run = with_row_locks(
+                session.query(DagRun).filter_by(
+                    dag_id=self.dag_id,
+                    execution_date=self.task_instance.execution_date,
+                ),
+                session=session,
+            ).one()
+
+            # Get a partial dag with just the specific tasks we want to
+            # examine. In order for dep checks to work correctly, we
+            # include ourself (so TriggerRuleDep can check the state of the
+            # task we just executed)
+            task = self.task_instance.task
+
+            partial_dag = task.dag.partial_subset(
+                task.downstream_task_ids,
+                include_downstream=False,
+                include_upstream=False,
+                include_direct_upstream=True,
+            )
+
+            dag_run.dag = partial_dag
+            info = dag_run.task_instance_scheduling_decisions(session)
+
+            skippable_task_ids = {
+                task_id for task_id in partial_dag.task_ids if task_id not in task.downstream_task_ids
+            }
+
+            schedulable_tis = [ti for ti in info.schedulable_tis if ti.task_id not in skippable_task_ids]
+            for schedulable_ti in schedulable_tis:
+                if not hasattr(schedulable_ti, "task"):
+                    schedulable_ti.task = task.dag.get_task(schedulable_ti.task_id)
+
+            num = dag_run.schedule_tis(schedulable_tis)
+            self.log.info("%d downstream tasks scheduled from follow-on schedule check", num)
+
+            session.commit()
+        except OperationalError as e:
+            # Any kind of DB error here is _non fatal_ as this block is just an optimisation.
+            self.log.info(
+                "Skipping mini scheduling run due to exception: %s",
+                e.statement,
+                exc_info=True,
+            )
+            session.rollback()
 
     @provide_session
     def _update_dagrun_state_for_paused_dag(self, session=None):

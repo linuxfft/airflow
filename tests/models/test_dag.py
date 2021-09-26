@@ -621,6 +621,46 @@ class TestDag(unittest.TestCase):
         _next = dag.following_schedule(_next)
         assert _next.isoformat() == "2015-01-02T02:00:00+00:00"
 
+    def test_previous_schedule_datetime_timezone(self):
+        # Check that we don't get an AttributeError 'name' for self.timezone
+
+        start = datetime.datetime(2018, 3, 25, 2, tzinfo=datetime.timezone.utc)
+        dag = DAG('tz_dag', start_date=start, schedule_interval='@hourly')
+        when = dag.previous_schedule(start)
+        assert when.isoformat() == "2018-03-25T01:00:00+00:00"
+
+    def test_following_schedule_datetime_timezone(self):
+        # Check that we don't get an AttributeError 'name' for self.timezone
+
+        start = datetime.datetime(2018, 3, 25, 2, tzinfo=datetime.timezone.utc)
+        dag = DAG('tz_dag', start_date=start, schedule_interval='@hourly')
+        when = dag.following_schedule(start)
+        assert when.isoformat() == "2018-03-25T03:00:00+00:00"
+
+    def test_following_schedule_datetime_timezone_utc0530(self):
+        # Check that we don't get an AttributeError 'name' for self.timezone
+        class UTC0530(datetime.tzinfo):
+            """tzinfo derived concrete class named "+0530" with offset of 19800"""
+
+            # can be configured here
+            _offset = datetime.timedelta(seconds=19800)
+            _dst = datetime.timedelta(0)
+            _name = "+0530"
+
+            def utcoffset(self, dt):
+                return self.__class__._offset
+
+            def dst(self, dt):
+                return self.__class__._dst
+
+            def tzname(self, dt):
+                return self.__class__._name
+
+        start = datetime.datetime(2018, 3, 25, 10, tzinfo=UTC0530())
+        dag = DAG('tz_dag', start_date=start, schedule_interval='@hourly')
+        when = dag.following_schedule(start)
+        assert when.isoformat() == "2018-03-25T05:30:00+00:00"
+
     def test_dagtag_repr(self):
         clear_db_dags()
         dag = DAG('dag-test-dagtag', start_date=DEFAULT_DATE, tags=['tag-1', 'tag-2'])
@@ -634,7 +674,7 @@ class TestDag(unittest.TestCase):
         clear_db_dags()
         dags = [DAG(f'dag-bulk-sync-{i}', start_date=DEFAULT_DATE, tags=["test-dag"]) for i in range(0, 4)]
 
-        with assert_queries_count(5):
+        with assert_queries_count(4):
             DAG.bulk_write_to_db(dags)
         with create_session() as session:
             assert {'dag-bulk-sync-0', 'dag-bulk-sync-1', 'dag-bulk-sync-2', 'dag-bulk-sync-3'} == {
@@ -651,14 +691,14 @@ class TestDag(unittest.TestCase):
                 assert row[0] is not None
 
         # Re-sync should do fewer queries
-        with assert_queries_count(4):
+        with assert_queries_count(3):
             DAG.bulk_write_to_db(dags)
-        with assert_queries_count(4):
+        with assert_queries_count(3):
             DAG.bulk_write_to_db(dags)
         # Adding tags
         for dag in dags:
             dag.tags.append("test-dag2")
-        with assert_queries_count(5):
+        with assert_queries_count(4):
             DAG.bulk_write_to_db(dags)
         with create_session() as session:
             assert {'dag-bulk-sync-0', 'dag-bulk-sync-1', 'dag-bulk-sync-2', 'dag-bulk-sync-3'} == {
@@ -677,7 +717,7 @@ class TestDag(unittest.TestCase):
         # Removing tags
         for dag in dags:
             dag.tags.remove("test-dag")
-        with assert_queries_count(5):
+        with assert_queries_count(4):
             DAG.bulk_write_to_db(dags)
         with create_session() as session:
             assert {'dag-bulk-sync-0', 'dag-bulk-sync-1', 'dag-bulk-sync-2', 'dag-bulk-sync-3'} == {
@@ -724,8 +764,8 @@ class TestDag(unittest.TestCase):
 
         model = session.query(DagModel).get((dag.dag_id,))
         assert model.next_dagrun == period_end
-        # We signal "at max active runs" by saying this run is never eligible to be created
-        assert model.next_dagrun_create_after is None
+        # Next dagrun after is not None because the dagrun would be in queued state
+        assert model.next_dagrun_create_after is not None
 
     def test_sync_to_db(self):
         dag = DAG(
@@ -1725,6 +1765,26 @@ class TestDagModel:
 
         dag_models = DagModel.dags_needing_dagruns(session).all()
         assert dag_models == []
+
+        session.rollback()
+        session.close()
+
+    def test_max_active_runs_not_none(self):
+        dag = DAG(dag_id='test_max_active_runs_not_none', start_date=timezone.datetime(2038, 1, 1))
+        DummyOperator(task_id='dummy', dag=dag, owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(
+            dag_id=dag.dag_id,
+            has_task_concurrency_limits=False,
+            next_dagrun=None,
+            next_dagrun_create_after=None,
+            is_active=True,
+        )
+        session.add(orm_dag)
+        session.flush()
+
+        assert orm_dag.max_active_runs is not None
 
         session.rollback()
         session.close()

@@ -149,11 +149,13 @@ function draw() {
       // A group node
       if (d3.event.defaultPrevented) return;
       expandGroup(nodeId, node);
+      draw();
+      focusGroup(nodeId);
     } else if (nodeId in tasks) {
       // A task node
       const task = tasks[nodeId];
       let tryNumber;
-      if (nodeId in taskInstances) tryNumber = taskInstances[nodeId].tryNumber;
+      if (nodeId in taskInstances) tryNumber = taskInstances[nodeId].try_number;
       else tryNumber = 0;
 
       if (task.task_type === 'SubDagOperator') callModal(nodeId, executionDate, task.extra_links, tryNumber, true);
@@ -451,6 +453,9 @@ function groupTooltip(nodeId, tis) {
 function updateNodesStates(tis) {
   for (const nodeId of g.nodes()) {
     const { elem } = g.node(nodeId);
+    if (!elem) {
+      return;
+    }
     elem.setAttribute('class', `node enter ${getNodeState(nodeId, tis)}`);
     elem.setAttribute('data-toggle', 'tooltip');
 
@@ -553,7 +558,6 @@ function focusedGroupKey() {
 function focusGroup(nodeId) {
   if (nodeId != null && zoom != null) {
     const { x } = g.node(nodeId);
-    const { y } = g.node(nodeId);
     // This is the total canvas size.
     const { width, height } = svg.node().getBoundingClientRect();
 
@@ -572,7 +576,8 @@ function focusGroup(nodeId) {
       1.5, // cap zoom level to 1.5 so nodes are not too large
     ) * 0.9;
 
-    const [deltaX, deltaY] = [width / 2 - x * scale, height / 2 - y * scale];
+    // deltaY of 5 keeps the zoom at the top of the view but with a slight margin
+    const [deltaX, deltaY] = [width / 2 - x * scale, 5];
     zoom.translate([deltaX, deltaY]);
     zoom.scale(scale);
     zoom.event(innerSvg.transition().duration(duration));
@@ -594,7 +599,7 @@ function focusGroup(nodeId) {
 }
 
 // Expands a group node
-function expandGroup(nodeId, node, focus = true) {
+function expandGroup(nodeId, node) {
   node.children.forEach((val) => {
     // Set children nodes
     g.setNode(val.id, val.value);
@@ -630,12 +635,6 @@ function expandGroup(nodeId, node, focus = true) {
       g.removeEdge(edge.v, edge.w);
     }
   });
-
-  draw();
-
-  if (focus) {
-    focusGroup(nodeId);
-  }
 
   saveExpandedGroup(nodeId);
 }
@@ -683,7 +682,7 @@ function expandSavedGroups(expandedGroups, node) {
 
   node.children.forEach((childNode) => {
     if (expandedGroups.has(childNode.id)) {
-      expandGroup(childNode.id, g.node(childNode.id), false);
+      expandGroup(childNode.id, g.node(childNode.id));
 
       expandSavedGroups(expandedGroups, childNode);
     }
@@ -699,6 +698,9 @@ expandGroup(null, nodes);
 
 // Expand the node that were previously expanded
 expandSavedGroups(expandedGroups, nodes);
+
+// Draw once after all groups have been expanded
+draw();
 
 // Restore focus (if available)
 if (g.hasNode(focusNodeId)) {

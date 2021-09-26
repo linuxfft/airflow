@@ -34,6 +34,7 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar, cast
 from airflow import settings
 from airflow.exceptions import AirflowException
 from airflow.utils import cli_action_loggers
+from airflow.utils.log.non_caching_file_handler import NonCachingFileHandler
 from airflow.utils.platform import getuser, is_terminal_support_colors
 from airflow.utils.session import provide_session
 
@@ -115,7 +116,8 @@ def _build_metrics(func_name, namespace):
     sub_commands_to_check = {'users', 'connections'}
     sensitive_fields = {'-p', '--password', '--conn-password'}
     full_command = list(sys.argv)
-    if full_command[1] in sub_commands_to_check:
+    sub_command = full_command[1] if len(full_command) > 1 else None
+    if sub_command in sub_commands_to_check:
         for idx, command in enumerate(full_command):
             if command in sensitive_fields:
                 # For cases when password is passed as "--password xyz" (with space between key and value)
@@ -243,7 +245,7 @@ def setup_locations(process, pid=None, stdout=None, stderr=None, log=None):
 def setup_logging(filename):
     """Creates log file handler for daemon process"""
     root = logging.getLogger()
-    handler = logging.FileHandler(filename)
+    handler = NonCachingFileHandler(filename)
     formatter = logging.Formatter(settings.SIMPLE_LOG_FORMAT)
     handler.setFormatter(formatter)
     root.addHandler(handler)

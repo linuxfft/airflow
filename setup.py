@@ -62,14 +62,14 @@ class CleanCommand(Command):
     description = "Tidy up the project root"
     user_options: List[str] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         """Set default values for options."""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Set final values for options."""
 
     @staticmethod
-    def rm_all_files(files: List[str]):
+    def rm_all_files(files: List[str]) -> None:
         """Remove all files from the list"""
         for file in files:
             try:
@@ -77,7 +77,7 @@ class CleanCommand(Command):
             except Exception as e:
                 logger.warning("Error when removing %s: %s", file, e)
 
-    def run(self):
+    def run(self) -> None:
         """Remove temporary files and directories."""
         os.chdir(my_dir)
         self.rm_all_files(glob.glob('./build/*'))
@@ -98,10 +98,10 @@ class CompileAssets(Command):
     description = "Compile and build the frontend assets"
     user_options: List[str] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         """Set default values for options."""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Set final values for options."""
 
     def run(self) -> None:
@@ -118,10 +118,10 @@ class ListExtras(Command):
     description = "List available extras"
     user_options: List[str] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         """Set default values for options."""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Set final values for options."""
 
     def run(self) -> None:
@@ -165,7 +165,7 @@ def git_version(version_: str) -> str:
     return 'no_git_version'
 
 
-def write_version(filename: str = os.path.join(*[my_dir, "airflow", "git_version"])):
+def write_version(filename: str = os.path.join(*[my_dir, "airflow", "git_version"])) -> None:
     """
     Write the Semver version + git hash to file, e.g. ".dev0+2f635dc265e78db6708f59f68e8009abb92c1e65".
 
@@ -188,6 +188,12 @@ apache_beam = [
 ]
 asana = ['asana>=0.10', 'cached-property>=1.5.2']
 async_packages = [
+    # DNS Python 2.0.0 and above breaks building documentation on Sphinx. When dnspython 2.0.0 is installed
+    # building documentation fails with trying to import google packages with
+    # TypeError("unsupported operand type(s) for +: 'SSL_VERIFY_PEER' and
+    # 'SSL_VERIFY_FAIL_IF_NO_PEER_CERT'")
+    # The issue is opened for it https://github.com/rthalley/dnspython/issues/681
+    'dnspython<2.0.0',
     'eventlet>= 0.9.7',
     'gevent>=0.13',
     'greenlet>=0.4.9',
@@ -234,15 +240,16 @@ dask = [
     'distributed>=2.11.1, <2.20',
 ]
 databricks = [
-    'requests>=2.20.0, <3',
+    'requests>=2.26.0, <3',
 ]
 datadog = [
     'datadog>=0.14.0',
 ]
 deprecated_api = [
-    'requests>=2.20.0',
+    'requests>=2.26.0',
 ]
 doc = [
+    'click>=7.1,<9',
     # Sphinx is limited to < 3.5.0 because of https://github.com/sphinx-doc/sphinx/issues/8880
     'sphinx>=2.1.2, <3.5.0',
     'sphinx-airflow-theme',
@@ -253,11 +260,12 @@ doc = [
     'sphinx-rtd-theme>=0.1.6',
     'sphinxcontrib-httpdomain>=1.7.0',
     'sphinxcontrib-redoc>=1.6.0',
-    'sphinxcontrib-spelling==5.2.1',
+    'sphinxcontrib-spelling==7.2.1',
 ]
 docker = [
     'docker',
 ]
+drill = ['sqlalchemy-drill>=1.1.0', 'sqlparse>=0.4.1']
 druid = [
     'pydruid>=0.4.1',
 ]
@@ -272,10 +280,8 @@ exasol = [
 facebook = [
     'facebook-business>=6.0.2',
 ]
-flask_oauth = [
-    'Flask-OAuthlib>=0.9.1,<0.9.6',  # Flask OAuthLib 0.9.6 requires Flask-Login 0.5.0 - breaks FAB
-    'oauthlib!=2.0.3,!=2.0.4,!=2.0.5,<3.0.0,>=1.1.2',
-    'requests-oauthlib<1.2.0',
+flask_appbuilder_authlib = [
+    'authlib',
 ]
 google = [
     'PyOpenSSL',
@@ -294,7 +300,9 @@ google = [
     'google-cloud-kms>=2.0.0,<3.0.0',
     'google-cloud-language>=1.1.1,<2.0.0',
     'google-cloud-logging>=2.1.1,<3.0.0',
-    'google-cloud-memcache>=0.2.0',
+    # 1.1.0 removed field_mask and broke import for released providers
+    # We can remove the <1.1.0 limitation after we release new Google Provider
+    'google-cloud-memcache>=0.2.0,<1.1.0',
     'google-cloud-monitoring>=2.0.0,<3.0.0',
     'google-cloud-os-login>=2.0.0,<3.0.0',
     'google-cloud-pubsub>=2.0.0,<3.0.0',
@@ -333,7 +341,9 @@ hive = [
     'thrift>=0.9.2',
 ]
 http = [
-    'requests>=2.20.0',
+    # The 2.26.0 release of requests got rid of the chardet LGPL mandatory dependency, allowing us to
+    # release it as a requirement for airflow
+    'requests>=2.26.0',
 ]
 http_provider = [
     # NOTE ! The HTTP provider is NOT preinstalled by default when Airflow is installed - because it
@@ -371,7 +381,7 @@ ldap = [
 ]
 leveldb = ['plyvel']
 mongo = [
-    'dnspython>=1.13.0,<2.0.0',
+    'dnspython>=1.13.0,<3.0.0',
     'pymongo>=3.6.0',
 ]
 mssql = [
@@ -535,6 +545,7 @@ PROVIDERS_REQUIREMENTS: Dict[str, List[str]] = {
     'amazon': amazon,
     'apache.beam': apache_beam,
     'apache.cassandra': cassandra,
+    'apache.drill': drill,
     'apache.druid': druid,
     'apache.hdfs': hdfs,
     'apache.hive': hive,
@@ -620,8 +631,8 @@ CORE_EXTRAS_REQUIREMENTS: Dict[str, List[str]] = {
     'cncf.kubernetes': kubernetes,  # also has provider, but it extends the core with the KubernetesExecutor
     'dask': dask,
     'deprecated_api': deprecated_api,
-    'github_enterprise': flask_oauth,
-    'google_auth': flask_oauth,
+    'github_enterprise': flask_appbuilder_authlib,
+    'google_auth': flask_appbuilder_authlib,
     'kerberos': kerberos,
     'ldap': ldap,
     'leveldb': leveldb,
@@ -726,6 +737,7 @@ ALL_PROVIDERS = list(PROVIDERS_REQUIREMENTS.keys())
 
 ALL_DB_PROVIDERS = [
     'apache.cassandra',
+    'apache.drill',
     'apache.druid',
     'apache.hdfs',
     'apache.hive',
@@ -768,7 +780,7 @@ PACKAGES_EXCLUDED_FOR_ALL.extend(
 )
 
 
-def is_package_excluded(package: str, exclusion_list: List[str]):
+def is_package_excluded(package: str, exclusion_list: List[str]) -> bool:
     """
     Checks if package should be excluded.
 
@@ -814,18 +826,15 @@ EXTRAS_REQUIREMENTS = sort_extras_requirements()
 # Those providers are pre-installed always when airflow is installed.
 # Those providers do not have dependency on airflow2.0 because that would lead to circular dependencies.
 # This is not a problem for PIP but some tools (pipdeptree) show those as a warning.
-# NOTE ! The HTTP provider is NOT preinstalled by default when Airflow is installed - because it
-#        depends on `requests` library and until `chardet` is mandatory dependency of `requests`
-#        we cannot make it mandatory dependency. See https://github.com/psf/requests/pull/5797
 PREINSTALLED_PROVIDERS = [
     'ftp',
-    # 'http',
+    'http',
     'imap',
     'sqlite'
 ]
 
 
-def get_provider_package_from_package_id(package_id: str):
+def get_provider_package_from_package_id(package_id: str) -> str:
     """
     Builds the name of provider package out of the package id provided/
 
@@ -836,16 +845,18 @@ def get_provider_package_from_package_id(package_id: str):
     return f"apache-airflow-providers-{package_suffix}"
 
 
-def get_excluded_providers():
+def get_excluded_providers() -> List[str]:
     """
     Returns packages excluded for the current python version.
+
     Currently the only excluded provider is apache hive for Python 3.9.
     Until https://github.com/dropbox/PyHive/issues/380 is fixed.
+
     """
     return ['apache.hive'] if PY39 else []
 
 
-def get_all_provider_packages():
+def get_all_provider_packages() -> str:
     """Returns all provider packages configured in setup.py"""
     excluded_providers = get_excluded_providers()
     return " ".join(
@@ -856,7 +867,13 @@ def get_all_provider_packages():
 
 
 class AirflowDistribution(Distribution):
-    """The setuptools.Distribution subclass with Airflow specific behaviour"""
+    """
+    The setuptools.Distribution subclass with Airflow specific behaviour
+
+    The reason for pylint: disable=signature-differs of parse_config_files is explained here:
+    https://github.com/PyCQA/pylint/issues/3737
+
+    """
 
     def parse_config_files(self, *args, **kwargs) -> None:
         """
@@ -954,7 +971,7 @@ def add_all_provider_packages() -> None:
 class Develop(develop_orig):
     """Forces removal of providers in editable mode."""
 
-    def run(self):
+    def run(self) -> None:
         self.announce('Installing in editable mode. Uninstalling provider packages!', level=log.INFO)
         # We need to run "python3 -m pip" because it might be that older PIP binary is in the path
         # And it results with an error when running pip directly (cannot import pip module)
@@ -978,7 +995,7 @@ class Develop(develop_orig):
 class Install(install_orig):
     """Forces installation of providers from sources in editable mode."""
 
-    def run(self):
+    def run(self) -> None:
         self.announce('Standard installation. Providers are installed from packages', level=log.INFO)
         super().run()
 

@@ -22,6 +22,7 @@
 
 - [Prepare the Apache Airflow Package RC](#prepare-the-apache-airflow-package-rc)
   - [Build RC artifacts](#build-rc-artifacts)
+  - [Manually prepare production Docker Image](#manually-prepare-production-docker-image)
   - [[\Optional\] Create new release branch](#%5Coptional%5C-create-new-release-branch)
   - [Prepare PyPI convenience "snapshot" packages](#prepare-pypi-convenience-snapshot-packages)
   - [Prepare production Docker Image](#prepare-production-docker-image)
@@ -37,7 +38,7 @@
   - [Publish release to SVN](#publish-release-to-svn)
   - [Prepare PyPI "release" packages](#prepare-pypi-release-packages)
   - [Update CHANGELOG.md](#update-changelogmd)
-  - [Manually prepare production Docker Image](#manually-prepare-production-docker-image)
+  - [Manually prepare production Docker Image](#manually-prepare-production-docker-image-1)
   - [Publish documentation](#publish-documentation)
   - [Notify developers of release](#notify-developers-of-release)
   - [Update Announcements page](#update-announcements-page)
@@ -56,8 +57,9 @@ The Release Candidate artifacts we vote upon should be the exact ones we vote ag
 
     ```shell script
     # Set Version
-    export VERSION=2.0.2rc3
+    export VERSION=2.1.2rc3
     export VERSION_SUFFIX=rc3
+    export VERSION_CONSTRAINT_BRANCH=2-1
     export VERSION_WITHOUT_RC=${VERSION/rc?/}
 
     # Set AIRFLOW_REPO_ROOT to the path of your git repo
@@ -82,13 +84,13 @@ The Release Candidate artifacts we vote upon should be the exact ones we vote ag
 - Clean the checkout: the sdist step below will
 
     ```shell script
-    rm -rf dist/*
     git clean -fxd
     ```
 
 - Tarball the repo
 
     ```shell script
+    mkdir dist
     git archive --format=tar.gz ${VERSION} \
         --prefix=apache-airflow-${VERSION_WITHOUT_RC}/ \
         -o dist/apache-airflow-${VERSION_WITHOUT_RC}-source.tar.gz
@@ -105,7 +107,7 @@ The Release Candidate artifacts we vote upon should be the exact ones we vote ag
 - Tag & Push the latest constraints files. This pushes constraints with rc suffix (this is expected)!
 
     ```shell script
-    git checkout constraints-2-0
+    git checkout constraints-${VERSION_CONSTRAINT_BRANCH}
     git tag -s "constraints-${VERSION}"
     git push origin "constraints-${VERSION}"
     ```
@@ -126,6 +128,18 @@ The Release Candidate artifacts we vote upon should be the exact ones we vote ag
     svn add *
     svn commit -m "Add artifacts for Airflow ${VERSION}"
     ```
+
+
+## Manually prepare production Docker Image
+
+
+```shell script
+./scripts/ci/tools/prepare_prod_docker_images.sh ${VERSION}
+```
+
+This will wipe Breeze cache and docker-context-files in order to make sure the build is "clean". It
+also performs image verification before pushing the images.
+
 
 ## [\Optional\] Create new release branch
 
@@ -154,17 +168,14 @@ Run script to re-tag images from the ``main`` branch to the  ``vX-Y-test`` branc
 ## Prepare PyPI convenience "snapshot" packages
 
 At this point we have the artefact that we vote on, but as a convenience to developers we also want to
-publish "snapshots" of the RC builds to PyPI for installing via pip. Also those packages
-are used to build the production docker image in DockerHub, so we need to upload the packages
-before we push the tag to GitHub. Pushing the tag to GitHub automatically triggers image building in
-DockerHub.
+publish "snapshots" of the RC builds to PyPI for installing via pip:
 
 To do this we need to
 
 - Build the package:
 
     ```shell script
-    ./breeze prepare-airflow-package --version-suffix-for-pypi "${VERSION_SUFFIX}"
+    ./breeze prepare-airflow-packages --version-suffix-for-pypi "${VERSION_SUFFIX}" --package-format both
     ```
 
 - Verify the artifacts that would be uploaded:
@@ -544,9 +555,9 @@ cd "${VERSION}"
 
 # Move the artifacts to svn folder & commit
 for f in ${AIRFLOW_DEV_SVN}/$RC/*; do
-    svn cp "$f" "${$(basename $f)/rc?/}"
+    svn cp "$f" "${$(basename $f)/}"
     # Those will be used to upload to PyPI
-    cp "$f" "${AIRFLOW_SOURCES}/dist/${$(basename $f)/rc?/}"
+    cp "$f" "${AIRFLOW_SOURCES}/dist/${$(basename $f)/}"
 done
 svn commit -m "Release Airflow ${VERSION} from ${RC}"
 

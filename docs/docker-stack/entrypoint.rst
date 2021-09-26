@@ -94,36 +94,18 @@ You can read more about it in the "Support arbitrary user ids" chapter in the
 Waits for Airflow DB connection
 -------------------------------
 
-In case Postgres or MySQL DB is used, the entrypoint will wait until the airflow DB connection becomes
-available. This happens always when you use the default entrypoint.
+The entrypoint is waiting for a connection to the database independent of the database engine. This allows us to increase
+the stability of the environment.
 
-The script detects backend type depending on the URL schema and assigns default port numbers if not specified
-in the URL. Then it loops until the connection to the host/port specified can be established
+Waiting for connection involves executing ``airflow db check`` command, which means that a ``select 1 as is_alive;`` statement
+is executed. Then it loops until the the command will be successful.
 It tries :envvar:`CONNECTION_CHECK_MAX_COUNT` times and sleeps :envvar:`CONNECTION_CHECK_SLEEP_TIME` between checks
 To disable check, set ``CONNECTION_CHECK_MAX_COUNT=0``.
-
-Supported schemes:
-
-* ``postgres://`` - default port 5432
-* ``mysql://``    - default port 3306
-* ``sqlite://``
-
-In case of SQLite backend, there is no connection to establish and waiting is skipped.
-
-For older than Airflow 1.10.14, waiting for connection involves checking if a matching port is open.
-The host information is derived from the variables :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN` and
-:envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD`. If :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD` variable
-is passed to the container, it is evaluated as a command to execute and result of this evaluation is used
-as :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN`. The :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD` variable
-takes precedence over the :envvar:`AIRFLOW__CORE__SQL_ALCHEMY_CONN` variable.
-
-For newer versions, the ``airflow db check`` command is used, which means that a ``select 1 as is_alive;`` query
-is executed. This also means that you can keep your password in secret backend.
 
 Waits for celery broker connection
 ----------------------------------
 
-In case Postgres or MySQL DB is used, and one of the ``scheduler``, ``celery``, ``worker``, or ``flower``
+In case CeleryExecutor is used, and one of the ``scheduler``, ``celery``
 commands are used the entrypoint will wait until the celery broker DB connection is available.
 
 The script detects backend type depending on the URL schema and assigns default port numbers if not specified
@@ -138,12 +120,7 @@ Supported schemes:
 * ``postgres://``            - default port 5432
 * ``mysql://``               - default port 3306
 
-Waiting for connection involves checking if a matching port is open.
-The host information is derived from the variables :envvar:`AIRFLOW__CELERY__BROKER_URL` and
-:envvar:`AIRFLOW__CELERY__BROKER_URL_CMD`. If :envvar:`AIRFLOW__CELERY__BROKER_URL_CMD` variable
-is passed to the container, it is evaluated as a command to execute and result of this evaluation is used
-as :envvar:`AIRFLOW__CELERY__BROKER_URL`. The :envvar:`AIRFLOW__CELERY__BROKER_URL_CMD` variable
-takes precedence over the :envvar:`AIRFLOW__CELERY__BROKER_URL` variable.
+Waiting for connection involves checking if a matching port is open. The host information is derived from the Airflow configuration.
 
 .. _entrypoint:commands:
 
@@ -183,6 +160,47 @@ If there are any other arguments - they are simply passed to the "airflow" comma
 
   > docker run -it apache/airflow:2.1.0-python3.6 version
   2.1.0
+
+Signal propagation
+------------------
+
+Airflow uses ``dumb-init`` to run as "init" in the entrypoint. This is in order to propagate
+signals and reap child processes properly. This means that the process that you run does not have
+to install signal handlers to work properly and be killed when the container is gracefully terminated.
+The behaviour of signal propagation is configured by ``DUMB_INIT_SETSID`` variable which is set to
+``1`` by default - meaning that the signals will be propagated to the whole process group, but you can
+set it to ``0`` to enable ``single-child`` behaviour of ``dumb-init`` which only propagates the
+signals to only single child process.
+
+The table below summarizes ``DUMB_INIT_SETSID`` possible values and their use cases.
+
++----------------+----------------------------------------------------------------------+
+| Variable value | Use case                                                             |
++----------------+----------------------------------------------------------------------+
+| 1 (default)    | Propagates signals to all processes in the process group of the main |
+|                | process running in the container.                                    |
+|                |                                                                      |
+|                | If you run your processes via ``["bash", "-c"]`` command and bash    |
+|                | spawn  new processes without ``exec``, this will help to terminate   |
+|                | your container gracefully as all processes will receive the signal.  |
++----------------+----------------------------------------------------------------------+
+| 0              | Propagates signals to the main process only.                         |
+|                |                                                                      |
+|                | This is useful if your main process handles signals gracefully.      |
+|                | A good example is warm shutdown of Celery workers. The ``dumb-init`` |
+|                | in this case will only propagate the signals to the main process,    |
+|                | but not to the processes that are spawned in the same process        |
+|                | group as the main one. For example in case of Celery, the main       |
+|                | process will put the worker in "offline" mode, and will wait         |
+|                | until all running tasks complete, and only then it will              |
+|                | terminate all processes.                                             |
+|                |                                                                      |
+|                | For Airflow's Celery worker, you should set the variable to 0        |
+|                | and either use ``["celery", "worker"]`` command.                     |
+|                | If you are running it through ``["bash", "-c"]`` command,            |
+|                | you  need to start the worker via ``exec airflow celery worker``     |
+|                | as the last command executed.                                        |
++----------------+----------------------------------------------------------------------+
 
 Additional quick test options
 -----------------------------

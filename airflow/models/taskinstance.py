@@ -35,7 +35,6 @@ import lazy_object_proxy
 import pendulum
 from jinja2 import TemplateAssertionError, UndefinedError
 from sqlalchemy import Column, Float, Index, Integer, PickleType, String, and_, func, or_
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import reconstructor, relationship
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import BooleanClauseList
@@ -70,8 +69,8 @@ from airflow.utils.net import get_hostname
 from airflow.utils.operator_helpers import context_to_airflow_vars
 from airflow.utils.platform import getuser
 from airflow.utils.session import provide_session
-from airflow.utils.sqlalchemy import UtcDateTime, with_row_locks
-from airflow.utils.state import State
+from airflow.utils.sqlalchemy import UtcDateTime
+from airflow.utils.state import DagRunState, State
 from airflow.utils.timeout import timeout
 
 try:
@@ -143,6 +142,8 @@ def set_current_context(context: Context):
 
 def load_error_file(fd: IO[bytes]) -> Optional[Union[str, Exception]]:
     """Load and return error from error file"""
+    if fd.closed:
+        return None
     fd.seek(0, os.SEEK_SET)
     data = fd.read()
     if not data:
@@ -169,7 +170,7 @@ def clear_task_instances(
     session,
     activate_dag_runs=None,
     dag=None,
-    dag_run_state: Union[str, Literal[False]] = State.RUNNING,
+    dag_run_state: Union[DagRunState, Literal[False]] = DagRunState.QUEUED,
 ):
     """
     Clears a set of task instances, but makes sure the running ones
@@ -203,6 +204,7 @@ def clear_task_instances(
                 # original max_tries or the last attempted try number.
                 ti.max_tries = max(ti.max_tries, ti.prev_attempted_tries)
             ti.state = State.NONE
+            ti.external_executor_id = None
             session.merge(ti)
 
         task_id_by_key[ti.dag_id][ti.execution_date][ti.try_number].add(ti.task_id)
@@ -270,7 +272,9 @@ def clear_task_instances(
         )
         for dr in drs:
             dr.state = dag_run_state
-            dr.start_date = timezone.utcnow()
+            dr.start_date = None
+            if dag_run_state == State.QUEUED:
+                dr.last_scheduling_decision = None
 
 
 class TaskInstanceKey(NamedTuple):
@@ -675,7 +679,10 @@ class TaskInstance(Base, LoggingMixin):
             self.priority_weight = ti.priority_weight
             self.operator = ti.operator
             self.queued_dttm = ti.queued_dttm
+            self.queued_by_job_id = ti.queued_by_job_id
             self.pid = ti.pid
+            self.executor_config = ti.executor_config
+            self.external_executor_id = ti.external_executor_id
         else:
             self.state = None
 
@@ -1056,6 +1063,7 @@ class TaskInstance(Base, LoggingMixin):
         self.refresh_from_db(session=session, lock_for_update=True)
         self.job_id = job_id
         self.hostname = get_hostname()
+        self.pid = None
 
         if not ignore_all_deps and not ignore_ti_state and self.state == State.SUCCESS:
             Stats.incr('previously_succeeded', 1, 1)
@@ -1250,62 +1258,6 @@ class TaskInstance(Base, LoggingMixin):
 
         session.commit()
 
-        if not test_mode:
-            self._run_mini_scheduler_on_child_tasks(session)
-
-    @provide_session
-    @Sentry.enrich_errors
-    def _run_mini_scheduler_on_child_tasks(self, session=None) -> None:
-        if conf.getboolean('scheduler', 'schedule_after_task_execution', fallback=True):
-            from airflow.models.dagrun import DagRun  # Avoid circular import
-
-            try:
-                # Re-select the row with a lock
-                dag_run = with_row_locks(
-                    session.query(DagRun).filter_by(
-                        dag_id=self.dag_id,
-                        execution_date=self.execution_date,
-                    ),
-                    session=session,
-                ).one()
-
-                # Get a partial dag with just the specific tasks we want to
-                # examine. In order for dep checks to work correctly, we
-                # include ourself (so TriggerRuleDep can check the state of the
-                # task we just executed)
-                partial_dag = self.task.dag.partial_subset(
-                    self.task.downstream_task_ids,
-                    include_downstream=False,
-                    include_upstream=False,
-                    include_direct_upstream=True,
-                )
-
-                dag_run.dag = partial_dag
-                info = dag_run.task_instance_scheduling_decisions(session)
-
-                skippable_task_ids = {
-                    task_id
-                    for task_id in partial_dag.task_ids
-                    if task_id not in self.task.downstream_task_ids
-                }
-
-                schedulable_tis = [ti for ti in info.schedulable_tis if ti.task_id not in skippable_task_ids]
-                for schedulable_ti in schedulable_tis:
-                    if not hasattr(schedulable_ti, "task"):
-                        schedulable_ti.task = self.task.dag.get_task(schedulable_ti.task_id)
-
-                num = dag_run.schedule_tis(schedulable_tis)
-                self.log.info("%d downstream tasks scheduled from follow-on schedule check", num)
-
-                session.commit()
-            except OperationalError as e:
-                # Any kind of DB error here is _non fatal_ as this block is just an optimisation.
-                self.log.info(
-                    f"Skipping mini scheduling run due to exception: {e.statement}",
-                    exc_info=True,
-                )
-                session.rollback()
-
     def _prepare_and_execute_task_with_callbacks(self, context, task):
         """Prepare Task for Execution"""
         from airflow.models.renderedtifields import RenderedTaskInstanceFields
@@ -1417,18 +1369,27 @@ class TaskInstance(Base, LoggingMixin):
             if task.on_failure_callback is not None:
                 context = self.get_template_context()
                 context["exception"] = error
-                task.on_failure_callback(context)
+                try:
+                    task.on_failure_callback(context)
+                except Exception:
+                    self.log.exception("Error when executing on_failure_callback")
         elif self.state == State.SUCCESS:
             task = self.task
             if task.on_success_callback is not None:
                 context = self.get_template_context()
-                task.on_success_callback(context)
+                try:
+                    task.on_success_callback(context)
+                except Exception:
+                    self.log.exception("Error when executing on_success_callback")
         elif self.state == State.UP_FOR_RETRY:
             task = self.task
             if task.on_retry_callback is not None:
                 context = self.get_template_context()
                 context["exception"] = error
-                task.on_retry_callback(context)
+                try:
+                    task.on_retry_callback(context)
+                except Exception:
+                    self.log.exception("Error when executing on_retry_callback")
 
     @provide_session
     def run(
@@ -1458,6 +1419,7 @@ class TaskInstance(Base, LoggingMixin):
             session=session,
         )
         if not res:
+            self.log.info("CHECK AND CHANGE")
             return
 
         try:
