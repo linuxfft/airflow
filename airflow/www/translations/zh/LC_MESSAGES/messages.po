@@ -245,7 +245,7 @@ msgstr "DAG依赖"
 #: airflow/security/permissions.py:32
 #, fuzzy
 msgid "DAG Code"
-msgstr "车辆代码"
+msgstr "DAG代码"
 
 #: airflow/security/permissions.py:33
 msgid "DAG Runs"
@@ -372,7 +372,7 @@ msgstr "设备类型"
 
 #: airflow/security/permissions.py:64 plugins/view/curve_analysis_views.py:71
 msgid "Analysis Via Track No"
-msgstr "根据车号分析"
+msgstr "根据发动机编号分析"
 
 #: airflow/security/permissions.py:65 plugins/view/curve_analysis_views.py:36
 msgid "Analysis Via Controller"
@@ -498,7 +498,7 @@ msgstr "查看源代码"
 #: plugins/view/curve_analysis_views.py:78 plugins/view/curves_view.py:45
 #: plugins/view/result_view.py:31 plugins/view/templates/curves.html:63
 msgid "Car Code"
-msgstr "车辆代码"
+msgstr "发动机编号"
 
 #: plugins/view/curve_analysis_views.py:96 plugins/view/result_view.py:32
 msgid "Bolt Number"
