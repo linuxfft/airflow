@@ -82,7 +82,7 @@ class ClsResultMQ(ClsEntity):
     def get_channel(
         self,
         queue,
-        passive=False,
+        passive=True,
         durable=False,
         exclusive=False,
         auto_delete=False,
@@ -108,7 +108,12 @@ class ClsResultMQ(ClsEntity):
             arguments=arguments
         )
         if exchange and exchange_type:
-            channel.exchange_declare(exchange=exchange, exchange_type=exchange_type, durable=exchange_durable)
+            channel.exchange_declare(
+                passive=passive,
+                exchange=exchange,
+                exchange_type=exchange_type,
+                durable=exchange_durable
+            )
             channel.queue_bind(exchange=exchange,
                                queue=queue,
                                routing_key=routing_key)  # 匹配python.后所有单词

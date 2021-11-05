@@ -62,11 +62,15 @@ def watch_mq_trigger(*args, **kwargs):
         'exchange': f'qcos_analysis_trigger.{factory_code}',
         'exchange_type': 'direct',
         'routing_key': f'qcos_analysis_trigger.{factory_code}',
+        'durable': True,
+        'arguments': {
+            'x-message-ttl': 60000
+        }
     }
     queue_config = Variable.get("analysis_trigger_queue_config", default_var=default_queue_config,
                                 deserialize_json=True)
     default_queue_config.update(queue_config)
-    mq_connection.doSubscribe(message_handler=trigger_handler, **default_queue_config)
+    mq_connection.doSubscribe(message_handler=trigger_handler, passive=True, **default_queue_config)
     mq_connection.run(queue=default_queue_config.get('queue'))
     mq_connection.doUnsubscribe(default_queue_config.get('queue'))
 
