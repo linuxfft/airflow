@@ -16,6 +16,7 @@ log = LoggingMixin().log
 def load_default_controller(file_dir, session=None):
     log.info("Loading default controllers")
     val = load_default_controllers(file_dir)
+    from plugins.models.tightening_controller import TighteningController
     for controller in val:
         if TighteningController.controller_exists(**controller):
             log.info(f"Controller already exists, skipping, {repr(controller)}")
