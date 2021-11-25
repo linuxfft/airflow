@@ -78,6 +78,7 @@ jobs:
           echo $(pwd)
           cp -r ../dags ./dags
           cp -r ../plugins ./plugins
+          cp -r ../qcos_addons ./qcos_addons
           docker build -t ghcr.io/masami10/airflow/airflow:latest --no-cache .
           docker tag ghcr.io/masami10/airflow/airflow:latest ghcr.io/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
           docker push ghcr.io/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
