@@ -3,7 +3,7 @@ import os
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.plugins_manager import AirflowPlugin
 from qcos_addons.default_data.loaders import load_default_controllers, load_default_error_tags, \
-    load_default_device_types, load_default_users
+    load_default_device_types, load_default_users, load_default_curve_templates, load_default_variables
 from airflow.configuration import conf
 from plugins.factory_code.factory_code import get_factory_code
 import json
@@ -152,6 +152,41 @@ def create_default_connection(session=None):
             ), session)
 
 
+def create_default_curve_templates():
+    log.info("Loading default Curve Templates.")
+    from plugins.models.curve_template import CurveTemplateModel
+    current_templates = len(CurveTemplateModel.get_all_active_curve_tmpls().keys())
+    if current_templates > 0:
+        log.info("There are existing Curve Templates, skip loading.")
+        return
+    templates = load_default_curve_templates()
+    suc_count = 0
+    for k, v in templates.items():
+        try:
+            CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+        except Exception as e:
+            fail_count += 1
+        else:
+            suc_count += 1
+    log.info(f"{suc_count} Curve Templates successfully loaded.")
+
+
+def create_default_variables():
+    log.info("Loading default Variables.")
+    from airflow.models import Variable
+
+    variables = load_default_variables()
+    suc_count = 0
+    for k, v in variables.items():
+        try:
+            Variable.setdefault(k, v)
+        except Exception as e:
+            fail_count += 1
+        else:
+            suc_count += 1
+    log.info(f"{suc_count} Variables successfully loaded.")
+
+
 # Defining the plugin class
 class LoadDefaultDataPlugin(AirflowPlugin):
     name = "load_default_data_plugin"
@@ -184,5 +219,14 @@ class LoadDefaultDataPlugin(AirflowPlugin):
 
         try:
             load_default_controller(factory_code)
+        except Exception as e:
+            log.error(e)
+
+        try:
+            create_default_curve_templates()
+        except Exception as e:
+            log.error(e)
+        try:
+            create_default_variables()
         except Exception as e:
             log.error(e)

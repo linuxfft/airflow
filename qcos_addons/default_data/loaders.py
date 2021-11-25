@@ -1,4 +1,5 @@
 from qcos_addons.utils.load_data_from_csv import load_data_from_csv
+from qcos_addons.utils.load_data_from_json import load_data_from_json
 import os
 from airflow.utils.log.logging_mixin import LoggingMixin
 
@@ -12,6 +13,14 @@ def _do_import(sub_path, data_keys=None):
         log.error("目录不存在：{}".format(file_path))
         return []
     return load_data_from_csv(file_path, data_keys)
+
+def _do_import_json(sub_path):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, sub_path)
+    if not os.path.exists(file_path):
+        log.error("目录不存在：{}".format(file_path))
+        return {}
+    return load_data_from_json(file_path)
 
 
 def load_default_controllers(factory):
@@ -52,3 +61,9 @@ def load_default_users(factory):
             'role': 'role'
         }
     )
+
+def load_default_curve_templates():
+    return _do_import_json('data/default_curve_templates.json')
+
+def load_default_variables():
+    return _do_import_json('data/default_variables.json')
