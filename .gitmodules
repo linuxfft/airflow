@@ -2,5 +2,5 @@
 	path = qcos_addons/spc
 	url = https://github.com/masami10/spc.git
 [submodule "plugins/default_data/data"]
-	path = plugins/default_data/data
+	path = qcos_addons/default_data/data
 	url = https://github.com/chasers2012/qcos-base-data.git
