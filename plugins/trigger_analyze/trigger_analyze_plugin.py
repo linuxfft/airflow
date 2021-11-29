@@ -4,7 +4,8 @@ from abc import ABC
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import BaseOperator
 from airflow.utils import timezone
-from plugins.utils.utils import get_curve_params
+from plugins.entities.curve_storage import ClsCurveStorage
+from plugins.utils.utils import get_curve_params, get_curve, get_result
 from typing import Dict
 from airflow.api.common.experimental import trigger_dag as trigger
 from distutils.util import strtobool
@@ -125,6 +126,30 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         # 此处未来或将不创建分析任务。
         # 添加此方法意在统一外部接口，不在不同地方调用trigger_dag，便于维护
         trigger.trigger_dag('curve_analyze_dag', conf=params, replace_microseconds=False)
+
+    @staticmethod
+    def trigger_with_entity_id(entity_id):
+
+        result = get_result(entity_id)
+        curve = get_curve(entity_id)
+        conf = TriggerAnalyzeHook.get_trigger_param_from_result(entity_id, result, curve)
+        trigger.trigger_dag('curve_analyze_dag', conf=conf, replace_microseconds=False)
+
+    @staticmethod
+    def get_trigger_param_from_result(entity_id, result, curve):
+        conf = {}
+        result.pop('update_time')
+        result.pop('execution_date')
+        result.pop('training_execution_date')
+        conf.update({
+            'bolt_number': result.get('bolt_number'),
+            'entity_id': entity_id,
+            'should_analyze': True,
+            'craft_type': result.get('craft_type'),
+            'result': result,
+            'curve': curve
+        })
+        return conf
 
 
 class TriggerAnalyzeOperator(BaseOperator):
