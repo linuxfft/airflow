@@ -180,7 +180,7 @@ def create_default_variables():
     suc_count = 0
     for k, v in variables.items():
         try:
-            Variable.setdefault(k, v)
+            Variable.setdefault(k, v if isinstance(v, str) else json.dumps(v, ensure_ascii=False))
         except Exception as e:
             fail_count += 1
         else:
