@@ -135,10 +135,17 @@
     }
 
     function entityIdUnselect(entityId) {
-      const idx = selectedEIds.findIndex(id => id === entityId);
+
+      let idx = selectedEIds.findIndex(id => id === entityId);
       if (idx >= 0) {
         selectedEIds.splice(idx, 1);
       }
+      const prevSelectedEIds = JSON.parse(window.sessionStorage.getItem('selectedEIds') || '[]');
+      idx = prevSelectedEIds.findIndex(id => id === entityId);
+      if (idx >= 0) {
+        prevSelectedEIds.splice(idx, 1);
+      }
+      window.sessionStorage.setItem('selectedEIds', JSON.stringify(prevSelectedEIds));
     }
 
     function curvesListInit() {
