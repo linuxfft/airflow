@@ -286,7 +286,9 @@
     }
 
     function getAllData(yKey, xKey) {
-      return genDataSeries()
+      return {
+        series: genDataSeries()
+      }
     }
 
 

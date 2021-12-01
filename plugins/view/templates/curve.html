@@ -117,19 +117,21 @@
 
     function getAllData() {
       const {yKey, yName} = chartParams;
-      return yKey.map(function (n, idx) {
-        return {
-          name: yName[idx],
-          type: 'line',
-          showSymbol: false,
-          data: genData(n),
-          xAxisIndex: idx,
-          yAxisIndex: idx,
-          lineStyle: {
-            width: 3
-          },
-        };
-      });
+      return {
+        series: yKey.map(function (n, idx) {
+          return {
+            name: yName[idx],
+            type: 'line',
+            showSymbol: false,
+            data: genData(n),
+            xAxisIndex: idx,
+            yAxisIndex: idx,
+            lineStyle: {
+              width: 3
+            },
+          };
+        })
+      };
     }
 
     function genData(yKey) {

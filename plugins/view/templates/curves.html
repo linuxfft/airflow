@@ -172,7 +172,7 @@
 
     function getAllData(yKey, xKey) {
       if ((!curvesData) || Object.keys(curvesData).length === 0) {
-        return [];
+        return {series: []};
       }
       let allDatas = [];
       selectedEIds.forEach(function (c) {
@@ -195,7 +195,16 @@
           });
         })
       });
-      return allDatas;
+      return {
+        series: allDatas,
+        legend: {
+          type: 'scroll',
+          right: 120,
+          data: allDatas.map(function (d) {
+            return d.name
+          })
+        }
+      };
     }
 
     function genData(entityId, xKey, yKey) {

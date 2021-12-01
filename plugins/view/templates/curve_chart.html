@@ -99,7 +99,7 @@
 
   function renderChart() {
     const {xName, yName, yKey, xKey} = chartParams;
-    const options = {
+    let options = {
       toolbox: {
         show: true,
         feature: {
@@ -147,9 +147,6 @@
           filterMode: 'none'
         }
       ],
-      legend: {
-        data: yName
-      },
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -192,9 +189,9 @@
           top: top + (margin + height) * idx + '%',
           bottom: bottom + (margin + height) * (yName.length - idx - 1) + '%',
         }
-      }),
-      series: getAllData(yKey, xKey)
+      })
     };
+    options = Object.assign(options, getAllData(yKey, xKey));
     curveChart.setOption(options, true);
   }
 
