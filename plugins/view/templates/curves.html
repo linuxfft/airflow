@@ -56,6 +56,8 @@
                 <td>
                   <button class="btn list-group-item" value="{{ result.entity_id }}">
                     <h4 class="list-group-item-heading">
+                      <div class="curve-color-indicator" data-entityid="{{ result.entity_id }}"
+                           style="width: 1rem;height: 1rem;border-radius: 1rem;margin-right:5px;display: inline-block;"></div>
                       {{ result.entity_id }}
                     </h4>
                     <p class="list-group-item-text ml-4">
@@ -117,6 +119,11 @@
     let backendSelectedResults = JSON.parse('{{ selected_results|tojson|safe }}');
     let curvesData = {};
     let extraData = {};
+    $(document).ready(function () {
+      Array.prototype.forEach.call($('.curve-color-indicator'), function ($cci) {
+        $($cci).css('backgroundColor', stringToColor($($cci).data('entityid').split('').reverse().join('')))
+      });
+    })
 
 
     function entityIdSelect(entityId, data) {
