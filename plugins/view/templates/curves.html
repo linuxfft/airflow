@@ -110,6 +110,7 @@
 
 {% block tail_js %}
   {{ super() }}
+  <script src="{{ url_for('static', filename='plugin/js/util.js') }}" type="text/javascript"></script>
   <script src="{{ url_for('static', filename='plugin/js/bootstrap-treeview.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     let selectedEIds = [];
@@ -166,17 +167,13 @@
       renderChart();
     }
 
-    function randomHexColor() { //随机生成十六进制颜色
-      return '#' + ('00000' + (Math.random() * 0x1000000 << 0).toString(16)).substr(-6);
-    }
-
     function getAllData(yKey, xKey) {
       if ((!curvesData) || Object.keys(curvesData).length === 0) {
         return {series: []};
       }
       let allDatas = [];
       selectedEIds.forEach(function (c) {
-        const color = randomHexColor();
+        const color = stringToColor(c.split('').reverse().join(''));
         yKey.forEach(function (n, idx) {
           allDatas.push({
             name: extraData[c] && `${extraData[c].carCode}@${extraData[c].date}` || c,
