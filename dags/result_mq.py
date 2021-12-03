@@ -17,11 +17,11 @@ _logger = generate_logger(__name__)
 
 
 def on_dag_fail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def on_dag_success(context):
-    _logger.info("{0} Run Success".format(context))
+    _logger.debug("{0} Run Success".format(context))
 
 
 dag = DAG(

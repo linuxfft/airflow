@@ -41,11 +41,11 @@ _logger.setLevel(loggingLevel)
 
 
 def onUpgradeCurveTmplFail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def onUpgradeCurveTmplSuccess(context):
-    _logger.info("{0} Run Success".format(context))
+    _logger.debug("{0} Run Success".format(context))
 
 
 local_tz = pendulum.timezone("Asia/Shanghai")

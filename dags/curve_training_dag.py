@@ -27,11 +27,11 @@ TASK_ID = 'curve_training_task'
 
 
 def onDagFail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def onDagSuccess(context):
-    _logger.info("{0} Run Success".format(context))
+    _logger.debug("{0} Run Success".format(context))
 
 
 local_tz = pendulum.timezone("Asia/Shanghai")
