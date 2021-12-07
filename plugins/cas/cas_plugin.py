@@ -52,6 +52,7 @@ class CasHook(BaseHook):
         return "{}/cas/invalid-curve".format(self.uri)
 
     async def trigger_analyze(self, params, timeout=ClientTimeout(total=30), retry_attempts=5):
+        '''触发分析，同步获取分析结果'''
         headers = {
             'Accept': 'application/json',
             'Content-type': 'application/json'
@@ -70,8 +71,7 @@ class CasHook(BaseHook):
                 async with client.post(headers=headers, url=url, retry_attempts=retry_attempts, json=data) as r:
                     r.raise_for_status()
                     resp = await r.read()
-                    self.log.debug("trigger training: {}, resp: {}".format(
-                        json.dumps(data), resp))
+                    self.log.debug("trigger training: {}, resp: {}".format(json.dumps(data), resp))
                     return resp
         except BaseException as e:
             self.log.error(
@@ -79,6 +79,7 @@ class CasHook(BaseHook):
             raise e
 
     async def training_server_update_templates(self, timeout=ClientTimeout(total=300), retry_attempts=5):
+        '''通知cas加载模板'''
         headers = {
             'Accept': 'application/json',
             'Content-type': 'application/json'
@@ -93,6 +94,7 @@ class CasHook(BaseHook):
                                                                                        resp))
 
     def trigger_training(self, data):
+        '''触发异步训练'''
         json_data = {
             'conf': data
         }

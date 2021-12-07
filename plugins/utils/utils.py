@@ -87,16 +87,6 @@ def get_curve_params(bolt_number):
         return {}
 
 
-def get_task_params(task_instance, entity_id):
-    task = {
-        "dag_id": task_instance.dag_id,
-        "task_id": task_instance.task_id,
-        "real_task_id": entity_id,
-        "exec_date": '{}'.format(task_instance.execution_date)
-    }
-    return {'task': task}
-
-
 def get_result_args():
     return {
         "engine": settings.engine,
