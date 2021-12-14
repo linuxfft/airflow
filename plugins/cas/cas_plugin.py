@@ -71,7 +71,7 @@ class CasHook(BaseHook):
                 async with client.post(headers=headers, url=url, retry_attempts=retry_attempts, json=data) as r:
                     r.raise_for_status()
                     resp = await r.read()
-                    self.log.debug("trigger training: {}, resp: {}".format(json.dumps(data), resp))
+                    self.log.debug("trigger analyze: {}, resp: {}".format(json.dumps(data), resp))
                     return resp
         except BaseException as e:
             self.log.error(
@@ -106,7 +106,7 @@ class CasHook(BaseHook):
                                  timeout=(3.05, 27))
             self.log.info('training server response')
             if resp.status_code != HTTPStatus.OK:
-                raise Exception(resp.content)
+                raise Exception(f'training server returns an error: {resp.content}')
         except Exception as e:
             self.log.error(repr(e))
             raise Exception(str(e))

@@ -75,6 +75,7 @@ def do_trigger_training(result, final_state):
         'curve': curve,
         'craft_type': get_craft_type(bolt_number),
         "curve_mode": curve_mode,
+        "verify_error": result.get('verify_error'),
     }
     data.update(curve_params)
     from plugins.cas.cas_plugin import CasHook
