@@ -58,7 +58,6 @@ EXISTING_ROLES = {
     '运维人员'
 }
 
-
 ENV_SUC_CRCCODE_KEY = os.getenv('ENV_SUC_CRCCODE_KEY', 'crccode')
 ENV_SUC_ROOT_URL = os.getenv('ENV_SUC_ROOT_URL', 'http://localhost:8080')
 ENV_PORTAL_INDEX_URL = os.getenv(
@@ -92,18 +91,35 @@ class CustomAuthDBView(AuthDBView):
     login_template = "airflow/login.html"
 
     @expose("/login/", methods=["GET", "POST"])
-    def login(self):
-        ret = super(CustomAuthDBView, self).login()
+    @provide_session
+    def login(self, session=None):
+        crc_code = request.args.get(
+            'crccode', None) or request.args.get('crcCode', None)
+        if not crc_code:
+            ret = super(CustomAuthDBView, self).login()
+        userinfo = doGetLoginInfo(crc_code)
+        # userinfo = {'username': "1312321", 'email': "123213", 'last_name': "12312323"}
+        if not userinfo:
+            ret = super(CustomAuthDBView, self).login()
+        user = self.appbuilder.sm.auth_user_oauth(userinfo)
+
+        session.merge(user)
+        session.commit()
+        login_user(SUCUser(user))
+        session.commit()
         msg = ''
-        if not current_user.is_active:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           'null', 'null',
-                                           CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
-        else:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user,  getattr(
-                                               current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
+        try:
+            if not current_user.is_active:
+                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                                               'null', 'null',
+                                               CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
+            else:
+                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
+                                               current_user, getattr(
+                        current_user, 'last_name', ''),
+                                               CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
+        except AttributeError as err:
+            logging.error(err)
         logging.info(msg)
         return ret
 
@@ -111,7 +127,7 @@ class CustomAuthDBView(AuthDBView):
     def logout(self):
         msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
                                        current_user, getattr(
-                                           current_user, 'last_name', ''),
+                current_user, 'last_name', ''),
                                        CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
         ret = super(CustomAuthDBView, self).logout()
         logging.info(msg)
@@ -190,8 +206,8 @@ class AuthOAuthView(AV):
                                                CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
             else:
                 msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               current_user,  getattr(
-                                                   current_user, 'last_name', ''),
+                                               current_user, getattr(
+                        current_user, 'last_name', ''),
                                                CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
         except AttributeError as err:
             logging.error(err)
@@ -202,7 +218,7 @@ class AuthOAuthView(AV):
     def logout(self):
         msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
                                        current_user, getattr(
-                                           current_user, 'last_name', ''),
+                current_user, 'last_name', ''),
                                        CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
         logging.info(msg)
         logout_user()
@@ -717,7 +733,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
         pvms = self.get_session.query(sqla_models.PermissionView).filter(~and_(
             sqla_models.PermissionView.permission_id.in_(dag_perm_ids),
             sqla_models.PermissionView.view_menu_id != all_dag_view.id)
-        ).all()
+                                                                         ).all()
 
         pvms = [p for p in pvms if p.permission and p.view_menu]
 
