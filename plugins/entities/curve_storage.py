@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import io
+import urllib3
 from typing import Dict, Optional, List
 from tablib import Dataset
 import uuid
@@ -10,6 +11,7 @@ from minio.error import (ResponseError, BucketAlreadyOwnedByYou,
 from plugins.entities.entity import ClsEntity
 from plugins.utils.logger import generate_logger
 import threading
+import concurrent.futures
 
 _logger = generate_logger(__name__)
 
@@ -61,11 +63,16 @@ class ClsCurveStorage(ClsEntity):
     @property
     def ObjectName(self):
         entity_id = self.entity_id
-        if entity_id:
-            self._fileName = "{}.csv".format(entity_id)
-        else:
-            self._fileName = "{}.csv".format(uuid.uuid4())
+        self._fileName = self.get_file_name(entity_id)
         return self._fileName
+
+    @staticmethod
+    def get_file_name(entity_id: Optional[str]) -> str:
+        if entity_id:
+            _fileName = "{}.csv".format(entity_id)
+        else:
+            _fileName = "{}.csv".format(uuid.uuid4())
+        return _fileName
 
     @property
     def endpoint(self):
@@ -77,7 +84,16 @@ class ClsCurveStorage(ClsEntity):
         self._client = Minio(self.endpoint,
                              access_key=self._access_key,
                              secret_key=self._secret_key,
-                             secure=self._secure)
+                             secure=self._secure,
+                             http_client=urllib3.PoolManager(
+                                 timeout=20.0,
+                                 retries=urllib3.Retry(
+                                     total=5,
+                                     backoff_factor=0.2,
+                                     status_forcelist=[500, 502, 503, 504]
+                                 )
+                             )
+                             )  # 线程安全，每个进程需要一个实例
 
     def ensure_bucket(self, bucket):
         self.ensure_connect()
@@ -173,3 +189,27 @@ class ClsCurveStorage(ClsEntity):
 
         dict_data = self.csv_data_to_dict(csv_data)
         return dict_data
+
+    def fetch_obj_via_entity_id(self, entity_id: str):
+        filename = self.get_file_name(entity_id)
+        resp = self._client.get_object(self._bucket, filename)
+        csv_data = resp.data.decode('utf-8')
+
+        dict_data = self.csv_data_to_dict(csv_data)
+        return dict_data
+
+    def query_curves(self, entity_ids: List[str]) -> List[Dict]:
+        self.ensure_bucket(self._bucket)
+        datas = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_url = {executor.submit(self.fetch_obj_via_entity_id, entity_id, 60): entity_id for entity_id in
+                             entity_ids}
+            for future in concurrent.futures.as_completed(future_to_url):
+                entity_id = future_to_url[future]
+                try:
+                    data = future.result()
+                    datas.append({'entity_id': entity_id, 'curve': data})
+                except Exception as exc:
+                    _logger.error('%r generated an exception: %s' % (entity_id, exc))
+                    datas.append({'entity_id': entity_id, 'curve': []})
+        return datas

@@ -3,9 +3,10 @@ from plugins.utils.logger import generate_logger
 import os
 from airflow.api.common.experimental import trigger_dag as trigger
 import json
-from typing import Optional
+from typing import Optional, List, Dict
 from airflow.exceptions import AirflowNotFoundException, AirflowConfigException
 from plugins.models.curve_template import CurveTemplateModel
+
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 CRAFT_TYPE_MAP = {
@@ -37,9 +38,9 @@ def ensure_int(num):
 
 def get_craft_type(nut_no: str) -> Optional[int]:
     template_data = CurveTemplateModel.get_fuzzy_active(nut_no,
-                                              deserialize_json=True,
-                                              default_var=None
-                                              )[1]
+                                                        deserialize_json=True,
+                                                        default_var=None
+                                                        )[1]
     ret = template_data.get('craft_type', None)
     if ret:
         return ret
@@ -180,6 +181,12 @@ def get_curve(entity_id):
     st = ClsCurveStorage(**get_curve_args())
     st.metadata = {'entity_id': entity_id}
     return st.query_curve()
+
+
+def get_curves(entity_ids) -> List[Dict]:
+    from plugins.entities.curve_storage import ClsCurveStorage
+    st = ClsCurveStorage(**get_curve_args())
+    return st.query_curves(entity_ids)
 
 
 def should_trigger_training(result, final_state, analysis_mode, train_mode):
