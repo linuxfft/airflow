@@ -15,7 +15,7 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowNotFoundException
 from plugins.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
-from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results
+from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results, get_curves
 from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 import logging
 import os
@@ -193,15 +193,17 @@ class CurvesView(AirflowModelView):
                 result_table = pd.concat([result_table, tb], ignore_index=True)
             except Exception as e:
                 _logger.error(e)
-            try:
-                curve = get_curve(entity_id)
+        try:
+            curves = get_curves(entities)
+            for curve in curves:
+                entity_id = curve.get('entity_id')
                 f = f'{entity_id}.csv'.replace('/', '@')
                 f = os.path.join(base_path, f)
                 dd = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in curve.items()]))
                 dd.to_csv(f, index=False, header=True)
                 files.append(f)
-            except Exception as e:
-                _logger.error(e)
+        except Exception as e:
+            _logger.error(e)
         try:
             rf = os.path.join(base_path, "results.csv")
             result_table.to_csv(rf, index=False, header=True)
@@ -264,20 +266,10 @@ class CurvesView(AirflowModelView):
             if entity_ids is None:
                 return jsonify(curves)
 
-            for entity_id in entity_ids:
-                try:
-                    curve = get_curve(entity_id)
-                    if curve is not None:
-                        curves.append({
-                            'entity_id': entity_id,
-                            'curve': curve
-                        })
-                except Exception as e:
-                    _logger.debug(e)
-                    curves.append({
-                        'entity_id': entity_id,
-                        'curve': []
-                    })
+            try:
+                curves = get_curves(entity_ids)
+            except Exception as e:
+                _logger.error(e)
 
             return jsonify(curves=curves)
         except AirflowException as e:
