@@ -96,11 +96,11 @@ class CustomAuthDBView(AuthDBView):
         crc_code = request.args.get(
             'crccode', None) or request.args.get('crcCode', None)
         if not crc_code:
-            ret = super(CustomAuthDBView, self).login()
+            return super(CustomAuthDBView, self).login()
         userinfo = doGetLoginInfo(crc_code)
         # userinfo = {'username': "1312321", 'email': "123213", 'last_name': "12312323"}
         if not userinfo:
-            ret = super(CustomAuthDBView, self).login()
+            return super(CustomAuthDBView, self).login()
         user = self.appbuilder.sm.auth_user_oauth(userinfo)
 
         session.merge(user)
@@ -115,8 +115,7 @@ class CustomAuthDBView(AuthDBView):
                                                CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
             else:
                 msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               current_user, getattr(
-                        current_user, 'last_name', ''),
+                                               current_user, getattr(current_user, 'last_name', ''),
                                                CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
         except AttributeError as err:
             logging.error(err)
@@ -126,8 +125,7 @@ class CustomAuthDBView(AuthDBView):
     @expose("/logout/")
     def logout(self):
         msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(
-                current_user, 'last_name', ''),
+                                       current_user, getattr(current_user, 'last_name', ''),
                                        CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
         ret = super(CustomAuthDBView, self).logout()
         logging.info(msg)
@@ -206,8 +204,7 @@ class AuthOAuthView(AV):
                                                CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
             else:
                 msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               current_user, getattr(
-                        current_user, 'last_name', ''),
+                                               current_user, getattr(current_user, 'last_name', ''),
                                                CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
         except AttributeError as err:
             logging.error(err)
