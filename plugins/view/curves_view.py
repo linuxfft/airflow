@@ -26,7 +26,7 @@ from plugins.common import AirflowModelView
 from flask import jsonify, request
 from airflow.exceptions import AirflowException
 from airflow.security import permissions
-
+from qcos_addons.access_log.log import access_log
 _logger = logging.getLogger(__name__)
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')

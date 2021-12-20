@@ -19,6 +19,7 @@ from plugins.models.error_tag import ErrorTag
 import logging
 import pprint
 from airflow.security import permissions
+from qcos_addons.access_log.log import access_log
 
 _logger = logging.getLogger(__name__)
 
