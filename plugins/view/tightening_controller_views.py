@@ -12,7 +12,6 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.settings import TIMEZONE
 from airflow.www.decorators import action_logging
 from flask_wtf.csrf import CSRFProtect
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 import logging
 import os
 import pandas as pd
@@ -25,7 +24,7 @@ from flask_appbuilder.fieldwidgets import (
 from flask_appbuilder.forms import DynamicForm
 from airflow.security import permissions
 from airflow.www.widgets import AirflowModelListWidget
-
+from qcos_addons.access_log.log import access_log
 FACTORY_CODE = os.getenv('FACTORY_CODE', 'DEFAULT_FACTORY_CODE')
 
 _logger = logging.getLogger(__name__)
@@ -116,40 +115,24 @@ class TighteningControllerView(AirflowModelView):
 
     base_order = ('id', 'asc')
 
+    @access_log('ADD', 'TIGHTENING_CONTROLLER', '增加控制器')
     def post_add(self, item):
         super(TighteningControllerView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '增加控制器')
-        logging.info(msg)
 
+    @access_log('UPDATE', 'TIGHTENING_CONTROLLER', '修改控制器')
     def post_update(self, item):
         super(TighteningControllerView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '修改控制器')
-        logging.info(msg)
 
+    @access_log('DELETE', 'TIGHTENING_CONTROLLER', '删除控制器')
     def post_delete(self, item):
         super(TighteningControllerView, self).post_delete(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '删除控制器')
-        logging.info(msg)
 
     @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
             single=False)
+    @access_log('DELETE', 'TIGHTENING_CONTROLLER', '删除多个控制器')
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '删除选中控制器')
-        logging.info(msg)
         return redirect(self.get_redirect())
 
     @expose('/controllerimport', methods=["POST"])
@@ -198,12 +181,8 @@ class TighteningControllerView(AirflowModelView):
         return response
 
     @expose("/list/")
+    @access_log('VIEW', 'TIGHTENING_CONTROLLER', '查看控制器列表')
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CONTROLLER'],
-                                       '查看控制器')
-        logging.info(msg)
         _has_access = self.appbuilder.sm.has_access
         can_import = _has_access(permissions.ACTION_CAN_CREATE, permissions.RESOURCE_CONTROLLER)
         widgets = self._list()

@@ -5,12 +5,12 @@ from flask_login import current_user
 import logging
 from airflow.plugins_manager import AirflowPlugin
 from airflow.settings import TIMEZONE
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 from airflow.exceptions import AirflowException
 from plugins.utils.utils import trigger_training_dag, get_result
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.www.app import csrf
 from airflow.security import permissions
+from qcos_addons.access_log.log import access_log
 
 _log = LoggingMixin().log
 
@@ -33,13 +33,9 @@ class DoubleConfirmView(BaseView):
     ]
 
     @expose('/double-confirm/<string:entity_id>', methods=['POST'])
+    @access_log('DOUBLE_CONFIRM', 'CURVE', '曲线二次确认')
     def double_confirm_task(self, entity_id):
         try:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user, getattr(current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['DOUBLE_CONFIRM'], CUSTOM_PAGE_NAME_MAP['CURVE'],
-                                           '曲线二次确认')
-            logging.info(msg)
             params = request.get_json(force=True)  # success failed
             final_state = params.get('final_state', None)
             error_tags = params.get('error_tags', [])

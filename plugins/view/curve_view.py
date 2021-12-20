@@ -5,12 +5,12 @@ from flask_appbuilder import BaseView, expose
 from airflow.models import Variable
 from plugins.utils.utils import get_curve, get_result
 from plugins.models.error_tag import ErrorTag
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 from datetime import datetime
 import os
 from airflow.settings import TIMEZONE
 from flask_login import current_user
 from airflow.security import permissions
+from qcos_addons.access_log.log import access_log
 _logger = logging.getLogger(__name__)
 
 
@@ -30,6 +30,7 @@ class CurveView(BaseView):
     ]
 
     @expose('/view_curve/<string:entity_id>')
+    @access_log('VIEW', 'CURVE', '查看单条曲线')
     def view_curve_page(self, entity_id: str):
         entity_id = entity_id.replace('@', '/')
 
@@ -62,10 +63,6 @@ class CurveView(BaseView):
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE')
         show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_RESULT)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['CURVE'], '查看单条曲线')
-        _logger.info(msg)
 
         if result.get('device_type') == 'servo_press':
             cur_key_map = {

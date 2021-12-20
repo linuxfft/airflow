@@ -16,7 +16,6 @@ from airflow.exceptions import AirflowNotFoundException
 from plugins.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
 from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results, get_curves
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 import logging
 import os
 import pandas as pd
@@ -67,6 +66,7 @@ class CurvesView(AirflowModelView):
         ret = super(CurvesView, self).__init__(**kwargs)
         os.makedirs(self.download_static_folder, exist_ok=True)
 
+    @access_log('VIEW', 'CURVES', '查看曲线对比页面')
     def do_render(self, track_no=None, bolt_no=None, controller=None, craft_type=None):
         view_name = 'curves'
         curves = request.args.get('curves')
@@ -126,11 +126,6 @@ class CurvesView(AirflowModelView):
                 'date': str(result.get('execution_date'))
             }
         widgets = self._list()
-
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['CURVES'], '查看曲线对比页面')
-        logging.info(msg)
 
         if device_type == 'servo_press':
             cur_key_map = {

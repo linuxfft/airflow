@@ -48,7 +48,6 @@ from airflow.www.views import (
     CustomViewMenuModelView,
 )
 from flask_appbuilder.security.views import AuthOAuthView as AV
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 from flask_login import login_user, logout_user, current_user
 from flask import redirect, url_for
 import logging
@@ -66,6 +65,7 @@ from datetime import datetime
 from airflow import models
 from airflow.utils.db import provide_session
 from airflow.settings import TIMEZONE
+from qcos_addons.access_log.log import access_log
 
 EXISTING_ROLES = {
     'Admin',
@@ -118,30 +118,14 @@ class CustomAuthDBView(AuthDBView):
     login_template = "login.html"
 
     @expose("/login/", methods=["GET", "POST"])
+    @access_log('LOGIN', 'LOGIN', '登录')
     def login(self):
-        ret = super(CustomAuthDBView, self).login()
-        msg = ''
-        if not current_user.is_active:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           'null', 'null',
-                                           CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
-        else:
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user, getattr(
-                    current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
-        logging.info(msg)
-        return ret
+        return super(CustomAuthDBView, self).login()
 
     @expose("/logout/")
+    @access_log('LOGOUT', 'LOGOUT', '登出')
     def logout(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(
-                current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
-        ret = super(CustomAuthDBView, self).logout()
-        logging.info(msg)
-        return ret
+        return super(CustomAuthDBView, self).logout()
 
 
 class AuthOAuthView(AV):
@@ -150,6 +134,7 @@ class AuthOAuthView(AV):
     @expose("/login/")
     @expose("/login/<provider>")
     @expose("/login/<provider>/<register>")
+    @access_log('LOGIN', 'LOGIN', '登录')
     @provide_session
     def login(self, provider=None, register=None, session=None):
         crc_code = request.args.get('crccode', None) or request.args.get('crcCode', None)
@@ -165,29 +150,11 @@ class AuthOAuthView(AV):
         session.commit()
         login_user(user)
         session.commit()
-        msg = ''
-        try:
-            if not current_user.is_active:
-                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               'null', 'null',
-                                               CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '查看登录页面')
-            else:
-                msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                               current_user, getattr(
-                        current_user, 'last_name', ''),
-                                               CUSTOM_EVENT_NAME_MAP['LOGIN'], CUSTOM_PAGE_NAME_MAP['LOGIN'], '登录')
-        except AttributeError as err:
-            logging.error(err)
-        logging.info(msg)
         return redirect(url_for('Airflow.index'))
 
     @expose("/logout/")
+    @access_log('LOGOUT', 'LOGOUT', '登出')
     def logout(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(
-                current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['LOGOUT'], CUSTOM_PAGE_NAME_MAP['LOGOUT'], '登出')
-        logging.info(msg)
         logout_user()
         if ENV_PORTAL_INDEX_URL and RUNTIME_ENV == 'prod':
             return redirect(ENV_PORTAL_INDEX_URL)
