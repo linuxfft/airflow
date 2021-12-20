@@ -2,6 +2,7 @@ from .constants import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAM
 from datetime import datetime
 import logging
 from flask_login import current_user  # noqa: F401
+from airflow.settings import TIMEZONE
 
 _logger = logging.getLogger(__name__)
 
