@@ -16,7 +16,6 @@ from airflow.settings import TIMEZONE
 from airflow.utils.db import provide_session
 from flask_appbuilder.models.sqla.filters import BaseFilter, get_field_setup_query
 from plugins.models.error_tag import ErrorTag
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 import logging
 import pprint
 from airflow.security import permissions
@@ -78,26 +77,17 @@ class ErrorTagModelView(AirflowModelView):
     }
     base_order = ('id', 'asc')
 
+    @access_log('ADD', 'ERROR_TAG', '增加错误标签')
     def post_add(self, item):
         super(ErrorTagModelView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '增加错误标签')
-        logging.info(msg)
 
+    @access_log('UPDATE', 'ERROR_TAG', '修改错误标签')
     def post_update(self, item):
         super(ErrorTagModelView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '修改错误标签')
-        logging.info(msg)
 
+    @access_log('DELETE', 'ERROR_TAG', '删除错误标签')
     def post_delete(self, item):
         super(ErrorTagModelView, self).post_delete(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除错误标签')
-        logging.info(msg)
 
     @action('export_analysis', "Export Statistics", '', single=False)
     @provide_session
@@ -118,22 +108,16 @@ class ErrorTagModelView(AirflowModelView):
 
     @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
             single=False)
+    @access_log('DELETE', 'ERROR_TAG', '删除选中错误标签')
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '删除选中错误标签')
-        logging.info(msg)
         return redirect(self.get_redirect())
 
     # 重写list
     @expose("/list/")
+    @access_log('VIEW', 'ERROR_TAG', '查看错误标签')
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['ERROR_TAG'], '查看错误标签')
-        logging.info(msg)
         return super(ErrorTagModelView, self).list()
 
 

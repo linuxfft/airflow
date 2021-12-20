@@ -8,7 +8,6 @@ from datetime import datetime
 from flask_appbuilder import expose
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 from airflow.exceptions import AirflowNotFoundException
-from plugins.utils.custom_log import CUSTOM_LOG_FORMAT, CUSTOM_EVENT_NAME_MAP, CUSTOM_PAGE_NAME_MAP
 import logging
 from airflow.api.common.experimental import trigger_dag as trigger
 from plugins.common import AirflowModelView
@@ -22,6 +21,7 @@ from airflow.security import permissions
 from flask import (
     Markup, flash, make_response, redirect, request
 )
+from qcos_addons.access_log.log import access_log
 
 _logger = logging.getLogger(__name__)
 
@@ -122,6 +122,7 @@ class CurveTemplateView(AirflowModelView):
     }
 
     @expose('/<string:bolt_no>/<string:craft_type>')
+    @access_log('VIEW', 'CURVE_TEMPLATE', '查看曲线模板页面')
     def view_curve_template(self, bolt_no, craft_type):
         curve_template = CurveTemplateModel.get_fuzzy_active('{}/{}'.format(bolt_no, craft_type),
                                                              deserialize_json=True,
@@ -134,11 +135,6 @@ class CurveTemplateView(AirflowModelView):
             # todo: 不要返回错误页面
             return AirflowNotFoundException()
 
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'],
-                                       '查看曲线模板页面')
-        logging.info(msg)
         device_type = 'tightening'  # fixme: 临时使用固定的device_type, 后续在控制器配置中添加
         if device_type == 'servo_press':
             cur_key_map = {
@@ -158,6 +154,7 @@ class CurveTemplateView(AirflowModelView):
                                     craft_type=craft_type, device_type=device_type, cur_key_map=cur_key_map)
 
     @expose('/<string:bolt_no>/<string:craft_type>/remove_curve', methods=['PUT'])
+    @access_log('DELETE', 'CURVE_TEMPLATE', '删除曲线模板')
     def remove_curve_template(self, bolt_no, craft_type):
         _has_access = self.appbuilder.sm.has_access
         can_delete = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CURVE_TEMPLATE)
@@ -172,22 +169,13 @@ class CurveTemplateView(AirflowModelView):
         try:
             new_template = do_remove_curve_from_curve_template(bolt_no, craft_type, version, mode, group_center_idx,
                                                                curve_idx)
-            msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                           current_user, getattr(current_user, 'last_name', ''),
-                                           CUSTOM_EVENT_NAME_MAP['DELETE'],
-                                           CUSTOM_PAGE_NAME_MAP['CURVE_TEMPLATE'], '删除曲线模板')
-            logging.info(msg)
             return {'data': new_template}
         except Exception as e:
             return {'error': str(e)}
 
     @expose("/list/")
+    @access_log('VIEW', 'TIGHTENING_CURVE_TEMPLATE', '曲线模板：查看列表')
     def list(self):
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['VIEW'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'],
-                                       '曲线模板：查看列表')
-        logging.info(msg)
         _has_access = self.appbuilder.sm.has_access
         can_import = _has_access(permissions.ACTION_CAN_CREATE, permissions.RESOURCE_CURVE_TEMPLATE)
         widgets = self._list()
@@ -207,13 +195,9 @@ class CurveTemplateView(AirflowModelView):
         super(CurveTemplateView, self).pre_add(item)
         item.key = self.generateCurveParamKey(item.key)
 
+    @access_log('ADD', 'TIGHTENING_CURVE_TEMPLATE', '曲线模板：增加')
     def post_add(self, item):
         super(CurveTemplateView, self).post_add(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['ADD'], CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'],
-                                       '曲线模板：增加')
-        logging.info(msg)
 
     def pre_update(self, item: CurveTemplateModel):
         super(CurveTemplateView, self).pre_update(item)
@@ -221,24 +205,16 @@ class CurveTemplateView(AirflowModelView):
             return
         item.key = self.generateCurveParamKey(item.key)
 
+    @access_log('UPDATE', 'TIGHTENING_CURVE_TEMPLATE', '曲线模板：修改')
     def post_update(self, item):
         super(CurveTemplateView, self).post_update(item)
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['UPDATE'],
-                                       CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：修改')
-        logging.info(msg)
 
     @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
             single=False)
+    @access_log('DELETE', 'TIGHTENING_CURVE_TEMPLATE', '曲线模板：多选删除')
     def action_muldelete(self, items):
         self.datamodel.delete_all(items)
         self.update_redirect()
-        msg = CUSTOM_LOG_FORMAT.format(datetime.now(tz=TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
-                                       current_user, getattr(current_user, 'last_name', ''),
-                                       CUSTOM_EVENT_NAME_MAP['DELETE'],
-                                       CUSTOM_PAGE_NAME_MAP['TIGHTENING_CURVE_TEMPLATE'], '曲线模板：删除选中变量')
-        logging.info(msg)
         return redirect(self.get_redirect())
 
     @action('varexport', 'Export', '', single=False)
