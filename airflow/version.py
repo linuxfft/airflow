@@ -18,4 +18,4 @@
 # under the License.
 #
 
-version = 'c1.1.2-TS012-4'
+version = 'c1.1.2-TS012-5'
