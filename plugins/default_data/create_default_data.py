@@ -90,7 +90,7 @@ def create_default_connection(session=None):
             password='admin',
             schema='amqp',
             extra=json.dumps({
-                'vhost': '/',
+                'vhost': 'qcos',
                 'heartbeat': '0',
                 'exchange': ''
             }),
