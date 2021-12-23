@@ -147,7 +147,7 @@ class CustomAuthDBView(AuthDBView):
         except AttributeError as err:
             logging.error(err)
         logging.info(msg)
-        return ret
+        return redirect(url_for('Airflow.index'))
 
     @expose("/logout/")
     def logout(self):
