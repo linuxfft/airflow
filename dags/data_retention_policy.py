@@ -87,13 +87,22 @@ def verify_params(test_mode, **kwargs):
 @provide_session
 def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
     from plugins.models.result import ResultModel
-    qry = session.query(ResultModel).limit(limit).from_self()
+    qry = session.query(ResultModel).from_self()
     if start_date:
         qry = qry.filter(ResultModel.update_time >= start_date)
     if end_date:
         qry = qry.filter(ResultModel.update_time <= end_date)
-    results = qry.all()
+    results = qry.limit(limit).all()
     return results
+
+
+@provide_session
+def clear_results(results, session=None):
+    from plugins.models.result import ResultModel
+    qry = session.query(ResultModel).filter(ResultModel.pk.in_(
+        list(map(lambda r: r.pk, results))
+    ))
+    qry.delete()
 
 
 def get_all_need_delete_results(test_mode, **kwargs):
@@ -102,6 +111,7 @@ def get_all_need_delete_results(test_mode, **kwargs):
     end_date = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - delta
     _logger.info("Get End Date Time: {}".format(datetime.isoformat(end_date)))
     results = get_all_results(end_date=end_date, limit=LIMIT)
+    clear_results(results=results)
     return results, end_date
 
 
