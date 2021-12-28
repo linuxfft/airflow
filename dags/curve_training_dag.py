@@ -63,7 +63,6 @@ def do_trigger_training(result, final_state):
     batch_count = result.get('batch_count', None)
     pset = result.get('pset', None)
     bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
-    curve_params = get_curve_params(bolt_number)
     for k, v in result.items():
         if isinstance(v, datetime.datetime):
             result.update({
@@ -77,7 +76,6 @@ def do_trigger_training(result, final_state):
         "curve_mode": curve_mode,
         "verify_error": result.get('verify_error'),
     }
-    data.update(curve_params)
     from plugins.cas.cas_plugin import CasHook
     cas = CasHook(role='training')
     cas.trigger_training(data)
