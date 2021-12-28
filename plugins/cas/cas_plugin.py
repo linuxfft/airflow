@@ -64,8 +64,6 @@ class CasHook(BaseHook):
             url = self.trigger_analyze_endpoint
             if not params:
                 raise Exception(u'数据为空')
-            if not params.get('curve_param', None):
-                raise Exception(u'未提供曲线参数')
             self.log.info('参数验证通过，触发分析...')
             async with RetryClient(timeout=timeout) as client:
                 async with client.post(headers=headers, url=url, retry_attempts=retry_attempts, json=data) as r:

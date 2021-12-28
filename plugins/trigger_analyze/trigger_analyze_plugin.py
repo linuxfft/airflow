@@ -3,8 +3,6 @@ import asyncio
 from abc import ABC
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import BaseOperator
-from airflow.utils import timezone
-from plugins.entities.curve_storage import ClsCurveStorage
 from plugins.utils.utils import get_curve_params, get_curve, get_result
 from typing import Dict
 from airflow.api.common.experimental import trigger_dag as trigger
@@ -13,17 +11,7 @@ from flask import jsonify, request, Blueprint
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.www.app import csrf
-from plugins.utils.utils import trigger_push_result_to_mq
-import json
-from airflow.utils.db import provide_session
-import datetime
-from random import choices
-import math
 
-ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS', 'False') == 'True' else False
-FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES', 'False') == 'True' else False
-MISMATCH_RATE_RELAXATION_FACTOR = float(os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
-MISMATCH_RATE_RELAXATION_THRESHOLD = float(os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
 
 _logger = LoggingMixin().log
 
@@ -43,20 +31,19 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         PublishResultHook.trigger_publish('tightening_result', params)
 
     @staticmethod
-    def is_rework_result(params: Dict) -> bool:
-        result_body = params.get('result', None)
-        if not result_body:
+    def is_rework_result(result) -> bool:
+        if not result:
             return False
-        job = result_body.get('job', 0)
-        batch_count = result_body.get('batch_count', 0)
+        job = result.get('job', 0)
+        batch_count = result.get('batch_count', 0)
         if (not job) and (not batch_count):
             return True
         return False
 
     @staticmethod
-    def get_result_type(params: Dict) -> str:
+    def get_result_type(result: Dict) -> str:
         ret = 'normal'
-        if TriggerAnalyzeHook.is_rework_result(params):
+        if TriggerAnalyzeHook.is_rework_result(result):
             return 'rework'
         return ret
 
@@ -68,7 +55,7 @@ class TriggerAnalyzeHook(BaseHook, ABC):
             return True
         if ENV_ALWAYS_TRIGGER_ANAY:
             return False
-        if TriggerAnalyzeHook.is_rework_result(params):
+        if TriggerAnalyzeHook.is_rework_result(params.get('result')):
             _logger.info('返修工位曲线，跳过分析...')
             return True
         return False
@@ -85,7 +72,7 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         assert craft_type is not None, '触发分析的数据中craft_type为空'
         new_param = params.copy()
         # 螺栓编码生成规则：控制器名称-job号-批次号
-        result_type = TriggerAnalyzeHook.get_result_type(new_param)
+        result_type = TriggerAnalyzeHook.get_result_type(params.get('result'))
         _logger.info("type: {}, entity_id: {} bolt_number: {}"
                      .format(result_type, entity_id, bolt_number))
 
@@ -160,47 +147,6 @@ class TriggerAnalyzeOperator(BaseOperator):
         TriggerAnalyzeHook.do_trigger_analyze(params, task_instance)
 
 
-def is_mismatch(measure_result, curve_mode):
-    analysis_result = 'OK' if curve_mode[0] is 0 else 'NOK'
-    return analysis_result != measure_result
-
-
-@provide_session
-def get_recent_mismatch_rate(session=None):
-    delta = datetime.timedelta(days=2)
-    min_date = timezone.utcnow() - delta
-    from plugins.models.result import ResultModel
-    total = session.query(ResultModel).filter(
-        ResultModel.execution_date > min_date
-    ).count()
-    mismatches = session.query(ResultModel).filter(
-        ResultModel.execution_date > min_date,
-        ResultModel.measure_result != ResultModel.result
-    ).count()
-    _logger.info('total:{},mismatches:{}'.format(total, mismatches))
-    return mismatches / (total + 1), total
-
-
-def mismatch_relaxation(mismatch_rate, count) -> bool:
-    if mismatch_rate < MISMATCH_RATE_RELAXATION_THRESHOLD:
-        return False
-    weight = MISMATCH_RATE_RELAXATION_FACTOR * (mismatch_rate - MISMATCH_RATE_RELAXATION_THRESHOLD) / (
-        mismatch_rate + MISMATCH_RATE_RELAXATION_THRESHOLD) * math.log(count, 2)
-    _logger.info('weight: {}'.format(weight))
-    return choices([True, False], weights=[weight, 1])[0]
-
-
-def filter_mismatches(measure_result, curve_mode):
-    if not is_mismatch(measure_result, curve_mode):
-        _logger.info('not mismatch')
-        return curve_mode
-    _logger.info('is mismatch')
-    mismatch_rate, count = get_recent_mismatch_rate()
-    _logger.info('mismatch_rate:{}, count:{}'.format(mismatch_rate, count))
-    if mismatch_relaxation(mismatch_rate, count):
-        return [0] if measure_result == 'OK' else [1]
-    return curve_mode
-
 
 bp = Blueprint('trigger_analyze', __name__)
 
@@ -209,37 +155,9 @@ bp = Blueprint('trigger_analyze', __name__)
 def put_analyze_result():
     try:
         data = request.get_json(force=True)
-        entity_id = data.get('entity_id')
-        measure_result = data.get('measure_result')
-        curve_mode = list(map(int, data.get('result')))  # List[int]
-
-        if FILTER_MISMATCHES:
-            curve_mode = filter_mismatches(measure_result, curve_mode)
-
-        result = 'OK' if curve_mode[0] is 0 else 'NOK'
-        if (not ANALYSIS_NOK_RESULTS) and measure_result == 'NOK':
-            result = 'NOK'
-
-        extra = {}
-        if curve_mode[0] is not 0:
-            extra['error_tag'] = json.dumps(curve_mode)
-        else:
-            extra['error_tag'] = json.dumps([])
-        extra['verify_error'] = int(data.get('verify_error'))  # OK, NOK
-
         from plugins.result_storage.result_storage_plugin import ResultStorageHook
         ResultStorageHook.save_analyze_result(
-            entity_id,
-            result,
-            **extra
-        )
-
-        trigger_push_result_to_mq(
-            'analysis_result',
-            result,
-            entity_id,
-            extra['verify_error'],
-            curve_mode
+            data
         )
         resp = jsonify({'response': 'ok'})
         resp.status_code = 200

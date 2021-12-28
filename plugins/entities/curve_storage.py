@@ -116,7 +116,7 @@ class ClsCurveStorage(ClsEntity):
                 data.append_col(col, header=header)
                 headers.append(header)
             except Exception as e:
-                _logger.error(e)
+                _logger.error(repr(e))
                 continue
         data.headers = headers
         return data.export('csv').encode('utf-8')
