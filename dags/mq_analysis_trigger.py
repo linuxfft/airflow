@@ -51,7 +51,6 @@ def trigger_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.s
         TriggerAnalyzeHook.trigger_with_entity_id(entity_id)
     except Exception as e:
         _logger.error("trigger_handler error: {}".format(repr(e)))
-        raise e
 
 
 def watch_mq_trigger(*args, **kwargs):

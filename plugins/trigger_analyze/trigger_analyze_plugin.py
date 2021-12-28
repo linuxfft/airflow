@@ -138,9 +138,9 @@ class TriggerAnalyzeHook(BaseHook, ABC):
     @staticmethod
     def get_trigger_param_from_result(entity_id, result, curve):
         conf = {}
-        result.pop('update_time')
-        result.pop('execution_date')
-        result.pop('training_execution_date')
+        for k in ['update_time', 'execution_date', 'training_execution_date']:
+            if k in result.keys():
+                result.pop(k)
         conf.update({
             'bolt_number': result.get('bolt_number'),
             'entity_id': entity_id,
