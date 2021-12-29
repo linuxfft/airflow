@@ -155,9 +155,16 @@ bp = Blueprint('trigger_analyze', __name__)
 def put_analyze_result():
     try:
         data = request.get_json(force=True)
+        entity_id = data.get('entity_id', None)
+        measure_result = data.get('measure_result', None)
+        curve_mode = data.get('result', None)
+        verify_error = data.get('verify_error', None)
         from plugins.result_storage.result_storage_plugin import ResultStorageHook
         ResultStorageHook.save_analyze_result(
-            data
+            entity_id,
+            measure_result,
+            curve_mode,
+            verify_error
         )
         resp = jsonify({'response': 'ok'})
         resp.status_code = 200
