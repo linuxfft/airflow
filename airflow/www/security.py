@@ -119,8 +119,22 @@ class CustomAuthDBView(AuthDBView):
 
     @expose("/login/", methods=["GET", "POST"])
     @access_log('LOGIN', 'LOGIN', '登录')
-    def login(self):
-        return super(CustomAuthDBView, self).login()
+    @provide_session
+    def login(self, session=None):
+        crc_code = request.args.get('crccode', None) or request.args.get('crcCode', None)
+        if not crc_code:
+            return super(CustomAuthDBView, self).login()
+        userinfo = doGetLoginInfo(crc_code)
+        # userinfo = {'username': "1312321", 'email': "123213", 'last_name': "12312323"}
+        if not userinfo:
+            return super(CustomAuthDBView, self).login()
+        user = self.appbuilder.sm.auth_user_oauth(userinfo)
+
+        session.merge(user)
+        session.commit()
+        login_user(user)
+        session.commit()
+        return redirect(url_for('Airflow.index'))
 
     @expose("/logout/")
     @access_log('LOGOUT', 'LOGOUT', '登出')
