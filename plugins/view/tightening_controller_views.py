@@ -34,7 +34,7 @@ csrf = CSRFProtect()
 def device_type_query():
     print(current_app)
     session = current_app.appbuilder.get_session()
-    from plugins.models.device_type import DeviceTypeModel
+    from qcos_addons.models.device_type import DeviceTypeModel
     return session.query(DeviceTypeModel)
 
 
@@ -74,7 +74,7 @@ class TighteningControllerListWidget(AirflowModelListWidget):
 class TighteningControllerView(AirflowModelView):
     route_base = '/tightening_controller'
     list_widget = TighteningControllerListWidget
-    from plugins.models.tightening_controller import TighteningController
+    from qcos_addons.models.tightening_controller import TighteningController
     datamodel = AirflowModelView.CustomSQLAInterface(TighteningController)
 
     extra_fields = []
@@ -152,7 +152,7 @@ class TighteningControllerView(AirflowModelView):
         controller: dict
         for controller in d:
             try:
-                from plugins.models.tightening_controller import TighteningController
+                from qcos_addons.models.tightening_controller import TighteningController
                 TighteningController.add_controller(**controller)
             except Exception as e:
                 logging.info('Controller import failed: {}'.format(repr(e)))
@@ -192,7 +192,7 @@ class TighteningControllerView(AirflowModelView):
 
 
 class DeviceTypeView(AirflowModelView):
-    from plugins.models.device_type import DeviceTypeModel
+    from qcos_addons.models.device_type import DeviceTypeModel
     datamodel = AirflowModelView.CustomSQLAInterface(DeviceTypeModel)
 
     method_permission_name = {

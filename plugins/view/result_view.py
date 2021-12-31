@@ -1,9 +1,9 @@
-from plugins.models.result import ResultModel
+from qcos_addons.models.result import ResultModel
 import json
 from plugins.common import AirflowModelView
 from flask_babel import lazy_gettext
 from airflow.plugins_manager import AirflowPlugin
-from plugins.models.error_tag import ErrorTag
+from qcos_addons.models.error_tag import ErrorTag
 from airflow.configuration import conf
 from airflow.security import permissions
 from flask_appbuilder import expose

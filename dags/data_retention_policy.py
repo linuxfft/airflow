@@ -86,7 +86,7 @@ def verify_params(test_mode, **kwargs):
 
 @provide_session
 def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     qry = session.query(ResultModel).from_self()
     if start_date:
         qry = qry.filter(ResultModel.update_time >= start_date)
@@ -98,7 +98,7 @@ def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
 
 @provide_session
 def clear_results(results, session=None):
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     qry = session.query(ResultModel).filter(ResultModel.pk.in_(
         list(map(lambda r: r.pk, results))
     ))

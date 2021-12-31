@@ -37,7 +37,7 @@ def is_mismatch(measure_result, curve_mode):
 def get_recent_mismatch_rate(session=None):
     delta = datetime.timedelta(days=2)
     min_date = timezone.utcnow() - delta
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     total = session.query(ResultModel).filter(
         ResultModel.execution_date > min_date
     ).count()
@@ -145,7 +145,7 @@ class ResultStorageHook(BaseHook, ABC):
             _logger.info('使用默认工艺类型：{}'.format(craft_type))
 
         try:
-            from plugins.models.tightening_controller import TighteningController
+            from qcos_addons.models.tightening_controller import TighteningController
             line_code, controller_id = TighteningController.get_line_code_by_controller_name(controller_name)
         except Exception as e:
             _logger.error(e)

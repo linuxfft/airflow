@@ -4,7 +4,7 @@ import logging
 from flask_appbuilder import BaseView, expose
 from airflow.models import Variable
 from plugins.utils.utils import get_curve, get_result
-from plugins.models.error_tag import ErrorTag
+from qcos_addons.models.error_tag import ErrorTag
 from datetime import datetime
 import os
 from airflow.settings import TIMEZONE
@@ -57,7 +57,7 @@ class CurveView(BaseView):
                                                     default_var={})
 
         controller_name = result.get('controller_name', '').split('@')[0] if result.get('controller_name') else ''
-        from plugins.models.tightening_controller import TighteningController
+        from qcos_addons.models.tightening_controller import TighteningController
         controller = TighteningController.find_controller(controller_name)
         error_tags = ErrorTag.get_all()
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE')

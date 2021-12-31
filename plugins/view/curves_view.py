@@ -13,7 +13,7 @@ from flask_babel import lazy_gettext
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 from airflow.configuration import conf
 from airflow.exceptions import AirflowNotFoundException
-from plugins.models.error_tag import ErrorTag
+from qcos_addons.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
 from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results, get_curves
 import logging
@@ -36,7 +36,7 @@ class CurvesView(AirflowModelView):
     list_template = "curves.html"
     CustomSQLAInterface = wwwutils.CustomSQLAInterface
     route_base = '/curves'
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     datamodel = CustomSQLAInterface(ResultModel)
     search_columns = ['execution_date', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
     label_columns = {

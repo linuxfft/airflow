@@ -11,7 +11,7 @@ from airflow.exceptions import AirflowNotFoundException
 import logging
 from airflow.api.common.experimental import trigger_dag as trigger
 from plugins.common import AirflowModelView
-from plugins.models.curve_template import CurveTemplateModel
+from qcos_addons.models.curve_template import CurveTemplateModel
 import uuid
 from flask_appbuilder.actions import action
 from airflow.www.decorators import action_logging

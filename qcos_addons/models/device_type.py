@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer
 from airflow.plugins_manager import AirflowPlugin
-from plugins.models.base import Base
+from qcos_addons.models.base import Base
 from airflow import settings
 
 

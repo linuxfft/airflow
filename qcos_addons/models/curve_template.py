@@ -1,6 +1,6 @@
 import json
 from typing import Any, List
-from plugins.models.base import Base
+from qcos_addons.models.base import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean
 from airflow.utils.db import provide_session
 from airflow.plugins_manager import AirflowPlugin
