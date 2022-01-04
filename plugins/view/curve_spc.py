@@ -1,8 +1,8 @@
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 import numpy as np
 from plugins.utils.utils import get_results
-from airflow.utils.spc.lexen_spc.chart import covert2dArray, xbar_rbar, rbar, xbar_sbar, sbar, cpk
-from airflow.utils.spc.lexen_spc.plot import histogram, normal
+from qcos_addons.spc.lexen_spc.chart import covert2dArray, xbar_rbar, rbar, xbar_sbar, sbar, cpk
+from qcos_addons.spc.lexen_spc.plot import histogram, normal
 from plugins.utils.misc import profile, get_first_valid_data
 from airflow.configuration import conf
 import os

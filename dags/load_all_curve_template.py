@@ -44,7 +44,7 @@ _logger.setLevel(loggingLevel)
 
 
 def onLoadCurveTmplsFail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def onLoadCurveTmplsSuccess(context):

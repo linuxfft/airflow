@@ -2,28 +2,21 @@ from airflow.utils.db import provide_session
 import os
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.plugins_manager import AirflowPlugin
-from plugins.utils.load_data_from_csv import load_data_from_csv
+from qcos_addons.default_data.loaders import load_default_controllers, load_default_error_tags, \
+    load_default_device_types, load_default_users, load_default_curve_templates, load_default_variables
 from airflow.configuration import conf
 from plugins.factory_code.factory_code import get_factory_code
 import json
 from sqlalchemy import or_
+
 log = LoggingMixin().log
 
 
 @provide_session
 def load_default_controller(file_dir, session=None):
     log.info("Loading default controllers")
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(
-        current_dir,
-        f'data/{file_dir}/default_controllers.csv' if file_dir else 'data/default_controllers.csv'
-    )
-    if not os.path.exists(file_path):
-        log.error("导入控制器目录不存在：{}".format(file_path))
-        return
+    val = load_default_controllers(file_dir)
     from plugins.models.tightening_controller import TighteningController
-
-    val = load_data_from_csv(file_path)
     for controller in val:
         if TighteningController.controller_exists(**controller):
             log.info(f"Controller already exists, skipping, {repr(controller)}")
@@ -42,11 +35,7 @@ def merge_data(model, data, is_exist, session=None):
 def create_default_error_tags(session=None):
     log.info("Loading default error_tags")
     from plugins.models.error_tag import ErrorTag
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    error_tags = load_data_from_csv(os.path.join(current_dir, 'data/error_tags.csv'), {
-        'value': 'value',
-        'label': 'label'
-    })
+    error_tags = load_default_error_tags()
     for error_tag in error_tags:
         data = ErrorTag(label=error_tag.get('label'), value=error_tag.get('value'))
         merge_data(model=ErrorTag, data=data, is_exist=ErrorTag.label == data.label, session=session)
@@ -55,13 +44,9 @@ def create_default_error_tags(session=None):
 @provide_session
 def create_device_type_support(session=None):
     log.info("Loading default device types")
-    current_dir = os.path.dirname(os.path.abspath(__file__))
     if not session:
         return
-    device_types = load_data_from_csv(os.path.join(current_dir, 'data/device_types.csv'), {
-        'name': 'name',
-        'view_config': 'view_config'
-    })
+    device_types = load_default_device_types()
     from plugins.models.device_type import DeviceTypeModel
     for device_type in device_types:
         data = DeviceTypeModel(name=device_type.get('name'), view_config=device_type.get('view_config'))
@@ -70,17 +55,7 @@ def create_device_type_support(session=None):
 
 def create_default_users(factory):
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    default_users = load_data_from_csv(os.path.join(
-        current_dir,
-        f'data/{factory}/default_users.csv' if factory else 'data/default_users.csv'
-    ), {
-        'username': 'username',
-        'email': 'email',
-        'lastname': 'lastname',
-        'firstname': 'firstname',
-        'password': 'password',
-        'role': 'role'
-    })
+    default_users = load_default_users(factory)
     from airflow.www.app import cached_app
     appbuilder = cached_app().appbuilder
     for user in default_users:
@@ -115,7 +90,7 @@ def create_default_connection(session=None):
             password='admin',
             schema='amqp',
             extra=json.dumps({
-                'vhost': '/',
+                'vhost': 'qcos',
                 'heartbeat': '0',
                 'exchange': ''
             }),
@@ -178,6 +153,41 @@ def create_default_connection(session=None):
             ), session)
 
 
+def create_default_curve_templates():
+    log.info("Loading default Curve Templates.")
+    from plugins.models.curve_template import CurveTemplateModel
+    current_templates = len(CurveTemplateModel.get_all_active_curve_tmpls().keys())
+    if current_templates > 0:
+        log.info("There are existing Curve Templates, skip loading.")
+        return
+    templates = load_default_curve_templates()
+    suc_count = 0
+    for k, v in templates.items():
+        try:
+            CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+        except Exception as e:
+            fail_count += 1
+        else:
+            suc_count += 1
+    log.info(f"{suc_count} Curve Templates successfully loaded.")
+
+
+def create_default_variables():
+    log.info("Loading default Variables.")
+    from airflow.models import Variable
+
+    variables = load_default_variables()
+    suc_count = 0
+    for k, v in variables.items():
+        try:
+            Variable.setdefault(k, v if isinstance(v, str) else json.dumps(v, ensure_ascii=False))
+        except Exception as e:
+            fail_count += 1
+        else:
+            suc_count += 1
+    log.info(f"{suc_count} Variables successfully loaded.")
+
+
 # Defining the plugin class
 class LoadDefaultDataPlugin(AirflowPlugin):
     name = "load_default_data_plugin"
@@ -210,5 +220,14 @@ class LoadDefaultDataPlugin(AirflowPlugin):
 
         try:
             load_default_controller(factory_code)
+        except Exception as e:
+            log.error(e)
+
+        try:
+            create_default_curve_templates()
+        except Exception as e:
+            log.error(e)
+        try:
+            create_default_variables()
         except Exception as e:
             log.error(e)

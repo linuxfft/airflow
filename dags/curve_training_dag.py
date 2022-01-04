@@ -27,11 +27,11 @@ TASK_ID = 'curve_training_task'
 
 
 def onDagFail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def onDagSuccess(context):
-    _logger.info("{0} Run Success".format(context))
+    _logger.debug("{0} Run Success".format(context))
 
 
 local_tz = pendulum.timezone("Asia/Shanghai")
@@ -52,27 +52,12 @@ desoutter_default_args = {
 }
 
 
-def update_confirm_data(verify_error, curve_mode):
-    # data = task_data.get('task', {})
-    data = {}
-    data.update({
-        "curve_mode": curve_mode,
-        "verify_error": verify_error
-    })
-    return {
-        'task': data
-    }
-
 
 def do_trigger_training(result, final_state):
     entity_id = result.get('entity_id')
     _logger.info('getting curve...')
     curve = get_curve(entity_id)
     curve_mode = get_curve_mode(final_state, result.get('error_tag'))
-    task_param = update_confirm_data(
-        result.get('verify_error'),
-        curve_mode
-    )
     controller_name = result.get('controller_name', None)
     job = result.get('job', None)
     batch_count = result.get('batch_count', None)
@@ -88,9 +73,10 @@ def do_trigger_training(result, final_state):
         'entity_id': entity_id,
         'result': result,
         'curve': curve,
-        'craft_type': get_craft_type(bolt_number)
+        'craft_type': get_craft_type(bolt_number),
+        "curve_mode": curve_mode,
+        "verify_error": result.get('verify_error'),
     }
-    data.update(task_param)
     data.update(curve_params)
     from plugins.cas.cas_plugin import CasHook
     cas = CasHook(role='training')

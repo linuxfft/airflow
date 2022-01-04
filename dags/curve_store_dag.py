@@ -21,7 +21,7 @@ def on_curve_receive(**kwargs):
 
 
 def onCurveAnalyFail(context):
-    _logger.error("{0} Run Fail".format(context))
+    _logger.debug("{0} Run Fail".format(context))
 
 
 def onCurveAnalySuccess(context):

@@ -305,6 +305,19 @@ class PublishResultHook(BaseHook, ABC):
     @staticmethod
     def trigger_publish(data_type, data):
         push_result_dat_id = 'publish_result_dag'
+
+        data_type_envs = {
+            'tightening_result': 'ENV_PUBLISH_TIGHTENING_RESULT',
+            'analysis_result': 'ENV_PUBLISH_ANALYSIS_RESULT',
+            'final_result': 'ENV_PUBLISH_FINAL_RESULT',
+            'curve_template': 'ENV_PUBLISH_CURVE_TEMPLATE',
+            'curve_templates_dict': 'ENV_PUBLISH_CURVE_TEMPLATE_DICT'
+        }
+
+        if not strtobool(os.getenv(data_type_envs[data_type], 'true')):
+            _logger.info(f'类型{data_type}的推送已关闭，如需进行推送，请将环境变量{data_type_envs[data_type]}设置为true')
+            return
+
         conf = {
             'data': data,
             'data_type': data_type
