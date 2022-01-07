@@ -19,6 +19,7 @@ class TighteningController(Base):
     work_center_name = Column(String(1000), nullable=True)
     device_type_id = Column(Integer, ForeignKey('device_type.id', onupdate='CASCADE', ondelete='SET NULL'),
                             nullable=True)
+    config = Column(Text, nullable=True)
 
     field_name_map = {
         'controller_name': ['控制器名称'],

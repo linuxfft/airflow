@@ -25,6 +25,7 @@ from flask_appbuilder.forms import DynamicForm
 from airflow.security import permissions
 from airflow.www.widgets import AirflowModelListWidget
 from qcos_addons.access_log.log import access_log
+
 FACTORY_CODE = os.getenv('FACTORY_CODE', 'DEFAULT_FACTORY_CODE')
 
 _logger = logging.getLogger(__name__)
@@ -59,12 +60,16 @@ class TighteningControllerForm(DynamicForm):
         lazy_gettext('Work Center Name'),
         widget=BS3TextFieldWidget())
 
-    device_type = QuerySelectField(
+    device_type_id = QuerySelectField(
         lazy_gettext('Device Type'),
         query_factory=device_type_query,
         # get_pk_func=_get_related_pk_func,
         widget=Select2Widget(extra_classes="readonly")
     )
+
+    config = StringField(
+        lazy_gettext('Config'),
+        widget=BS3TextFieldWidget())
 
 
 class TighteningControllerListWidget(AirflowModelListWidget):
@@ -78,9 +83,22 @@ class TighteningControllerView(AirflowModelView):
     datamodel = AirflowModelView.CustomSQLAInterface(TighteningController)
 
     extra_fields = []
-    list_columns = ['controller_name', 'line_code', 'line_name', 'work_center_code', 'work_center_name', 'device_type']
-    add_columns = edit_columns = ['controller_name', 'line_code', 'line_name', 'work_center_code',
-                                  'work_center_name', 'device_type'] + extra_fields
+    list_columns = [
+        'controller_name',
+        'line_code',
+        'line_name',
+        'work_center_code',
+        'work_center_name',
+        'device_type_id',
+        'config'
+    ]
+    add_columns = edit_columns = ['controller_name',
+                                  'line_code',
+                                  'line_name',
+                                  'work_center_code',
+                                  'work_center_name',
+                                  'device_type_id',
+                                  'config'] + extra_fields
     add_form = edit_form = TighteningControllerForm
     add_template = 'tightening_controller_create.html'
     edit_template = 'tightening_controller_edit.html'
@@ -92,6 +110,7 @@ class TighteningControllerView(AirflowModelView):
         'work_center_code': lazy_gettext('Work Center Code'),
         'work_center_name': lazy_gettext('Work Center Name'),
         'device_type_id': lazy_gettext('Device Type'),
+        'config': lazy_gettext('Config'),
     }
 
     method_permission_name = {
