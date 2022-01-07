@@ -1,9 +1,7 @@
 from sqlalchemy import ForeignKey
 from airflow.utils.db import provide_session
-from sqlalchemy import Column, String, Integer
-from airflow.plugins_manager import AirflowPlugin
+from sqlalchemy import Column, String, Integer, Text
 from qcos_addons.models.base import Base
-from airflow import settings
 
 
 class TighteningController(Base):
@@ -104,14 +102,3 @@ class TighteningController(Base):
         if not controller_data:
             raise Exception('未找到控制器数据: {}'.format(controller_name))
         return controller_data.get('line_code', None), controller_data.get('id')
-
-
-# Defining the plugin class
-class TighteningControllerModelPlugin(AirflowPlugin):
-    name = "tightening_controller_model_plugin"
-
-    @classmethod
-    def on_load(cls):
-        engine = settings.engine
-        if not engine.dialect.has_table(engine, TighteningController.__tablename__):
-            Base.metadata.create_all(engine)
