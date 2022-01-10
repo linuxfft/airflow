@@ -27,6 +27,8 @@ from flask import jsonify, request
 from airflow.exceptions import AirflowException
 from airflow.security import permissions
 from qcos_addons.access_log.log import access_log
+from airflow.models import Variable
+
 _logger = logging.getLogger(__name__)
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')
@@ -188,6 +190,19 @@ class CurvesView(AirflowModelView):
                 result_table = pd.concat([result_table, tb], ignore_index=True)
             except Exception as e:
                 _logger.error(e)
+        if result.get('device_type') == 'servo_press':
+            result_keys_translation_mapping = Variable.get(
+                'servo_press_result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={}
+            )
+        else:
+            result_keys_translation_mapping = Variable.get(
+                'result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={}
+            )
+        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x,x), inplace=True)
         try:
             curves = get_curves(entities)
             for curve in curves:
