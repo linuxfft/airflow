@@ -46,8 +46,8 @@
 
             {% if result.final_state %}
               <h2
-                      class="double-check-result {{ 'text-danger' if result.final_state =='NOK' else ('text-success' if result.final_state =='OK' else '') }}"
-                      style="font-weight: bolder">{{ result.final_state }}</h2>
+                class="double-check-result {{ 'text-danger' if result.final_state =='NOK' else ('text-success' if result.final_state =='OK' else '') }}"
+                style="font-weight: bolder">{{ result.final_state }}</h2>
             {% elif can_verify %}
               <h2 class="double-check-result">
                 <button id="btn_double_check_success" style="width:110px;padding-top: 5px;padding-bottom: 5px;"
@@ -311,25 +311,25 @@
         const resultClass = finalState === 'OK' ? 'panel-success' : 'panel-danger';
         $('#double-check-card').addClass(resultClass);
         $('.double-check-result').html(`${finalState}`)
-                .addClass(finalState === 'OK' ? 'text-success' : 'text-danger')
-                .css({'font-weight': 'bolder'});
+          .addClass(finalState === 'OK' ? 'text-success' : 'text-danger')
+          .css({'font-weight': 'bolder'});
         $('#doubleCheckModal').modal('hide');
         if (resp && resp.response === 'ok') {
           $('#error-tags').html((errorTagsArr || []).map(t => `${t}`).map(getErrorTagText).filter(t => !!t).map(t => t.label)
-                  .join(','));
+            .join(','));
         }
       });
     }
 
     function tagsSelector() {
       $errorTagsSelector = $(
-              '<label for="error-tag-select" id="error-tag-label-container" class="my-0">'
-              + '          <select class="error-tag-select-input" id="error-tag-select" name="error_tags[]" multiple>'
-              + '            {% for err in errorTags %}'
-                + '            <option value="{{err.value}}" data-value="{{err.value}}">{{err.label}}</option>'
-                + '            {% endfor %}'
-              + '          </select>'
-              + '        </label>',
+        '<label for="error-tag-select" id="error-tag-label-container" class="my-0">'
+        + '          <select class="error-tag-select-input" id="error-tag-select" name="error_tags[]" multiple>'
+        + '            {% for err in errorTags %}'
+          + '            <option value="{{err.value}}" data-value="{{err.value}}">{{err.label}}</option>'
+          + '            {% endfor %}'
+        + '          </select>'
+        + '        </label>',
       );
       $errorTagInput = $errorTagsSelector.find('.error-tag-select-input');
       $errorTagInput.select2({
@@ -342,7 +342,7 @@
 
     function confirmDoubleCheck(status) {
       const message = status === 'OK' ? `二次确认曲线结果为：${status}，曲线的标签将被清除。`
-              : `二次确认曲线结果为：${status}，请选择曲线标签：`;
+        : `二次确认曲线结果为：${status}，请选择曲线标签：`;
       const $content = $('<div/>');
       const $message = $(`<h4 style="font-weight: normal">${message}</h4>`);
       $content.append($message);
@@ -367,7 +367,7 @@
 
     function renderBaseInfoRow(label, value) {
       return $(
-              `<tr>
+        `<tr>
         <td><h4 class="m-0 p-1" style="font-weight: normal">${label}</h4></td>
         <td><h4 class="m-0 p-1" style="font-weight: normal">${value}</h4></td>
       </tr>`
@@ -467,7 +467,25 @@
     function downloadCurveAndResult() {
       const curveContent = formatCurveFileContent();
       doDownLoad(curveContent, '{{result.entity_id}}.csv'.replace('/', '@'), 'text/plain');
-      const resultContent = JSON.stringify(result);
+      const resultLocalized = {};
+      Object.keys(result).forEach(function (k) {
+
+        const key = resultKeys[k] || k;
+        if(k==='step_results'){
+          resultLocalized[key] = result[k].map(function(r){
+            ret = {}
+            Object.keys(r).forEach(function (rk) {
+              const rkey = resultKeys[rk] || rk;
+              ret[rkey]=r[rk];
+            })
+            return ret;
+          })
+        }else{
+          resultLocalized[key] = result[k];
+        }
+      })
+
+      const resultContent = JSON.stringify(resultLocalized);
       doDownLoad(resultContent, '{{result.entity_id}}.json'.replace('/', '@'), 'text/plain');
 
     }
