@@ -30,8 +30,6 @@ _logger.setLevel(loggingLevel)
 START_DATE = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - relativedelta.relativedelta(
     days=1)
 
-MINIO_ROOT_URL = os.environ.get('MINIO_ROOT_URL', None)
-
 try:
     LIMIT = int(os.environ.get('DATA_VACUUM_LIMIT', '1000'))
 except Exception as e:
@@ -39,15 +37,10 @@ except Exception as e:
     LIMIT = 1000
 
 try:
-    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION', '90'))  # 单位为天
+    DATA_STORAGE_DURATION = int(os.environ.get('DATA_STORAGE_DURATION', '30'))  # 单位为天
 except Exception as e:
     _logger.error(e)
-    DATA_STORAGE_DURATION = 90
-try:
-    DATA_STORAGE_MARGIN = int(os.environ.get('DATA_STORAGE_MARGIN', '3'))
-except Exception as e:
-    _logger.error(e)
-    DATA_STORAGE_MARGIN = 3
+    DATA_STORAGE_DURATION = 30 # 设置一个较小的默认值，避免空间不足
 
 default_args = {
     'owner': "operations",
@@ -86,7 +79,7 @@ def verify_params(test_mode, **kwargs):
 
 @provide_session
 def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     qry = session.query(ResultModel).from_self()
     if start_date:
         qry = qry.filter(ResultModel.update_time >= start_date)
@@ -98,7 +91,7 @@ def get_all_results(start_date=None, end_date=None, limit=1000, session=None):
 
 @provide_session
 def clear_results(results, session=None):
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     qry = session.query(ResultModel).filter(ResultModel.pk.in_(
         list(map(lambda r: r.pk, results))
     ))
@@ -106,7 +99,7 @@ def clear_results(results, session=None):
 
 
 def get_all_need_delete_results(test_mode, **kwargs):
-    delta_time = verify_params(test_mode, **kwargs) - DATA_STORAGE_MARGIN
+    delta_time = verify_params(test_mode, **kwargs)
     delta = relativedelta.relativedelta(days=delta_time)
     end_date = datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0) - delta
     _logger.info("Get End Date Time: {}".format(datetime.isoformat(end_date)))
@@ -119,8 +112,6 @@ def clear_curve_files(curve_files):
     if not curve_files:
         return
     curve_args = get_curve_args('qcos_minio')
-    if MINIO_ROOT_URL:
-        curve_args.update({'endpoint': MINIO_ROOT_URL})
     ct = ClsCurveStorage(**curve_args)
     try:
         ct.remove_curves(curve_files=curve_files)

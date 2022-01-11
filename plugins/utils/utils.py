@@ -5,7 +5,7 @@ from airflow.api.common.experimental import trigger_dag as trigger
 import json
 from typing import Optional, List, Dict
 from airflow.exceptions import AirflowNotFoundException, AirflowConfigException
-from plugins.models.curve_template import CurveTemplateModel
+from qcos_addons.models.curve_template import CurveTemplateModel
 
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
@@ -121,7 +121,7 @@ def get_curve_args(connection_key='qcos_minio'):
 
 
 def get_curve_entity_ids(bolt_number=None, craft_type=None):
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     tasks = ResultModel.list_results(craft_type, bolt_number)
     tasks.sort(key=lambda t: t.execution_date, reverse=True)
     return list(map(lambda ti: ti.entity_id, tasks))

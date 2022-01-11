@@ -11,7 +11,7 @@ import logging
 import pika
 from typing import Optional
 from airflow.models import DAG
-from plugins.models.curve_template import CurveTemplateModel
+from qcos_addons.models.curve_template import CurveTemplateModel
 from typing import Dict
 from airflow.operators.python_operator import PythonOperator
 from plugins.entities.redis import ClsRedisConnection, gen_template_key
@@ -21,7 +21,7 @@ from plugins.utils.utils import parse_template_name
 CURVE_TEMPLATE_UPGRADE_TASK = 'curve_template_upgrade'
 
 CURVE_TEMPLATE_KEY_PREFIX = os.environ.get(
-    "CURVE_TEMPLATE_KEY_PREFIX", "templates")
+    "CURVE_TEMPLATE_KEY_PREFIX", "qcos_templates")
 
 DAG_ID = 'curve_template_upgrade'
 

@@ -31,7 +31,7 @@ class BoltNoNotNullFilter(BaseFilter):
 class CurveAnalysisControllerView(AirflowModelView):
     route_base = '/curves_analysis_controller'
     list_widget = TighteningControllerListWidget
-    from plugins.models.tightening_controller import TighteningController
+    from qcos_addons.models.tightening_controller import TighteningController
     datamodel = AirflowModelView.CustomSQLAInterface(TighteningController)
     list_title = lazy_gettext("Analysis Via Controller")
     page_size = PAGE_SIZE
@@ -50,7 +50,7 @@ class CurveAnalysisControllerView(AirflowModelView):
 
 class CurveAnalysisTrackNoView(AirflowModelView):
     route_base = '/curves_analysis_track'
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     datamodel = wwwutils.CustomSQLAInterface(ResultModel)
 
     page_size = PAGE_SIZE

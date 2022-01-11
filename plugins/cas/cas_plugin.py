@@ -7,10 +7,6 @@ import json
 from http import HTTPStatus
 import requests
 
-CAS_ANALYSIS_BASE_URL = os.environ.get("CAS_ANALYSIS_BASE_URL", "http://localhost:9095")
-CAS_TRAINING_BASE_URL = os.environ.get("CAS_TRAINING_BASE_URL", "http://localhost:9095")
-
-
 class CasHook(BaseHook):
     def __init__(self, role='all'):
         super(CasHook, self).__init__()

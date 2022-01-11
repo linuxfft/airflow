@@ -7,3 +7,8 @@ from sqlalchemy.ext.declarative import as_declarative
 @as_declarative(name="Base")
 class Base(object):
     __table_args__ = {"extend_existing": True}
+
+    @classmethod
+    def create_model(cls, engine):
+        if not engine.dialect.has_table(engine, cls.__tablename__):
+            Base.metadata.create_all(engine)

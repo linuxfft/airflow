@@ -16,7 +16,7 @@ log = LoggingMixin().log
 def load_default_controller(file_dir, session=None):
     log.info("Loading default controllers")
     val = load_default_controllers(file_dir)
-    from plugins.models.tightening_controller import TighteningController
+    from qcos_addons.models.tightening_controller import TighteningController
     for controller in val:
         if TighteningController.controller_exists(**controller):
             log.info(f"Controller already exists, skipping, {repr(controller)}")
@@ -34,7 +34,7 @@ def merge_data(model, data, is_exist, session=None):
 @provide_session
 def create_default_error_tags(session=None):
     log.info("Loading default error_tags")
-    from plugins.models.error_tag import ErrorTag
+    from qcos_addons.models.error_tag import ErrorTag
     error_tags = load_default_error_tags()
     for error_tag in error_tags:
         data = ErrorTag(label=error_tag.get('label'), value=error_tag.get('value'))
@@ -47,7 +47,7 @@ def create_device_type_support(session=None):
     if not session:
         return
     device_types = load_default_device_types()
-    from plugins.models.device_type import DeviceTypeModel
+    from qcos_addons.models.device_type import DeviceTypeModel
     for device_type in device_types:
         data = DeviceTypeModel(name=device_type.get('name'), view_config=device_type.get('view_config'))
         merge_data(model=DeviceTypeModel, data=data, is_exist=DeviceTypeModel.name == data.name, session=session)
@@ -155,7 +155,7 @@ def create_default_connection(session=None):
 
 def create_default_curve_templates():
     log.info("Loading default Curve Templates.")
-    from plugins.models.curve_template import CurveTemplateModel
+    from qcos_addons.models.curve_template import CurveTemplateModel
     current_templates = len(CurveTemplateModel.get_all_active_curve_tmpls().keys())
     if current_templates > 0:
         log.info("There are existing Curve Templates, skip loading.")

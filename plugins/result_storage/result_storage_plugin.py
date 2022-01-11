@@ -20,7 +20,6 @@ from airflow.utils import timezone
 _logger = LoggingMixin().log
 SUPPORT_DEVICE_TYPE = ['tightening', 'servo_press']
 
-MINIO_ROOT_URL = os.environ.get('MINIO_ROOT_URL', None)
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS', 'False') == 'True' else False
@@ -37,7 +36,7 @@ def is_mismatch(measure_result, curve_mode):
 def get_recent_mismatch_rate(session=None):
     delta = datetime.timedelta(days=2)
     min_date = timezone.utcnow() - delta
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     total = session.query(ResultModel).filter(
         ResultModel.execution_date > min_date
     ).count()
@@ -91,9 +90,6 @@ class ResultStorageHook(BaseHook, ABC):
     def save_curve(entity_id, curve):
         _logger.info('start pushing curve...')
         curve_args = get_curve_args()
-        if MINIO_ROOT_URL:
-            _logger.debug(f'override OSS URL： {MINIO_ROOT_URL}')
-            curve_args.update({'endpoint': MINIO_ROOT_URL})
         ct = ClsCurveStorage(**curve_args)
         ct.metadata = {
             'entity_id': entity_id
@@ -145,7 +141,7 @@ class ResultStorageHook(BaseHook, ABC):
             _logger.info('使用默认工艺类型：{}'.format(craft_type))
 
         try:
-            from plugins.models.tightening_controller import TighteningController
+            from qcos_addons.models.tightening_controller import TighteningController
             line_code, controller_id = TighteningController.get_line_code_by_controller_name(controller_name)
         except Exception as e:
             _logger.error(e)
