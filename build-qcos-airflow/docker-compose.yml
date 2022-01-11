@@ -9,8 +9,6 @@ services:
         environment:
             - MQ_TEMPLATE_QUEUE=qcos_templates_airflow
             - MQ_TEMPLATE_EXCHANGE=qcos_templates
-            - CAS_ANALYSIS_BASE_URL=http://localhost:9095
-            - CAS_TRAINING_BASE_URL=http://localhost:9095
             - ENABLE_DELETE_CHILD_LOG = False
             - MAX_LOG_AGE_IN_DAYS = 180
             - LOAD_EX=n
@@ -68,8 +66,6 @@ services:
         environment:
             - MQ_TEMPLATE_QUEUE=qcos_templates_airflow
             - MQ_TEMPLATE_EXCHANGE=qcos_templates
-            - CAS_ANALYSIS_BASE_URL=http://localhost:9095
-            - CAS_TRAINING_BASE_URL=http://localhost:9095
             - ENABLE_DELETE_CHILD_LOG = False
             - MAX_LOG_AGE_IN_DAYS = 180
             - TRAIN_ERROR_TAG=False
@@ -98,8 +94,6 @@ services:
         environment:
             - MQ_TEMPLATE_QUEUE=qcos_templates_airflow
             - MQ_TEMPLATE_EXCHANGE=qcos_templates
-            - CAS_ANALYSIS_BASE_URL=http://localhost:9095
-            - CAS_TRAINING_BASE_URL=http://localhost:9095
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
             - POSTGRES_HOST=172.17.0.1

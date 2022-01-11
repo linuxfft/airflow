@@ -60,7 +60,7 @@ class CurveView(BaseView):
         from qcos_addons.models.tightening_controller import TighteningController
         controller = TighteningController.find_controller(controller_name)
         error_tags = ErrorTag.get_all()
-        ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE')
+        ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE', False)
         show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_RESULT)
 

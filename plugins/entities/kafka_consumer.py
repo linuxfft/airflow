@@ -14,7 +14,7 @@ from plugins.utils.logger import generate_logger
 
 _logger = generate_logger(__name__)
 
-FACTORY_CODE = os.getenv('FACTORY_CODE', 'DEFAULT_FACTORY_CODE')
+FACTORY_CODE = os.getenv('FACTORY_CODE', '')
 
 
 class ClsKafkaConsumer(ClsEntity):

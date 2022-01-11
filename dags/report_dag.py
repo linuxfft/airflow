@@ -13,7 +13,7 @@ import errno
 file_ok_report = "ok_report.pdf"
 file_task = "task.pdf"
 file_diff = "diff.pdf"
-file_path = os.path.join(os.environ.get('AIRFLOW_USER_HOME', '/usr/local/airflow'))
+file_path = os.path.join(os.environ.get('AIRFLOW_HOME', '/usr/local/airflow'))
 if not os.path.exists(os.path.dirname(file_path)):
     try:
         os.makedirs(os.path.dirname(file_path))

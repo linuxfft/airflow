@@ -21,7 +21,7 @@ from plugins.utils.utils import parse_template_name
 CURVE_TEMPLATE_UPGRADE_TASK = 'curve_template_upgrade'
 
 CURVE_TEMPLATE_KEY_PREFIX = os.environ.get(
-    "CURVE_TEMPLATE_KEY_PREFIX", "templates")
+    "CURVE_TEMPLATE_KEY_PREFIX", "qcos_templates")
 
 DAG_ID = 'curve_template_upgrade'
 

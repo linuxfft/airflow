@@ -27,7 +27,7 @@ ALERT_EMAIL_ADDRESSES = []
 # Length to retain the log files if not already provided in the conf. If this
 # is set to 30, the job will remove those files that are 30 days old or older
 DEFAULT_MAX_LOG_AGE_IN_DAYS = os.environ.get(
-    "MAX_LOG_AGE_IN_DAYS", 180
+    "MAX_LOG_AGE_IN_DAYS", 30
 )
 # Whether the job should delete the logs or not. Included if you want to
 # temporarily avoid deleting the logs

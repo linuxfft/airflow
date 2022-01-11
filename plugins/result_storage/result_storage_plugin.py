@@ -20,7 +20,6 @@ from airflow.utils import timezone
 _logger = LoggingMixin().log
 SUPPORT_DEVICE_TYPE = ['tightening', 'servo_press']
 
-MINIO_ROOT_URL = os.environ.get('MINIO_ROOT_URL', None)
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 ANALYSIS_NOK_RESULTS = True if os.environ.get('ANALYSIS_NOK_RESULTS', 'False') == 'True' else False
@@ -91,9 +90,6 @@ class ResultStorageHook(BaseHook, ABC):
     def save_curve(entity_id, curve):
         _logger.info('start pushing curve...')
         curve_args = get_curve_args()
-        if MINIO_ROOT_URL:
-            _logger.debug(f'override OSS URL： {MINIO_ROOT_URL}')
-            curve_args.update({'endpoint': MINIO_ROOT_URL})
         ct = ClsCurveStorage(**curve_args)
         ct.metadata = {
             'entity_id': entity_id

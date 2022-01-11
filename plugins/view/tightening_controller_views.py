@@ -26,7 +26,7 @@ from airflow.security import permissions
 from airflow.www.widgets import AirflowModelListWidget
 from qcos_addons.access_log.log import access_log
 
-FACTORY_CODE = os.getenv('FACTORY_CODE', 'DEFAULT_FACTORY_CODE')
+FACTORY_CODE = os.getenv('FACTORY_CODE', '')
 
 _logger = logging.getLogger(__name__)
 csrf = CSRFProtect()
