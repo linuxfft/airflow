@@ -13,7 +13,7 @@ from flask_babel import lazy_gettext
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 from airflow.configuration import conf
 from airflow.exceptions import AirflowNotFoundException
-from plugins.models.error_tag import ErrorTag
+from qcos_addons.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
 from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results, get_curves
 import logging
@@ -27,6 +27,8 @@ from flask import jsonify, request
 from airflow.exceptions import AirflowException
 from airflow.security import permissions
 from qcos_addons.access_log.log import access_log
+from airflow.models import Variable
+
 _logger = logging.getLogger(__name__)
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')
@@ -36,7 +38,7 @@ class CurvesView(AirflowModelView):
     list_template = "curves.html"
     CustomSQLAInterface = wwwutils.CustomSQLAInterface
     route_base = '/curves'
-    from plugins.models.result import ResultModel
+    from qcos_addons.models.result import ResultModel
     datamodel = CustomSQLAInterface(ResultModel)
     search_columns = ['execution_date', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
     label_columns = {
@@ -188,6 +190,19 @@ class CurvesView(AirflowModelView):
                 result_table = pd.concat([result_table, tb], ignore_index=True)
             except Exception as e:
                 _logger.error(e)
+        if result.get('device_type') == 'servo_press':
+            result_keys_translation_mapping = Variable.get(
+                'servo_press_result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={}
+            )
+        else:
+            result_keys_translation_mapping = Variable.get(
+                'result_keys_translation_mapping',
+                deserialize_json=True,
+                default_var={}
+            )
+        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x,x), inplace=True)
         try:
             curves = get_curves(entities)
             for curve in curves:

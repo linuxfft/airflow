@@ -1,9 +1,7 @@
 from sqlalchemy import ForeignKey
 from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer, Text
-from airflow.plugins_manager import AirflowPlugin
-from plugins.models.base import Base
-from airflow import settings
+from qcos_addons.models.base import Base
 
 
 class TighteningController(Base):
@@ -21,6 +19,7 @@ class TighteningController(Base):
     work_center_name = Column(String(1000), nullable=True)
     device_type_id = Column(Integer, ForeignKey('device_type.id', onupdate='CASCADE', ondelete='SET NULL'),
                             nullable=True)
+    config = Column(Text, nullable=True)
 
     field_name_map = {
         'controller_name': ['控制器名称'],
@@ -104,14 +103,3 @@ class TighteningController(Base):
         if not controller_data:
             raise Exception('未找到控制器数据: {}'.format(controller_name))
         return controller_data.get('line_code', None), controller_data.get('id')
-
-
-# Defining the plugin class
-class TighteningControllerModelPlugin(AirflowPlugin):
-    name = "tightening_controller_model_plugin"
-
-    @classmethod
-    def on_load(cls):
-        engine = settings.engine
-        if not engine.dialect.has_table(engine, TighteningController.__tablename__):
-            Base.metadata.create_all(engine)

@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from airflow.utils.db import create_session
 from plugins.utils.logger import generate_logger
 from plugins.entities.entity import ClsEntity
-from plugins.models.result import ResultModel
+from qcos_addons.models.result import ResultModel
 from airflow.utils.db import provide_session
 from psycopg2 import errors
 from sqlalchemy.exc import IntegrityError

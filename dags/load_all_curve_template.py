@@ -9,7 +9,7 @@ from airflow.operators.python_operator import PythonOperator
 from typing import Dict
 import logging
 from plugins.utils.utils import get_curve_template_name
-from plugins.models.curve_template import CurveTemplateModel
+from qcos_addons.models.curve_template import CurveTemplateModel
 import asyncio
 from plugins.entities.redis import ClsRedisConnection
 from plugins.utils.utils import parse_template_name

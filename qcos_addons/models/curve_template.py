@@ -1,11 +1,8 @@
 import json
 from typing import Any, List
-from plugins.models.base import Base
+from qcos_addons.models.base import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean
 from airflow.utils.db import provide_session
-from airflow.plugins_manager import AirflowPlugin
-from airflow import settings
-
 
 class CurveTemplateModel(Base):
     """
@@ -115,14 +112,3 @@ class CurveTemplateModel(Base):
         if deserialize_json:
             return obj.key, json.loads(obj.val)
         return obj.key, obj.val
-
-
-# Defining the plugin class
-class CurveTemplateModelPlugin(AirflowPlugin):
-    name = "curve_template_model_plugin"
-
-    @classmethod
-    def on_load(cls):
-        engine = settings.engine
-        if not engine.dialect.has_table(engine, CurveTemplateModel.__tablename__):
-            Base.metadata.create_all(engine)

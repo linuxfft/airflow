@@ -3,9 +3,7 @@ from airflow.utils import timezone
 from sqlalchemy import Boolean, Float, Text
 from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer
-from airflow.plugins_manager import AirflowPlugin
-from plugins.models.base import Base
-from airflow import settings
+from qcos_addons.models.base import Base
 from distutils.util import strtobool
 from sqlalchemy import text, ForeignKey, sql
 import os
@@ -117,14 +115,8 @@ class ResultModel(Base):
                 result_data[key] = value
         return result_data
 
-
-# Defining the plugin class
-class ResultModelPlugin(AirflowPlugin):
-    name = "result_model_plugin"
-
     @classmethod
-    def on_load(cls):
-        engine = settings.engine
+    def create_model(cls, engine):
         if not engine.dialect.has_table(engine, ResultModel.__tablename__):
             Base.metadata.create_all(engine)
             if not ENV_TIMESCALE_ENABLE:

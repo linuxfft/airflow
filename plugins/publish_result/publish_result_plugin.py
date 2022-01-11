@@ -19,7 +19,7 @@ _logger = LoggingMixin().log
 
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 try:
-    ENV_PUSH_HMI_ENABLE = strtobool(os.getenv('ENV_PUSH_HMI_ENABLE', 'true'))
+    ENV_PUSH_HMI_ENABLE = strtobool(os.getenv('ENV_PUSH_HMI_ENABLE', 'false'))
 except Exception as err:
     ENV_PUSH_HMI_ENABLE = False
     _logger.debug('ENV_PUSH_HMI_ENABLE 解析失败({})，使用默认值{}'.format(err, ENV_PUSH_HMI_ENABLE))

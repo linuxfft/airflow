@@ -15,7 +15,7 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.settings import TIMEZONE
 from airflow.utils.db import provide_session
 from flask_appbuilder.models.sqla.filters import BaseFilter, get_field_setup_query
-from plugins.models.error_tag import ErrorTag
+from qcos_addons.models.error_tag import ErrorTag
 import logging
 import pprint
 from airflow.security import permissions

@@ -1,8 +1,6 @@
 from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer
-from airflow.plugins_manager import AirflowPlugin
-from plugins.models.base import Base
-from airflow import settings
+from qcos_addons.models.base import Base
 
 
 class ErrorTag(Base):
@@ -50,13 +48,3 @@ class ErrorTag(Base):
         dataArr = list(map(cls._error_tag_data, objs))
         return dataArr
 
-
-# Defining the plugin class
-class ErrorTagModelPlugin(AirflowPlugin):
-    name = "error_tag_model_plugin"
-
-    @classmethod
-    def on_load(cls):
-        engine = settings.engine
-        if not engine.dialect.has_table(engine, ErrorTag.__tablename__):
-            Base.metadata.create_all(engine)

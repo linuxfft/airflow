@@ -471,8 +471,7 @@ class CustomSQLAInterface(SQLAInterface):
 
 class ErrorTagField(StringField):
     def iter_choices(self):
-        import plugins
-        ErrorTag = plugins.models.error_tag.ErrorTag
+        from qcos_addons.models.error_tag import ErrorTag
         d = ErrorTag.get_all_dict()
         for value, label in d.items():
             yield (value, label, self.data is None)
