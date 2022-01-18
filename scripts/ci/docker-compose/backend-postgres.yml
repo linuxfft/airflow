@@ -22,8 +22,11 @@ services:
       - BACKEND=postgres
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:airflow@postgres/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:${POSTGRES_VERSION}
     environment:
@@ -32,5 +35,10 @@ services:
       - POSTGRES_DB=airflow
     volumes:
       - /dev/urandom:/dev/random   # Required to get non-blocking entropy source
-    ports:
-      - "${POSTGRES_HOST_PORT}:5432"
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "psql", "-h", "localhost", "-U", "postgres", "-c", "select 1", "airflow"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always

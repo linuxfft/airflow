@@ -10,15 +10,12 @@ secrets.py
 airflow.db
 unittests.db
 
-
 # Airflow temporary artifacts
 airflow/git_version
 airflow/www/static/coverage/
 airflow/www/static/dist
-airflow/www_rbac/static/coverage/
-airflow/www_rbac/static/dist/
 
-logs/
+/logs/
 airflow-webserver.pid
 
 # Byte-compiled / optimized / DLL files
@@ -65,7 +62,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
-coverage.xml
+coverage*.xml
 *,cover
 .hypothesis/
 .pytest_cache
@@ -88,7 +85,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/_api/
+docs/_doctrees/
+docs/_inventory_cache/
+docs/*/_api/
 
 # PyBuilder
 target/
@@ -154,8 +153,8 @@ rat-results.txt
 # Kubernetes generated templated files
 *.generated
 *.tar.gz
-scripts/ci/in_container/kubernetes/kube/.generated/airflow.yaml
-scripts/ci/in_container/kubernetes/docker/requirements.txt
+scripts/ci/kubernetes/kube/.generated/airflow.yaml
+scripts/ci/kubernetes/docker/requirements.txt
 
 # Node & Webpack Stuff
 *.entry.js
@@ -187,3 +186,39 @@ dmypy.json
 /.kube
 /.inputrc
 log.txt*
+
+# Provider-related ignores
+/provider_packages/CHANGELOG.txt
+/provider_packages/MANIFEST.in
+/airflow/providers/__init__.py
+
+# Docker context files
+/docker-context-files
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Terraform variables
+*.tfvars
+
+Chart.lock
+
+# Chart dependencies
+**/charts/*.tgz
+
+# Might be generated when you build wheels
+pip-wheel-metadata
+
+.pypirc
+
+/.docs-venv
+
+# Dev files
+/dev/packages.txt
+/dev/Dockerfile.pmc
+
+build-qcos-airflow/dags
+build-qcos-airflow/plugins

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -16,24 +15,24 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+"""Standard task runner"""
+import logging
 import os
+from typing import Optional
 
 import psutil
 from setproctitle import setproctitle
 
+from airflow.settings import CAN_FORK
 from airflow.task.task_runner.base_task_runner import BaseTaskRunner
-from airflow.utils.helpers import reap_process_group
-
-CAN_FORK = hasattr(os, 'fork')
+from airflow.utils.process_utils import reap_process_group
 
 
 class StandardTaskRunner(BaseTaskRunner):
-    """
-    Runs the raw Airflow task by invoking through the Bash shell.
-    """
+    """Standard runner for all tasks."""
+
     def __init__(self, local_task_job):
-        super(StandardTaskRunner, self).__init__(local_task_job)
+        super().__init__(local_task_job)
         self._rc = None
         self.dag = local_task_job.task_instance.task.dag
 
@@ -53,9 +52,11 @@ class StandardTaskRunner(BaseTaskRunner):
             self.log.info("Started process %d to run task", pid)
             return psutil.Process(pid)
         else:
-            from airflow.bin.cli import get_parser
             import signal
-            import airflow.settings as settings
+
+            from airflow import settings
+            from airflow.cli.cli_parser import get_parser
+            from airflow.sentry import Sentry
 
             signal.signal(signal.SIGINT, signal.SIG_DFL)
             signal.signal(signal.SIGTERM, signal.SIG_DFL)
@@ -72,6 +73,9 @@ class StandardTaskRunner(BaseTaskRunner):
             # [1:] - remove "airflow" from the start of the command
             args = parser.parse_args(self._command[1:])
 
+            self.log.info('Running: %s', self._command)
+            self.log.info('Job %s: Subtask %s', self._task_instance.job_id, self._task_instance.task_id)
+
             proc_title = "airflow task runner: {0.dag_id} {0.task_id} {0.execution_date}"
             if hasattr(args, "job_id"):
                 proc_title += " {0.job_id}"
@@ -79,11 +83,16 @@ class StandardTaskRunner(BaseTaskRunner):
 
             try:
                 args.func(args, dag=self.dag)
-                os._exit(0)
+                return_code = 0
             except Exception:
-                os._exit(1)
+                return_code = 1
+            finally:
+                # Explicitly flush any pending exception to Sentry if enabled
+                Sentry.flush()
+                logging.shutdown()
+                os._exit(return_code)
 
-    def return_code(self, timeout=0):
+    def return_code(self, timeout: int = 0) -> Optional[int]:
         # We call this multiple times, but we can only wait on the process once
         if self._rc is not None or not self.process:
             return self._rc
@@ -100,7 +109,10 @@ class StandardTaskRunner(BaseTaskRunner):
         if self.process is None:
             return
 
-        if self.process.is_running():
+        # Reap the child process - it may already be finished
+        _ = self.return_code(timeout=0)
+
+        if self.process and self.process.is_running():
             rcs = reap_process_group(self.process.pid, self.log)
             self._rc = rcs.get(self.process.pid)
 
@@ -109,3 +121,11 @@ class StandardTaskRunner(BaseTaskRunner):
         if self._rc is None:
             # Something else reaped it before we had a chance, so let's just "guess" at an error code.
             self._rc = -9
+
+        if self._rc == -9:
+            # If either we or psutil gives out a -9 return code, it likely means
+            # an OOM happened
+            self.log.error(
+                'Job %s was killed before it finished (likely due to running out of memory)',
+                self._task_instance.job_id,
+            )

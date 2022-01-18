@@ -22,14 +22,6 @@ jobs:
           submodules: true
           path: airflow
           token: ${{ secrets.airflow_curve }}
-      - name: Add dags
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-          repository: masami10/curve
-          ref: master
-          path: curve
-          token: ${{ secrets.airflow_curve }}
       - name: Add docker-ariflow
         uses: actions/checkout@v2
         with:
@@ -52,14 +44,15 @@ jobs:
           pip install -r requirements.txt --cache-dir .pip_cache
       - name: Compile translation
         run: |
-          cd $GITHUB_WORKSPACE/airflow/airflow
+          cd $GITHUB_WORKSPACE/airflow
           /bin/bash ./compile_translation.sh
       - name: Build
         run: |
           cd $GITHUB_WORKSPACE/airflow
           echo $(pwd)
           echo creating a build
-          /bin/bash ./airflow/www_rbac/compile_assets.sh
+          /bin/bash ./airflow/www/compile_assets.sh
+          export INSTALL_PROVIDERS_FROM_SOURCES=true
           python setup.py sdist bdist_wheel
           echo "$(ls dist/ | grep whl)" > $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME
           echo "$(ls dist/)"
@@ -68,23 +61,46 @@ jobs:
           echo  "$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME)"
       - name: Docker login
         run: |
-          docker login docker.pkg.github.com -u ${{ github.actor }} -p ${{ secrets.airflow_curve }}
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.airflow_curve }}
       - name: Build airflow-base
         run: |
           cd $GITHUB_WORKSPACE/docker-airflow
           echo $(pwd)
           cp $GITHUB_WORKSPACE/airflow/dist/$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME) ./$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME)
-          docker build --build-arg AIRFLOW_WHEEL_NAME=$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME) -t docker.pkg.github.com/masami10/airflow/airflow-base:latest --no-cache .
-          docker tag docker.pkg.github.com/masami10/airflow/airflow-base:latest docker.pkg.github.com/masami10/airflow/airflow-base:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
-          docker push docker.pkg.github.com/masami10/airflow/airflow-base:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
-          docker push docker.pkg.github.com/masami10/airflow/airflow-base:latest
+          cp $GITHUB_WORKSPACE/airflow/requirements.txt ./requirements.txt
+          docker build --build-arg AIRFLOW_WHEEL_NAME=$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_NAME) -t ghcr.io/masami10/airflow/airflow-base:latest --no-cache .
+          docker tag ghcr.io/masami10/airflow/airflow-base:latest ghcr.io/masami10/airflow/airflow-base:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
+          docker push ghcr.io/masami10/airflow/airflow-base:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
+          docker push ghcr.io/masami10/airflow/airflow-base:latest
       - name: Build airflow
         run: |
-          cd $GITHUB_WORKSPACE/curve
+          cd $GITHUB_WORKSPACE/airflow/build-qcos-airflow
           echo $(pwd)
-          docker build -t docker.pkg.github.com/masami10/airflow/airflow:latest --no-cache .
-          docker tag docker.pkg.github.com/masami10/airflow/airflow:latest docker.pkg.github.com/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
-          docker push docker.pkg.github.com/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
-          docker push docker.pkg.github.com/masami10/airflow/airflow:latest
+          cp -r ../dags ./dags
+          cp -r ../plugins ./plugins
+          cp -r ../qcos_addons ./qcos_addons
+          docker build -t ghcr.io/masami10/airflow/airflow:latest --no-cache .
+          docker tag ghcr.io/masami10/airflow/airflow:latest ghcr.io/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
+          docker push ghcr.io/masami10/airflow/airflow:$(cat $GITHUB_WORKSPACE/AIRFLOW_RELEASE_VERSION)
+          docker push ghcr.io/masami10/airflow/airflow:latest
+      - name: Check If Product Tag
+        id: check-tag
+        run: |
+          if [[ ${{ github.event.ref }} =~ ^refs/tags/vc[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo ::set-output name=match::true
+          fi
+      - name: push to cluster
+        if: steps.check-tag.outputs.match == 'true'
+        run: |
+          echo ${{ secrets.TENCENT_PASS }} | docker login -u ${{ secrets.TENCENT_USER }} ccr.ccs.tencentyun.com --password-stdin
+          docker tag ghcr.io/masami10/airflow/airflow:${GITHUB_REF##*/} ccr.ccs.tencentyun.com/dev-tke/airflow:${GITHUB_REF##*/}
+          docker push ccr.ccs.tencentyun.com/dev-tke/airflow:${GITHUB_REF##*/}
+      - name: deploy to cluster
+        if: steps.check-tag.outputs.match == 'true'
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mkdir -p ~/.kube
+          echo '${{ secrets.TENCENT_KUBECTL_DATA }}' > ~/.kube/config
 
-
+          export IMAGE="ccr.ccs.tencentyun.com/dev-tke/airflow:${GITHUB_REF##*/}"
+          envsubst < deploy_services/airflow.yaml | ./kubectl apply -f -
