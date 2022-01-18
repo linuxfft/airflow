@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 import datetime as dt
 import json
-import os
 import pprint
 from datetime import timedelta
 from typing import Dict
@@ -13,7 +12,9 @@ from airflow.models import DAG, Variable
 import pendulum
 from airflow.operators.python_operator import PythonOperator
 from plugins.entities.result_mq import ClsResultMQ
+from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator
 from plugins.utils.logger import generate_logger
+from functools import wraps
 
 _logger = generate_logger(__name__)
 
@@ -23,9 +24,49 @@ def on_fail(context):
 
 
 def on_success(context):
-    _logger.info("{0} Run Success".format(context))
+    _logger.debug("{0} Run Success".format(context))
 
 
+def handler_exception(msg):
+    def wrapper(func):
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                _logger.error(f"{msg}: {repr(e)}")
+                _logger.info("正在推送异常信息")
+
+        #         todo
+                publish = RabbitmqOperator(
+                    connection_id='qcos_rabbitmq',
+                    task_id='mq_result_storage_task',
+                    dag=dag,
+                    priority_weight=9,
+                    queue=f'qcos_result_storage',
+                    queue_args=Variable.get(
+                        "result_storage_queue_config",
+                        default_var={
+                            'durable': True
+                        },
+                        deserialize_json=True
+                    ),
+                    exchange=f'qcos_analysis_result',
+                    exchange_args={
+                        'exchange_type': 'fanout'
+                    },
+                    binding_args={
+                        'routing_key': f'*',
+                    },
+                    message_handler=result_handler
+                )
+
+        return wrapped
+
+    return wrapper
+
+
+@handler_exception('结果异常')
 def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
     '''
     :param channel: BlockingChannel
@@ -59,10 +100,12 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         result_data = data_dict.get('result_data', None)
         curve_data = data_dict.get('curve_data', None)
         measure_result = data_dict.get('measure_result', None)
-        curve_mode = data_dict.get('result', None)
-        verify_error = data_dict.get('verify_error', None)
         factory_code = data_dict.get('factory_code', None)
 
+    except Exception as e:
+        _logger.error("解析分析结果异常: {}".format(repr(e)))
+        raise e
+    try:
         from plugins.result_storage.result_storage_plugin import ResultStorageHook
 
         ResultStorageHook.save_result(
@@ -74,31 +117,21 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
             entity_id,
             curve_data
         )
-        ResultStorageHook.save_analyze_result(
-            entity_id, measure_result, curve_mode, verify_error
-        )
 
-        _logger.info(f"{entity_id} all saved")
     except Exception as e:
-        _logger.error("trigger_handler error: {}".format(repr(e)))
+        _logger.error("保存曲线异常: {}".format(repr(e)))
+        raise e
 
+    curve_mode = data_dict.get('result', None)
+    verify_error = data_dict.get('verify_error', None)
 
-def watch_mq_results(*args, **kwargs):
-    mq_connection = ClsResultMQ(**ClsResultMQ.get_result_mq_args(key='qcos_rabbitmq'))
-    factory_code = get_factory_code()
-    default_queue_config = {
-        'queue': f'qcos_result_storage',
-        'exchange': f'qcos_analysis_result',
-        'exchange_type': 'fanout',
-        'routing_key': f'*',
-        'durable': True
-    }
-    queue_config = Variable.get("result_storage_queue_config", default_var=default_queue_config,
-                                deserialize_json=True)
-    default_queue_config.update(queue_config)
-    mq_connection.doSubscribe(message_handler=result_handler, passive=False, **default_queue_config)
-    mq_connection.run(queue=default_queue_config.get('queue'))
-    mq_connection.doUnsubscribe(default_queue_config.get('queue'))
+    if curve_mode is None or verify_error is None:
+        # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
+        raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}），将发送异常信息")
+    ResultStorageHook.save_analyze_result(
+        entity_id, measure_result, curve_mode, verify_error
+    )
+    _logger.info(f"{entity_id} all saved")
 
 
 dag = DAG(
@@ -119,10 +152,25 @@ dag = DAG(
     max_active_runs=1
 )
 
-task = PythonOperator(
-    provide_context=True,
+listener_task = RabbitmqOperator(
+    connection_id='qcos_rabbitmq',
     task_id='mq_result_storage_task',
     dag=dag,
     priority_weight=9,
-    python_callable=watch_mq_results
+    queue=f'qcos_result_storage',
+    queue_args=Variable.get(
+        "result_storage_queue_config",
+        default_var={
+            'durable': True
+        },
+        deserialize_json=True
+    ),
+    exchange=f'qcos_analysis_result',
+    exchange_args={
+        'exchange_type': 'fanout'
+    },
+    binding_args={
+        'routing_key': f'*',
+    },
+    message_handler=result_handler
 )

@@ -1,0 +1,133 @@
+from airflow.models import BaseOperator
+import pika
+from plugins.utils.logger import generate_logger
+from functools import wraps
+from airflow.hooks.base_hook import BaseHook
+
+_logger = generate_logger(__name__)
+
+
+class RabbitmqHook(BaseHook):
+
+    @classmethod
+    def get_connection(cls, conn_id: str):
+        from airflow.models.connection import Connection
+        mq = Connection.get_connection_from_secrets(conn_id)
+        if mq is None:
+            raise Exception(f'Connection {conn_id} not found')
+        _logger.info('{}:{}, {},{}'.format(mq.host, mq.port, mq.login, mq.get_password()))
+        credentials = pika.PlainCredentials(mq.login, mq.get_password())
+        extra = mq.extra_dejson
+        connection_config = {
+            'host': mq.host,
+            'port': mq.port,
+            'credentials': credentials,
+            'virtual_host': extra.get('vhost', '/')
+        }
+        return pika.BlockingConnection(
+            pika.ConnectionParameters(**connection_config)
+        )
+
+    @staticmethod
+    def with_channel(func):
+        @wraps(func)
+        def wrapper(**kwargs):
+            connection = RabbitmqHook.get_connection(self.connection_id)
+            channel: pika.adapters.blocking_connection.BlockingChannel = connection.channel()
+            channel.confirm_delivery()
+            if self.queue:
+                channel.queue_declare(
+                    self.queue,
+                    **self.queue_args
+                )
+            if self.exchange:
+                channel.exchange_declare(
+                    exchange=self.exchange,
+                    **self.exchange_args
+                )
+            if self.queue and self.exchange:
+                channel.queue_bind(
+                    exchange=self.exchange,
+                    queue=self.queue,
+                    **self.binding_args
+                )
+
+            ret = func(self, channel=channel, *args, **kwargs)
+
+            connection.close()
+            return ret
+
+        return wrapper
+
+    @staticmethod
+    @with_channel
+    def subscribe(
+        queue=None,
+        message_handler=None,
+        subscribe_args=None,
+        channel: pika.adapters.blocking_connection.BlockingChannel = None
+    ):
+        channel.basic_consume(
+            queue,
+            on_message_callback=message_handler,
+            auto_ack=subscribe_args.get('auto_ack', True)
+        )
+        channel.start_consuming()
+        channel.stop_consuming()
+
+    @staticmethod
+    @with_channel
+    def publish(
+        message_source=None,
+        exchange=None,
+        publish_args=None,
+        channel: pika.adapters.blocking_connection.BlockingChannel = None):
+        for msg in message_source():
+            channel.basic_publish(exchange=exchange, body=msg, **publish_args)
+
+
+class RabbitmqOperator(BaseOperator):
+    connection = None
+
+    def __init__(
+        self,
+        connection_id=None,
+        queue=None,
+        queue_args=None,
+        exchange=None,
+        exchange_args=None,
+        binding_args=None,
+        message_handler=None,
+        message_source=None,
+        publish_args=None,
+        subscribe_args=None,
+        *args,
+        **kwargs
+    ):
+        if not connection_id:
+            raise Exception('RabbitmqOperator must have a connection_id')
+        super().__init__(*args, **kwargs)
+        self.subscribe_args = subscribe_args if subscribe_args is not None else {}
+        self.publish_args = publish_args if publish_args is not None else {}
+        self.binding_args = binding_args if binding_args is not None else {}
+        self.exchange_args = exchange_args if exchange_args is not None else {}
+        self.queue_args = queue_args if queue_args is not None else {}
+        self.exchange = exchange
+        self.queue = queue
+
+        self.connection_id = connection_id
+        self.message_handler = message_handler
+        self.message_source = message_source
+
+    def execute(self, context):
+        if self.message_handler is not None:
+            _logger.info('message_handler found, run in subscribe mode')
+            self.subscribe(
+                queue=self.queue,
+                message_handler=self.message_handler,
+                subscribe_args=self.subscribe_args
+            )
+
+        if self.message_source is not None:
+            _logger.info('message_source found, run in publish mode')
+            self.publish()
