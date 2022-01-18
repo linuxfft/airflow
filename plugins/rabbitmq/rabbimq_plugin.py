@@ -7,6 +7,49 @@ from airflow.hooks.base_hook import BaseHook
 _logger = generate_logger(__name__)
 
 
+def with_channel(func):
+    @wraps(func)
+    def wrapper(
+        conn_id=None, queue=None, queue_args={}, exchange=None, exchange_args={},
+        binding_args={}, **kwargs
+    ):
+        connection = RabbitmqHook.get_connection(conn_id)
+        channel: pika.adapters.blocking_connection.BlockingChannel = connection.channel()
+        channel.confirm_delivery()
+        if queue:
+            channel.queue_declare(
+                queue,
+                **queue_args
+            )
+        if exchange:
+            channel.exchange_declare(
+                exchange=exchange,
+                **exchange_args
+            )
+        if queue and exchange:
+            channel.queue_bind(
+                exchange=exchange,
+                queue=queue,
+                **binding_args
+            )
+
+        ret = func(
+            conn_id=conn_id,
+            channel=channel,
+            queue=queue,
+            queue_args=queue_args,
+            exchange=exchange,
+            exchange_args=exchange_args,
+            binding_args=binding_args,
+            **kwargs
+        )
+
+        connection.close()
+        return ret
+
+    return wrapper
+
+
 class RabbitmqHook(BaseHook):
 
     @classmethod
@@ -29,43 +72,13 @@ class RabbitmqHook(BaseHook):
         )
 
     @staticmethod
-    def with_channel(func):
-        @wraps(func)
-        def wrapper(**kwargs):
-            connection = RabbitmqHook.get_connection(self.connection_id)
-            channel: pika.adapters.blocking_connection.BlockingChannel = connection.channel()
-            channel.confirm_delivery()
-            if self.queue:
-                channel.queue_declare(
-                    self.queue,
-                    **self.queue_args
-                )
-            if self.exchange:
-                channel.exchange_declare(
-                    exchange=self.exchange,
-                    **self.exchange_args
-                )
-            if self.queue and self.exchange:
-                channel.queue_bind(
-                    exchange=self.exchange,
-                    queue=self.queue,
-                    **self.binding_args
-                )
-
-            ret = func(self, channel=channel, *args, **kwargs)
-
-            connection.close()
-            return ret
-
-        return wrapper
-
-    @staticmethod
     @with_channel
     def subscribe(
         queue=None,
         message_handler=None,
         subscribe_args=None,
-        channel: pika.adapters.blocking_connection.BlockingChannel = None
+        channel: pika.adapters.blocking_connection.BlockingChannel = None,
+        **kwargs
     ):
         channel.basic_consume(
             queue,
@@ -80,10 +93,15 @@ class RabbitmqHook(BaseHook):
     def publish(
         message_source=None,
         exchange=None,
-        publish_args=None,
-        channel: pika.adapters.blocking_connection.BlockingChannel = None):
-        for msg in message_source():
-            channel.basic_publish(exchange=exchange, body=msg, **publish_args)
+        routing_key='*',
+        publish_args={},
+        channel: pika.adapters.blocking_connection.BlockingChannel = None,
+        **kwargs
+    ):
+        if hasattr(message_source, '__call__'):
+            for msg in message_source():
+                channel.basic_publish(exchange=exchange, routing_key=routing_key, body=msg, **publish_args)
+        channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message_source, **publish_args)
 
 
 class RabbitmqOperator(BaseOperator):
@@ -91,7 +109,7 @@ class RabbitmqOperator(BaseOperator):
 
     def __init__(
         self,
-        connection_id=None,
+        conn_id=None,
         queue=None,
         queue_args=None,
         exchange=None,
@@ -104,7 +122,7 @@ class RabbitmqOperator(BaseOperator):
         *args,
         **kwargs
     ):
-        if not connection_id:
+        if not conn_id:
             raise Exception('RabbitmqOperator must have a connection_id')
         super().__init__(*args, **kwargs)
         self.subscribe_args = subscribe_args if subscribe_args is not None else {}
@@ -115,19 +133,26 @@ class RabbitmqOperator(BaseOperator):
         self.exchange = exchange
         self.queue = queue
 
-        self.connection_id = connection_id
+        self.conn_id = conn_id
         self.message_handler = message_handler
         self.message_source = message_source
 
     def execute(self, context):
         if self.message_handler is not None:
             _logger.info('message_handler found, run in subscribe mode')
-            self.subscribe(
+            RabbitmqHook.subscribe(
+                conn_id=self.conn_id,
                 queue=self.queue,
+                queue_args=self.queue_args,
                 message_handler=self.message_handler,
                 subscribe_args=self.subscribe_args
             )
 
         if self.message_source is not None:
             _logger.info('message_source found, run in publish mode')
-            self.publish()
+            RabbitmqHook.publish(
+                conn_id=self.conn_id,
+                message_source=self.message_source,
+                exchange=self.exchange,
+                publish_args=self.publish_args
+            )

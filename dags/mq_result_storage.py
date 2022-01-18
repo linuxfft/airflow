@@ -12,7 +12,7 @@ from airflow.models import DAG, Variable
 import pendulum
 from airflow.operators.python_operator import PythonOperator
 from plugins.entities.result_mq import ClsResultMQ
-from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator
+from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator, RabbitmqHook
 from plugins.utils.logger import generate_logger
 from functools import wraps
 
@@ -35,31 +35,6 @@ def handler_exception(msg):
                 func(*args, **kwargs)
             except Exception as e:
                 _logger.error(f"{msg}: {repr(e)}")
-                _logger.info("正在推送异常信息")
-
-        #         todo
-                publish = RabbitmqOperator(
-                    connection_id='qcos_rabbitmq',
-                    task_id='mq_result_storage_task',
-                    dag=dag,
-                    priority_weight=9,
-                    queue=f'qcos_result_storage',
-                    queue_args=Variable.get(
-                        "result_storage_queue_config",
-                        default_var={
-                            'durable': True
-                        },
-                        deserialize_json=True
-                    ),
-                    exchange=f'qcos_analysis_result',
-                    exchange_args={
-                        'exchange_type': 'fanout'
-                    },
-                    binding_args={
-                        'routing_key': f'*',
-                    },
-                    message_handler=result_handler
-                )
 
         return wrapped
 
@@ -127,7 +102,20 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
 
     if curve_mode is None or verify_error is None:
         # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
-        raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}），将发送异常信息")
+        RabbitmqHook.publish(
+            conn_id='qcos_rabbitmq',
+            exchange=f'qcos_analysis_exception',
+            exchange_args={
+                'exchange_type': 'fanout'
+            },
+            binding_args={
+                'routing_key': f'*',
+            },
+            message_source=json.dumps({
+                'entity_id': entity_id,
+            })
+        )
+        raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
     ResultStorageHook.save_analyze_result(
         entity_id, measure_result, curve_mode, verify_error
     )
@@ -153,18 +141,14 @@ dag = DAG(
 )
 
 listener_task = RabbitmqOperator(
-    connection_id='qcos_rabbitmq',
+    conn_id='qcos_rabbitmq',
     task_id='mq_result_storage_task',
     dag=dag,
     priority_weight=9,
     queue=f'qcos_result_storage',
-    queue_args=Variable.get(
-        "result_storage_queue_config",
-        default_var={
-            'durable': True
-        },
-        deserialize_json=True
-    ),
+    queue_args={
+        'durable': True
+    },
     exchange=f'qcos_analysis_result',
     exchange_args={
         'exchange_type': 'fanout'
