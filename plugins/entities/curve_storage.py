@@ -202,7 +202,7 @@ class ClsCurveStorage(ClsEntity):
         self.ensure_bucket(self._bucket)
         datas = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_url = {executor.submit(self.fetch_obj_via_entity_id, entity_id, 60): entity_id for entity_id in
+            future_to_url = {executor.submit(self.fetch_obj_via_entity_id, entity_id): entity_id for entity_id in
                              entity_ids}
             for future in concurrent.futures.as_completed(future_to_url):
                 entity_id = future_to_url[future]
