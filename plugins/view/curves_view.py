@@ -88,7 +88,7 @@ class CurvesView(AirflowModelView):
                                      value=controller)
 
         joined_filters = self._filters.get_joined_filters(self._base_filters)
-        order_column, order_direction = "execution_date", "desc"
+        order_column, order_direction = "update_time", "desc"
         page_size = PAGE_SIZE
         count, lst = self.datamodel.query(
             joined_filters,
