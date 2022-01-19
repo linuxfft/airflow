@@ -95,7 +95,7 @@ def clear_results(results, session=None):
     qry = session.query(ResultModel).filter(ResultModel.pk.in_(
         list(map(lambda r: r.pk, results))
     ))
-    qry.delete()
+    qry.delete(synchronize_session=False)
 
 
 def get_all_need_delete_results(test_mode, **kwargs):
@@ -143,7 +143,7 @@ def clear_tasks(start_date=None, end_date=None, session=None):
             qry = qry.filter(model.execution_date >= start_date)
         if end_date:
             qry = qry.filter(model.execution_date <= end_date)
-        count += qry.delete()
+        count += qry.delete(synchronize_session=False)
     return count
 
 
