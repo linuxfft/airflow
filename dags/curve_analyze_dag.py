@@ -15,7 +15,7 @@ try:
 except:
     ENV_ALWAYS_TRIGGER_ANAY = True
 
-MAX_ACTIVE_ANALYSIS = 8
+ENV_MAX_ACTIVE_ANALYSIS = int(os.environ.get('ENV_MAX_ACTIVE_ANALYSIS', 8))
 
 
 dag = DAG(
@@ -35,8 +35,8 @@ dag = DAG(
         'on_retry_callback': None,
         'trigger_rule': 'all_success'
     },
-    concurrency=MAX_ACTIVE_ANALYSIS,
-    max_active_runs=MAX_ACTIVE_ANALYSIS)
+    concurrency=ENV_MAX_ACTIVE_ANALYSIS,
+    max_active_runs=ENV_MAX_ACTIVE_ANALYSIS)
 
 
 trigger_anay_task = TriggerAnalyzeOperator(
