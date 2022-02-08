@@ -144,6 +144,8 @@ class RabbitmqOperator(BaseOperator):
                 conn_id=self.conn_id,
                 queue=self.queue,
                 queue_args=self.queue_args,
+                exchange=self.exchange,
+                exchange_args=self.exchange_args,
                 message_handler=self.message_handler,
                 subscribe_args=self.subscribe_args
             )
