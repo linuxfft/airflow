@@ -32,9 +32,6 @@ dag = DAG(
         'owner': 'qcos',
         'depends_on_past': False,
         'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
         'retries': 4,
         'retry_delay': timedelta(minutes=2),
         'on_failure_callback': on_dag_fail,
@@ -42,7 +39,7 @@ dag = DAG(
         'on_retry_callback': None,
         'trigger_rule': 'all_success'
     },
-    tags=['reporting'],
+    tags=['reporting', 'mq'],
     max_active_runs=64,
     concurrency=64)
 

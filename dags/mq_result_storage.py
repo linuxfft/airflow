@@ -132,15 +132,12 @@ dag = DAG(
         'owner': 'qcos',
         'depends_on_past': False,
         'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': ['support@desoutter.cn'],
-        'email_on_failure': False,
-        'email_on_retry': False,
         'retries': 0,
         'trigger_rule': 'all_success'
     },
     concurrency=1,
     max_active_runs=1,
-    tags=['analyze']
+    tags=['analyze', 'mq']
 )
 
 listener_task = RabbitmqOperator(
