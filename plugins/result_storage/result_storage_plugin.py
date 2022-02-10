@@ -162,30 +162,6 @@ class ResultStorageHook(BaseHook, ABC):
             'car_code': vin
         }
 
-    @staticmethod
-    def on_curve_receive(params):
-        should_store = True  # 目前总是为True，未来视情况更改
-        if should_store:
-            entity_id = params.get('entity_id')
-
-            should_analyze = params.get('should_analyze')
-            factory_code = params.get('factory_code', None)
-            extra_data = ResultStorageHook.generate_extra_data(result, should_analyze, factory_code)
-
-            ResultStorageHook.save_result(
-                entity_id,
-                result,
-                **extra_data
-            )
-
-            ResultStorageHook.save_curve(entity_id, params.get('curve'))
-        _logger.debug(params)
-        params.update({
-            'bolt_number': bolt_number,
-            'craft_type': craft_type
-        })
-        return params
-
     # 根据entity_id更新分析结果
     @staticmethod
     def save_analyze_result(entity_id, measure_result, curve_mode, verify_error):

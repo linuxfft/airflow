@@ -4,17 +4,14 @@ import json
 import pprint
 from datetime import timedelta
 from typing import Dict
-
 import pika
-from plugins.factory_code.factory_code import get_factory_code
-
-from airflow.models import DAG, Variable
+from airflow.models import DAG
 import pendulum
-from airflow.operators.python_operator import PythonOperator
-from plugins.entities.result_mq import ClsResultMQ
 from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator, RabbitmqHook
 from plugins.utils.logger import generate_logger
 from functools import wraps
+from sqlalchemy.exc import IntegrityError
+from psycopg2 import errors
 
 _logger = generate_logger(__name__)
 
@@ -49,6 +46,9 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     :param properties: spec.BasicProperties
     :param body: bytes
     '''
+    from plugins.result_storage.result_storage_plugin import ResultStorageHook
+    from plugins.publish_result.publish_result_plugin import PublishResultHook
+
     try:
         if not body:
             return
@@ -64,41 +64,41 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         if entity_id is None:
             _logger.debug("entity_id not in result")
             return
-        # data = {
-        #     'result': curve_mode,
-        #     'verify_error': verify_error,
-        #     'entity_id': trigger.entity_id,
-        #     'measure_result': trigger.measure_result,
-        #     'result_data': trigger.result,
-        #     'curve_data': trigger.curve
-        # }
         result_data = data_dict.get('result_data', None)
         curve_data = data_dict.get('curve_data', None)
         measure_result = data_dict.get('measure_result', None)
         factory_code = data_dict.get('factory_code', None)
-
+        curve_mode = data_dict.get('result', None)
+        verify_error = data_dict.get('verify_error', None)
     except Exception as e:
         _logger.error("解析分析结果异常: {}".format(repr(e)))
         raise e
-    try:
-        from plugins.result_storage.result_storage_plugin import ResultStorageHook
 
+    try:
         ResultStorageHook.save_result(
             entity_id,
             result_data,
             **ResultStorageHook.generate_extra_data(result_data, True, factory_code)
         )
+
+        PublishResultHook.trigger_publish('tightening_result', data_dict)
         ResultStorageHook.save_curve(
             entity_id,
             curve_data
         )
-
+    except IntegrityError as e:
+        # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
+        if isinstance(e.orig, errors.UniqueViolation):
+            _logger.info(f'结果{entity_id}已存在')
+            if curve_mode is None or verify_error is None:
+                return
+            _logger.info(f'结果{entity_id}中包含分析结果，正在更新分析结果...')
+            ResultStorageHook.save_analyze_result(entity_id, measure_result, curve_mode, verify_error)
+            _logger.info(f'分析结果更新完成。')
+            return
     except Exception as e:
         _logger.error("保存曲线异常: {}".format(repr(e)))
         raise e
-
-    curve_mode = data_dict.get('result', None)
-    verify_error = data_dict.get('verify_error', None)
 
     if curve_mode is None or verify_error is None:
         # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
@@ -106,14 +106,16 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
             conn_id='qcos_rabbitmq',
             exchange=f'qcos_analysis_exception',
             exchange_args={
+                'passive': True,
                 'exchange_type': 'fanout'
             },
             binding_args={
                 'routing_key': f'*',
             },
-            message_source=json.dumps({
-                'entity_id': entity_id,
-            })
+            # 曲线和结果的验证和保存应该在本dag中保证，因此分析异常只需要发送entity_id
+            message_source={
+                'entity_id': entity_id
+            }
         )
         raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
     ResultStorageHook.save_analyze_result(

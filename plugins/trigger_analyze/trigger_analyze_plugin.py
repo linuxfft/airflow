@@ -12,7 +12,6 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.www.app import csrf
 
-
 _logger = LoggingMixin().log
 
 try:
@@ -27,8 +26,6 @@ class TriggerAnalyzeHook(BaseHook, ABC):
     @staticmethod
     def trigger_push_result_dag(params):
         _logger.info('pushing result to mq...')
-        from plugins.publish_result.publish_result_plugin import PublishResultHook
-        PublishResultHook.trigger_publish('tightening_result', params)
 
     @staticmethod
     def is_rework_result(result) -> bool:
@@ -48,7 +45,7 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         return ret
 
     @staticmethod
-    def should_skip_analysis(params: Dict) -> bool:
+    def _should_skip_analysis(params: Dict) -> bool:
         should_analyze = params.get('should_analyze', True)
         if not should_analyze:
             _logger.info('接收到不分析指令，跳过分析...')
@@ -61,7 +58,7 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         return False
 
     @staticmethod
-    def prepare_trigger_params(params):
+    def _guard_params(params):
         result_body = params.get('result', None)
         entity_id = params.get('entity_id', None)
         bolt_number = params.get('bolt_number', None)
@@ -70,60 +67,45 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         assert entity_id is not None, '触发分析的数据中entity_id为空'
         assert bolt_number is not None, '触发分析的数据中bolt_number为空'
         assert craft_type is not None, '触发分析的数据中craft_type为空'
-        new_param = params.copy()
-        # 螺栓编码生成规则：控制器名称-job号-批次号
-        result_type = TriggerAnalyzeHook.get_result_type(params.get('result'))
-        _logger.info("type: {}, entity_id: {} bolt_number: {}"
-                     .format(result_type, entity_id, bolt_number))
-
-        try:
-            curve_params = get_curve_params(bolt_number)
-        except Exception as e:
-            _logger.error(e)
-            curve_params = {}
-            _logger.error('无法获取曲线参数（{}/{}）'.format(bolt_number, craft_type))
-
-        new_param.update(curve_params)
-        return new_param
 
     @staticmethod
-    def do_trigger_analyze(params, task_instance):
-        should_skip_analysis = TriggerAnalyzeHook.should_skip_analysis(params)
+    def _do_trigger_analyze(params):
+        should_skip_analysis = TriggerAnalyzeHook._should_skip_analysis(params)
         if should_skip_analysis:
             return
-        from plugins.result_storage.result_storage_plugin import ResultStorageHook
-        entity_id = params.get('entity_id', None)
-        ResultStorageHook.bind_analyze_task(
-            entity_id,
-            task_instance.dag_id,
-            task_instance.task_id,
-            task_instance.execution_date
-        )
-        new_param = TriggerAnalyzeHook.prepare_trigger_params(params)
-        TriggerAnalyzeHook.trigger_push_result_dag(new_param)
+
+        # 结果中不再绑定任务信息
+        # from plugins.result_storage.result_storage_plugin import ResultStorageHook
+        # entity_id = params.get('entity_id', None)
+        # ResultStorageHook.bind_analyze_task(
+        #     entity_id,
+        #     task_instance.dag_id,
+        #     task_instance.task_id,
+        #     task_instance.execution_date
+        # )
+        TriggerAnalyzeHook._guard_params(params)
+
+        # 触发推送结果到外部mq
+        from plugins.publish_result.publish_result_plugin import PublishResultHook
+        PublishResultHook.trigger_publish('tightening_result', params)
+
+        # 触发cas分析
         from plugins.cas.cas_plugin import CasHook
         cas = CasHook(role='analysis')
         loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(cas.trigger_analyze(new_param))
+        result = loop.run_until_complete(cas.trigger_analyze(params))
         loop.close()
         return result
 
     @staticmethod
-    def trigger_analyze(params):
-        # 此处未来或将不创建分析任务。
-        # 添加此方法意在统一外部接口，不在不同地方调用trigger_dag，便于维护
-        trigger.trigger_dag('curve_analyze_dag', conf=params, replace_microseconds=False)
-
-    @staticmethod
-    def trigger_with_entity_id(entity_id):
-
+    def trigger_analyze_with_entity_id(entity_id):
         result = get_result(entity_id)
         curve = get_curve(entity_id)
-        conf = TriggerAnalyzeHook.get_trigger_param_from_result(entity_id, result, curve)
-        trigger.trigger_dag('curve_analyze_dag', conf=conf, replace_microseconds=False)
+        conf = TriggerAnalyzeHook._get_trigger_param_from_result(entity_id, result, curve)
+        TriggerAnalyzeHook._do_trigger_analyze(conf)
 
     @staticmethod
-    def get_trigger_param_from_result(entity_id, result, curve):
+    def _get_trigger_param_from_result(entity_id, result, curve):
         conf = {}
         for k in ['update_time', 'execution_date', 'training_execution_date']:
             if k in result.keys():
@@ -137,15 +119,6 @@ class TriggerAnalyzeHook(BaseHook, ABC):
             'curve': curve
         })
         return conf
-
-
-class TriggerAnalyzeOperator(BaseOperator):
-
-    def execute(self, context):
-        params = context['dag_run'].conf
-        task_instance = context['task_instance']
-        TriggerAnalyzeHook.do_trigger_analyze(params, task_instance)
-
 
 
 bp = Blueprint('trigger_analyze', __name__)
