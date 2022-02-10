@@ -19,7 +19,7 @@
 
 __all__ = ['version']
 
-version = 'c2.1.2'
+version = 'c2.3.0-rc1'
 
 # try:
 #     import importlib_metadata as metadata
