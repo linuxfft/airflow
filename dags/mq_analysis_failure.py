@@ -49,7 +49,7 @@ listener_dag = DAG(
     },
     concurrency=analysis_error_listener_concurrency,
     max_active_runs=analysis_error_listener_concurrency,
-    tags=['analyze']
+    tags=['analyze', 'mq']
 )
 
 listener_task = RabbitmqOperator(

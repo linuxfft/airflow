@@ -17,6 +17,7 @@ from airflow.operators.python_operator import PythonOperator
 from plugins.entities.redis import ClsRedisConnection, gen_template_key
 from plugins.entities.result_mq import ClsResultMQ
 from plugins.utils.utils import parse_template_name
+from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator
 
 CURVE_TEMPLATE_UPGRADE_TASK = 'curve_template_upgrade'
 
@@ -54,9 +55,6 @@ desoutter_default_args = {
     'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz),
-    'email': ['support@desoutter.cn'],
-    'email_on_failure': False,
-    'email_on_retry': False,
     'retries': 4,
     'retry_delay': timedelta(minutes=2),
     'on_failure_callback': onUpgradeCurveTmplFail,
@@ -65,7 +63,6 @@ desoutter_default_args = {
     'trigger_rule': 'all_success'
 }
 
-mq_connection: Optional[ClsResultMQ] = None
 redis_connection: Optional[ClsRedisConnection] = None
 
 
@@ -107,7 +104,7 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
     try:
         global redis_connection
         if redis_connection is None:
-            raise Exception('redis not connected')
+            redis_connection = ClsRedisConnection()
         redis_connection.store_templates({
             template_name: json.dumps(template)
         })
@@ -115,27 +112,13 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
         _logger.error('store curve template to redis error: {}'.format(repr(e)))
 
 
-def curve_template_upgrade_task(**kwargs):
-    global mq_connection, redis_connection
-    _logger.debug("{} context: {}".format('curve_template_upgrade_task', kwargs))
-    mq_connection = ClsResultMQ(**ClsResultMQ.get_result_mq_args(key='qcos_rabbitmq'))
-    redis_connection = ClsRedisConnection()
-    queue = os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow')
-    exchange = os.environ.get('MQ_TEMPLATE_EXCHANGE', 'qcos_templates')
-    routing_key = gen_template_key('*')
-
-    mq_connection.doSubscribe(queue=queue, message_handler=template_upgrade_handler, exchange=exchange,
-                              exchange_type='fanout', routing_key=routing_key)
-    mq_connection.run(queue=queue)
-    mq_connection.doUnsubscribe(queue)
-
-
 dag = DAG(
     dag_id=DAG_ID,
     description=u'上汽拧紧曲线分析-曲线模板更新',
     start_date=dt.datetime(2020, 1, 1, tzinfo=local_tz),
+    concurrency=1,
     max_active_runs=1,
-    schedule_interval=timedelta(seconds=1),
+    schedule_interval=timedelta(milliseconds=500),
     catchup=True,
     default_args= {
         'owner': 'qcos',
@@ -144,9 +127,24 @@ dag = DAG(
         'retries': 0,
         'trigger_rule': 'all_success'
     },
-    tags=['training']
+    tags=['training', 'mq']
 )
 
-upgrade_curve_template_task = PythonOperator(dag=dag, provide_context=True, task_id=CURVE_TEMPLATE_UPGRADE_TASK,
-                                             priority_weight=9,
-                                             python_callable=curve_template_upgrade_task)
+upgrade_curve_template_task = RabbitmqOperator(
+    task_id=CURVE_TEMPLATE_UPGRADE_TASK,
+    dag=dag,
+    priority_weight=9,
+    conn_id='qcos_rabbitmq',
+    queue=os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow'),
+    queue_args={
+        'durable': True
+    },
+    exchange=os.environ.get('MQ_TEMPLATE_EXCHANGE', 'qcos_templates'),
+    exchange_args={
+        'exchange_type': 'fanout'
+    },
+    binding_args={
+        'routing_key': gen_template_key('*'),
+    },
+    message_handler=template_upgrade_handler
+)
