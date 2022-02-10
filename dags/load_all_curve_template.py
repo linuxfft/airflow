@@ -54,7 +54,7 @@ def onLoadCurveTmplsSuccess(context):
 local_tz = pendulum.timezone("Asia/Shanghai")
 
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz),
     'email': ['support@desoutter.cn'],
@@ -157,6 +157,7 @@ dag = DAG(
     default_args=desoutter_default_args,
     max_active_runs=100,
     catchup=False,
+    tags=['analyze', 'training']
 )
 
 load_curve_tmpl_task = PythonOperator(provide_context=True,

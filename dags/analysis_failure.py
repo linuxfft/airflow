@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 import datetime as dt
 import json
-import logging
 import os
 from datetime import timedelta
 from typing import Dict
@@ -49,7 +48,8 @@ listener_dag = DAG(
         'trigger_rule': 'all_success'
     },
     concurrency=analysis_error_listener_concurrency,
-    max_active_runs=analysis_error_listener_concurrency
+    max_active_runs=analysis_error_listener_concurrency,
+    tags=['analyze']
 )
 
 listener_task = RabbitmqOperator(
@@ -81,14 +81,12 @@ handler_dag = DAG(
         'owner': 'qcos',
         'depends_on_past': False,
         'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-        'email': [],
-        'email_on_failure': False,
-        'email_on_retry': False,
         'retries': 0,
         'trigger_rule': 'all_success'
     },
     concurrency=analysis_error_handler_concurrency,
-    max_active_runs=analysis_error_handler_concurrency
+    max_active_runs=analysis_error_handler_concurrency,
+    tags=['analyze']
 )
 
 

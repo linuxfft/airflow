@@ -51,7 +51,7 @@ def onUpgradeCurveTmplSuccess(context):
 local_tz = pendulum.timezone("Asia/Shanghai")
 
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz),
     'email': ['support@desoutter.cn'],
@@ -136,7 +136,15 @@ dag = DAG(
     start_date=dt.datetime(2020, 1, 1, tzinfo=local_tz),
     max_active_runs=1,
     schedule_interval=timedelta(seconds=1),
-    catchup=True
+    catchup=True,
+    default_args= {
+        'owner': 'qcos',
+        'depends_on_past': False,
+        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
+        'retries': 0,
+        'trigger_rule': 'all_success'
+    },
+    tags=['training']
 )
 
 upgrade_curve_template_task = PythonOperator(dag=dag, provide_context=True, task_id=CURVE_TEMPLATE_UPGRADE_TASK,

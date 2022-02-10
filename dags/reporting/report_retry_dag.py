@@ -12,11 +12,12 @@ from plugins.utils.logger import generate_logger
 from sqlalchemy import func
 from airflow.utils.db import provide_session
 from airflow.utils import timezone
+
 _logger = generate_logger(__name__)
 
 local_tz = pendulum.timezone("Asia/Shanghai")
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz)
 }
@@ -24,7 +25,7 @@ desoutter_default_args = {
 dag_id = 'report_retry'
 task_report_retry = 'task_report_retry'
 
-dag = DAG(dag_id, description=u'分析任务重试数量报警推送',
+dag = DAG(dag_id, description=u'分析任务重试数量报警推送', tags=['reporting'],
           schedule_interval='@hourly', default_args=desoutter_default_args, catchup=False)
 
 

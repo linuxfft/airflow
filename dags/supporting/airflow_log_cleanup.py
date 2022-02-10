@@ -21,7 +21,7 @@ BASE_LOG_FOLDER = conf.get("logging", "BASE_LOG_FOLDER")
 # How often to Run. @daily - Once a day at Midnight
 SCHEDULE_INTERVAL = "@daily"
 # Who is listed as the owner of this DAG in the Airflow Web Server
-DAG_OWNER_NAME = "operations"
+DAG_OWNER_NAME = "qcos"
 # List of email address to send email alerts to if this job fails
 ALERT_EMAIL_ADDRESSES = []
 # Length to retain the log files if not already provided in the conf. If this
@@ -78,7 +78,8 @@ dag = DAG(
     DAG_ID,
     default_args=default_args,
     schedule_interval=SCHEDULE_INTERVAL,
-    start_date=START_DATE
+    start_date=START_DATE,
+    tags=['supporting'],
 )
 if hasattr(dag, 'doc_md'):
     dag.doc_md = __doc__

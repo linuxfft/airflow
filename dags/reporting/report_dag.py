@@ -27,7 +27,7 @@ target_file_diff = os.path.join(file_path, file_diff)
 
 local_tz = pendulum.timezone("Asia/Shanghai")
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz)
 }
@@ -54,7 +54,7 @@ task_report_task = 'task_report_task'
 task_report_diff = 'task_report_diff'
 line_code = 'All'
 
-dag = DAG(dag_id, description=u'日报表推送',
+dag = DAG(dag_id, description=u'日报表推送', tags=['reporting'],
           schedule_interval='@daily', default_args=desoutter_default_args, catchup=False)
 
 
@@ -64,12 +64,13 @@ def do_load_file(**kwargs):
     reporter_url = '{}:{}'.format(report.host, report.port) if report else ''
     grafana_token = report.get_password() if report else ''
 
-    report_ok_rate_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_ok_rate,
-                                                                                      grafana_token, line_code)
+    report_ok_rate_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url,
+                                                                                          dashboard_ok_rate,
+                                                                                          grafana_token, line_code)
     report_task_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_task,
-                                                                                   grafana_token, line_code)
+                                                                                       grafana_token, line_code)
     report_diff_url = 'http://{}/api/v5/report/{}?apitoken={}&var-line_code={}'.format(reporter_url, dashboard_diff,
-                                                                                   grafana_token, line_code)
+                                                                                       grafana_token, line_code)
     save_pdf_file(report_ok_rate_url, target_file_ok_report)
     save_pdf_file(report_task_url, target_file_task_report)
     save_pdf_file(report_diff_url, target_file_diff)

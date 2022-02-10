@@ -43,7 +43,7 @@ except Exception as e:
     DATA_STORAGE_DURATION = 30 # 设置一个较小的默认值，避免空间不足
 
 default_args = {
-    'owner': "operations",
+    'owner': "qcos",
     'depends_on_past': False,
     'email_on_failure': False,
     'email_on_retry': False,
@@ -56,7 +56,8 @@ dag = DAG(
     'data_retention_policy',
     default_args=default_args,
     schedule_interval=schedule_interval,
-    start_date=START_DATE
+    start_date=START_DATE,
+    tags=['supporting']
 )
 
 

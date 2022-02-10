@@ -29,7 +29,7 @@ dag = DAG(
     description=u'上汽拧紧曲线分析结果推送',
     schedule_interval=schedule_interval,
     default_args={
-        'owner': 'desoutter',
+        'owner': 'qcos',
         'depends_on_past': False,
         'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
         'email': ['support@desoutter.cn'],
@@ -42,9 +42,9 @@ dag = DAG(
         'on_retry_callback': None,
         'trigger_rule': 'all_success'
     },
+    tags=['reporting'],
     max_active_runs=64,
     concurrency=64)
-
 
 publish_task = PublishResultOperator(
     task_id='publish_result_task',

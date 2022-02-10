@@ -17,7 +17,7 @@ _logger = generate_logger(__name__)
 
 local_tz = pendulum.timezone("Asia/Shanghai")
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz)
 }
@@ -60,7 +60,8 @@ def report_analysis_timeout(**kwargs):
 
 
 dag = DAG('report_analysis_timeout', description=u'分析任务超时报警',
-          schedule_interval='@hourly', default_args=desoutter_default_args, catchup=False)
+          schedule_interval='@hourly', default_args=desoutter_default_args, tags=['reporting'],
+          catchup=False)
 
 report_analysis_timeout_task = PythonOperator(
     provide_context=True,

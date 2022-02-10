@@ -37,7 +37,7 @@ def onDagSuccess(context):
 local_tz = pendulum.timezone("Asia/Shanghai")
 
 desoutter_default_args = {
-    'owner': 'desoutter',
+    'owner': 'qcos',
     'depends_on_past': False,
     'start_date': dt.datetime(2020, 1, 1, tzinfo=local_tz),
     'email': ['support@desoutter.cn'],
@@ -135,7 +135,8 @@ dag = DAG(
     description=u'上汽拧紧曲线训练任务',
     schedule_interval=schedule_interval,
     default_args=desoutter_default_args,
-    max_active_runs=MAX_ACTIVE_TRAINING)
+    max_active_runs=MAX_ACTIVE_TRAINING,
+    tags=['training'])
 
 store_task = PythonOperator(provide_context=True,
                             task_id=TASK_ID, dag=dag,

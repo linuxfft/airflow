@@ -129,7 +129,7 @@ dag = DAG(
     description=u'从mq获取结果数据并保存',
     schedule_interval=timedelta(milliseconds=500),
     default_args={
-        'owner': 'desoutter',
+        'owner': 'qcos',
         'depends_on_past': False,
         'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
         'email': ['support@desoutter.cn'],
@@ -139,7 +139,8 @@ dag = DAG(
         'trigger_rule': 'all_success'
     },
     concurrency=1,
-    max_active_runs=1
+    max_active_runs=1,
+    tags=['analyze']
 )
 
 listener_task = RabbitmqOperator(
