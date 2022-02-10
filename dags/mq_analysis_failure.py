@@ -17,7 +17,7 @@ from plugins.utils.logger import generate_logger
 _logger = generate_logger(__name__)
 
 
-def analysis_error_listener(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties,
+def analysis_failure_listener(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties,
                             body: bytes):
     if not body:
         return
@@ -28,13 +28,13 @@ def analysis_error_listener(channel, method: pika.spec.Basic.Deliver, properties
         data = data.decode('utf-8')
     data_dict: Dict = json.loads(data)
     # 触发重试dag
-    trigger_dag.trigger_dag('analysis_error_handler', replace_microseconds=False, conf=data_dict)
+    trigger_dag.trigger_dag('analysis_failure_handler', replace_microseconds=False, conf=data_dict)
 
 
-analysis_error_listener_concurrency = int(os.getenv('ANALYSIS_ERROR_LISTENER_CONCURRENCY', '1'))
+analysis_failure_listener_concurrency = int(os.getenv('ANALYSIS_FAILURE_LISTENER_CONCURRENCY', '1'))
 
 listener_dag = DAG(
-    dag_id='analysis_error_listener',
+    dag_id='analysis_failure_listener',
     description=u'监听分析异常',
     schedule_interval=timedelta(milliseconds=500),
     default_args={
@@ -44,13 +44,13 @@ listener_dag = DAG(
         'retries': 0,
         'trigger_rule': 'all_success'
     },
-    concurrency=analysis_error_listener_concurrency,
-    max_active_runs=analysis_error_listener_concurrency,
+    concurrency=analysis_failure_listener_concurrency,
+    max_active_runs=analysis_failure_listener_concurrency,
     tags=['analyze', 'mq']
 )
 
 listener_task = RabbitmqOperator(
-    task_id='mq_analysis_error_listener_task',
+    task_id='mq_analysis_failure_listener_task',
     dag=listener_dag,
     priority_weight=9,
     conn_id='qcos_rabbitmq',
@@ -65,13 +65,13 @@ listener_task = RabbitmqOperator(
     binding_args={
         'routing_key': f'*',
     },
-    message_handler=analysis_error_listener
+    message_handler=analysis_failure_listener
 )
 
-analysis_error_handler_concurrency = int(os.getenv('ANALYSIS_ERROR_HANDLER_CONCURRENCY', '16'))
+analysis_failure_handler_concurrency = int(os.getenv('ANALYSIS_FAILURE_HANDLER_CONCURRENCY', '16'))
 
 handler_dag = DAG(
-    dag_id='analysis_error_handler',
+    dag_id='analysis_failure_handler',
     description=u'处理分析异常',
     schedule_interval=None,
     default_args={
@@ -81,13 +81,13 @@ handler_dag = DAG(
         'retries': 0,
         'trigger_rule': 'all_success'
     },
-    concurrency=analysis_error_handler_concurrency,
-    max_active_runs=analysis_error_handler_concurrency,
+    concurrency=analysis_failure_handler_concurrency,
+    max_active_runs=analysis_failure_handler_concurrency,
     tags=['analyze']
 )
 
 
-def handle_analysis_error(dag_run):
+def handle_analysis_failure(dag_run):
     if isinstance(dag_run, DagRun):
         params = getattr(dag_run, 'conf')
     elif isinstance(dag_run, dict):
@@ -104,7 +104,7 @@ def handle_analysis_error(dag_run):
 
 handler_task = PythonOperator(
     provide_context=True,
-    task_id='analysis_error_handler_task',
+    task_id='analysis_failure_handler_task',
     dag=handler_dag,
-    python_callable=handle_analysis_error
+    python_callable=handle_analysis_failure
 )
