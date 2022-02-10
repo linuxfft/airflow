@@ -59,8 +59,9 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         data_dict: Dict = json.loads(data)
-        _logger.debug("Receive Analysis Result, data: {}".format(pprint.pformat(data, indent=4)))
+        _logger.debug(f"Receive Analysis Result, data: {data}")
         entity_id = data_dict.get('entity_id', None)
+        _logger.debug(f"entity_id: {entity_id}")
         if entity_id is None:
             _logger.debug("entity_id not in result")
             return
@@ -68,7 +69,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         curve_data = data_dict.get('curve_data', None)
         measure_result = data_dict.get('measure_result', None)
         factory_code = data_dict.get('factory_code', None)
-        curve_mode = data_dict.get('result', None)
+        curve_mode = data_dict.get('rescurve_storageult', None)
         verify_error = data_dict.get('verify_error', None)
     except Exception as e:
         _logger.error("解析分析结果异常: {}".format(repr(e)))
@@ -99,9 +100,11 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     except Exception as e:
         _logger.error("保存曲线异常: {}".format(repr(e)))
         raise e
+    _logger.info(f'保存控制器结果和曲线完成。')
 
     if curve_mode is None or verify_error is None:
         # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
+        _logger.info(f'正在发布分析异常消息。')
         RabbitmqHook.publish(
             conn_id='qcos_rabbitmq',
             exchange=f'qcos_analysis_exception',
@@ -113,14 +116,18 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
                 'routing_key': f'*',
             },
             # 曲线和结果的验证和保存应该在本dag中保证，因此分析异常只需要发送entity_id
-            message_source={
+            message_source=json.dumps({
                 'entity_id': entity_id
-            }
+            })
         )
+        _logger.info(f'分析异常消息发布完成。')
         raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
+    _logger.info(f'分析结果解析正常，开始保存分析结果。')
+
     ResultStorageHook.save_analyze_result(
         entity_id, measure_result, curve_mode, verify_error
     )
+    _logger.info(f'保存分析结果完成。')
     _logger.info(f"{entity_id} all saved")
 
 

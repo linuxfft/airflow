@@ -100,8 +100,13 @@ class RabbitmqHook(BaseHook):
     ):
         if hasattr(message_source, '__call__'):
             for msg in message_source():
+                _logger.debug(f'publishing: {msg}')
                 channel.basic_publish(exchange=exchange, routing_key=routing_key, body=msg, **publish_args)
+            return
+        _logger.debug(f'publishing: {message_source}')
         channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message_source, **publish_args)
+        _logger.debug('published')
+
 
 
 class RabbitmqOperator(BaseOperator):
