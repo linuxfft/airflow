@@ -149,7 +149,7 @@ def doLoadCurveTmplsTask(**kwargs):
 
 dag = DAG(
     dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析加载模板曲线',
+    description=u'拧紧曲线分析加载模板曲线',
     schedule_interval=schedule_interval,
     default_args=desoutter_default_args,
     max_active_runs=100,

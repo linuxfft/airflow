@@ -26,7 +26,7 @@ def on_dag_success(context):
 
 dag = DAG(
     dag_id='publish_result_dag',
-    description=u'上汽拧紧曲线分析结果推送',
+    description=u'拧紧曲线分析结果推送',
     schedule_interval=schedule_interval,
     default_args={
         'owner': 'qcos',

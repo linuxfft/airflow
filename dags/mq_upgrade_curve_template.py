@@ -114,16 +114,15 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
 
 dag = DAG(
     dag_id=DAG_ID,
-    description=u'上汽拧紧曲线分析-曲线模板更新',
-    start_date=dt.datetime(2020, 1, 1, tzinfo=local_tz),
+    description=u'拧紧曲线分析-曲线模板更新',
+    start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
+    catchup=False,
     concurrency=1,
     max_active_runs=1,
-    schedule_interval=timedelta(milliseconds=500),
-    catchup=True,
-    default_args= {
+    schedule_interval=timedelta(seconds=1),
+    default_args={
         'owner': 'qcos',
         'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
         'retries': 0,
         'trigger_rule': 'all_success'
     },

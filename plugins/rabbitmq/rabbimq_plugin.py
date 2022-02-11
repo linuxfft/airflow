@@ -80,13 +80,17 @@ class RabbitmqHook(BaseHook):
         channel: pika.adapters.blocking_connection.BlockingChannel = None,
         **kwargs
     ):
-        channel.basic_consume(
-            queue,
-            on_message_callback=message_handler,
-            auto_ack=subscribe_args.get('auto_ack', True)
-        )
-        channel.start_consuming()
-        channel.stop_consuming()
+        while True:
+            try:
+                channel.basic_consume(
+                    queue,
+                    on_message_callback=message_handler,
+                    auto_ack=subscribe_args.get('auto_ack', True)
+                )
+                channel.start_consuming()
+            except Exception as e:
+                _logger.error(e)
+                channel.stop_consuming()
 
     @staticmethod
     @with_channel

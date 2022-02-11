@@ -24,21 +24,6 @@ def on_success(context):
     _logger.debug("{0} Run Success".format(context))
 
 
-def handler_exception(msg):
-    def wrapper(func):
-        @wraps(func)
-        def wrapped(*args, **kwargs):
-            try:
-                func(*args, **kwargs)
-            except Exception as e:
-                _logger.error(f"{msg}: {repr(e)}")
-
-        return wrapped
-
-    return wrapper
-
-
-@handler_exception('结果异常')
 def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
     '''
     :param channel: BlockingChannel
@@ -75,6 +60,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         _logger.error("解析分析结果异常: {}".format(repr(e)))
         raise e
 
+    result_exists = False
     try:
         ResultStorageHook.save_result(
             entity_id,
@@ -83,26 +69,27 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         )
 
         PublishResultHook.trigger_publish('tightening_result', data_dict)
-        ResultStorageHook.save_curve(
-            entity_id,
-            curve_data
-        )
     except IntegrityError as e:
         # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
         if isinstance(e.orig, errors.UniqueViolation):
             _logger.info(f'结果{entity_id}已存在')
-            if curve_mode is None or verify_error is None:
-                return
-            _logger.info(f'结果{entity_id}中包含分析结果，正在更新分析结果...')
-            ResultStorageHook.save_analyze_result(entity_id, measure_result, curve_mode, verify_error)
-            _logger.info(f'分析结果更新完成。')
-            return
+            result_exists = True
+    except Exception as e:
+        _logger.error("保存结果异常: {}".format(repr(e)))
+        raise e
+
+    try:
+        ResultStorageHook.save_curve(
+            entity_id,
+            curve_data
+        )
     except Exception as e:
         _logger.error("保存曲线异常: {}".format(repr(e)))
         raise e
     _logger.info(f'保存控制器结果和曲线完成。')
 
-    if curve_mode is None or verify_error is None:
+    # 如果结果已经存在，则认为分析异常已经触发过（如存在分析异常），因此不再触发
+    if not result_exists and curve_mode is None or verify_error is None:
         # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
         _logger.info(f'正在发布分析异常消息。')
         RabbitmqHook.publish(
@@ -122,23 +109,25 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         )
         _logger.info(f'分析异常消息发布完成。')
         raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
-    _logger.info(f'分析结果解析正常，开始保存分析结果。')
 
-    ResultStorageHook.save_analyze_result(
-        entity_id, measure_result, curve_mode, verify_error
-    )
-    _logger.info(f'保存分析结果完成。')
+    if curve_mode is not None and verify_error is not None:
+        _logger.info(f'分析结果解析正常，开始保存分析结果。')
+        ResultStorageHook.save_analyze_result(
+            entity_id, measure_result, curve_mode, verify_error
+        )
+        _logger.info(f'保存分析结果完成。')
     _logger.info(f"{entity_id} all saved")
 
 
 dag = DAG(
     dag_id='mq_result_storage',
     description=u'从mq获取结果数据并保存',
-    schedule_interval=timedelta(milliseconds=500),
+    start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
+    catchup=False,
+    schedule_interval=timedelta(seconds=0),
     default_args={
         'owner': 'qcos',
         'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
         'retries': 0,
         'trigger_rule': 'all_success'
     },

@@ -18,7 +18,7 @@ _logger = generate_logger(__name__)
 
 
 def analysis_failure_listener(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties,
-                            body: bytes):
+                              body: bytes):
     if not body:
         return
     if not body or not channel:
@@ -36,14 +36,15 @@ analysis_failure_listener_concurrency = int(os.getenv('ANALYSIS_FAILURE_LISTENER
 listener_dag = DAG(
     dag_id='analysis_failure_listener',
     description=u'监听分析异常',
-    schedule_interval=timedelta(milliseconds=500),
+    start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
+    schedule_interval=timedelta(seconds=0),
     default_args={
         'owner': 'qcos',
         'depends_on_past': False,
-        'start_date': dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
         'retries': 0,
         'trigger_rule': 'all_success'
     },
+    catchup=False,
     concurrency=analysis_failure_listener_concurrency,
     max_active_runs=analysis_failure_listener_concurrency,
     tags=['analyze', 'mq']
