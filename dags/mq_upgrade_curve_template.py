@@ -134,17 +134,19 @@ upgrade_curve_template_task = RabbitmqOperator(
     task_id=CURVE_TEMPLATE_UPGRADE_TASK,
     dag=dag,
     priority_weight=9,
-    conn_id='qcos_rabbitmq',
-    queue=os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow'),
-    queue_args={
-        'durable': True
-    },
-    exchange=os.environ.get('MQ_TEMPLATE_EXCHANGE', 'qcos_templates'),
-    exchange_args={
-        'exchange_type': 'fanout'
-    },
-    binding_args={
-        'routing_key': gen_template_key('*'),
-    },
-    message_handler=template_upgrade_handler
+    mq_config={
+        'conn_id': 'qcos_rabbitmq',
+        'queue': os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow'),
+        'queue_args': {
+            'durable': True
+        },
+        'exchange': os.environ.get('MQ_TEMPLATE_EXCHANGE', 'qcos_templates'),
+        'exchange_args': {
+            'exchange_type': 'fanout'
+        },
+        'binding_args': {
+            'routing_key': gen_template_key('*'),
+        },
+        'message_handler': template_upgrade_handler
+    }
 )

@@ -53,19 +53,21 @@ listener_task = RabbitmqOperator(
     task_id='mq_analysis_failure_listener_task',
     dag=listener_dag,
     priority_weight=9,
-    conn_id='qcos_rabbitmq',
-    queue=f'qcos_analysis_exception',
-    queue_args={
-        'durable': True
-    },
-    exchange=f'qcos_analysis_exception',
-    exchange_args={
-        'exchange_type': 'fanout'
-    },
-    binding_args={
-        'routing_key': f'*',
-    },
-    message_handler=analysis_failure_listener
+    mq_config={
+        'conn_id': 'qcos_rabbitmq',
+        'queue': f'qcos_analysis_exception',
+        'queue_args': {
+            'durable': True
+        },
+        'exchange': f'qcos_analysis_exception',
+        'exchange_args': {
+            'exchange_type': 'fanout'
+        },
+        'binding_args': {
+            'routing_key': f'*',
+        },
+        'message_handler': analysis_failure_listener
+    }
 )
 
 analysis_failure_handler_concurrency = int(os.getenv('ANALYSIS_FAILURE_HANDLER_CONCURRENCY', '16'))

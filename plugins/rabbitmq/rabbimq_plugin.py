@@ -108,25 +108,25 @@ class RabbitmqHook(BaseHook):
         _logger.debug('published')
 
 
-
 class RabbitmqOperator(BaseOperator):
     connection = None
 
     def __init__(
         self,
-        conn_id=None,
-        queue=None,
-        queue_args=None,
-        exchange=None,
-        exchange_args=None,
-        binding_args=None,
-        message_handler=None,
-        message_source=None,
-        publish_args=None,
-        subscribe_args=None,
+        mq_config={},
         *args,
         **kwargs
     ):
+        conn_id = mq_config.get('conn_id', None)
+        queue = mq_config.get('queue', None)
+        queue_args = mq_config.get('queue_args', None)
+        exchange = mq_config.get('exchange', None)
+        exchange_args = mq_config.get('exchange_args', None)
+        binding_args = mq_config.get('binding_args', None)
+        message_handler = mq_config.get('message_handler', None)
+        message_source = mq_config.get('message_source', None)
+        publish_args = mq_config.get('publish_args', None)
+        subscribe_args = mq_config.get('subscribe_args', None)
         if not conn_id:
             raise Exception('RabbitmqOperator must have a connection_id')
         super().__init__(*args, **kwargs)
@@ -134,9 +134,9 @@ class RabbitmqOperator(BaseOperator):
         self.publish_args = publish_args if publish_args is not None else {}
         self.binding_args = binding_args if binding_args is not None else {}
         self.exchange_args = exchange_args if exchange_args is not None else {}
-        self.queue_args = queue_args if queue_args is not None else {}
+        self.mq_queue_args = queue_args if queue_args is not None else {}
         self.exchange = exchange
-        self.queue = queue
+        self.mq_queue = queue
 
         self.conn_id = conn_id
         self.message_handler = message_handler
@@ -147,8 +147,8 @@ class RabbitmqOperator(BaseOperator):
             _logger.info('message_handler found, run in subscribe mode')
             RabbitmqHook.subscribe(
                 conn_id=self.conn_id,
-                queue=self.queue,
-                queue_args=self.queue_args,
+                queue=self.mq_queue,
+                queue_args=self.mq_queue_args,
                 exchange=self.exchange,
                 exchange_args=self.exchange_args,
                 message_handler=self.message_handler,

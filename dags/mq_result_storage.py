@@ -148,20 +148,22 @@ dag = DAG(
 )
 
 listener_task = RabbitmqOperator(
-    conn_id='qcos_rabbitmq',
     task_id='mq_result_storage_task',
     dag=dag,
     priority_weight=9,
-    queue=f'qcos_result_storage',
-    queue_args={
-        'durable': True
-    },
-    exchange=f'qcos_analysis_result',
-    exchange_args={
-        'exchange_type': 'fanout'
-    },
-    binding_args={
-        'routing_key': f'*',
-    },
-    message_handler=result_handler
+    mq_config={
+        'conn_id': 'qcos_rabbitmq',
+        'queue': f'qcos_result_storage',
+        'queue_args': {
+            'durable': True
+        },
+        'exchange': f'qcos_analysis_result',
+        'exchange_args': {
+            'exchange_type': 'fanout'
+        },
+        'binding_args': {
+            'routing_key': f'*',
+        },
+        'message_handler': result_handler
+    }
 )
