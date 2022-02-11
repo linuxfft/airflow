@@ -124,7 +124,7 @@ dag = DAG(
     description=u'从mq获取结果数据并保存',
     start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
     catchup=False,
-    schedule_interval=timedelta(seconds=0),
+    schedule_interval=timedelta(seconds=1),
     default_args={
         'owner': 'qcos',
         'depends_on_past': False,

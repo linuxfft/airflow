@@ -37,7 +37,7 @@ listener_dag = DAG(
     dag_id='analysis_failure_listener',
     description=u'监听分析异常',
     start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-    schedule_interval=timedelta(seconds=0),
+    schedule_interval=timedelta(seconds=1),
     default_args={
         'owner': 'qcos',
         'depends_on_past': False,
