@@ -14,9 +14,13 @@ log = LoggingMixin().log
 
 @provide_session
 def load_default_controller(file_dir, session=None):
+    from qcos_addons.models.tightening_controller import TighteningController
+
+    if len(TighteningController.list_controllers()) > 0:
+        log.info(f"Controllers already exist, not creating")
+        return
     log.info("Loading default controllers")
     val = load_default_controllers(file_dir)
-    from qcos_addons.models.tightening_controller import TighteningController
     for controller in val:
         if TighteningController.controller_exists(**controller):
             log.info(f"Controller already exists, skipping, {repr(controller)}")
