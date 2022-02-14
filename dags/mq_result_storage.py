@@ -147,7 +147,7 @@ listener_task = RabbitmqOperator(
         'queue_args': {
             'durable': True
         },
-        'exchange': os.environ.get('MQ_RESULT_STORAGE_EXCHANGE', 'qcos_analysis_result'),
+        'exchange': os.environ.get('MQ_RESULT_STORAGE_EXCHANGE', 'qcos_result_storage'),
         'exchange_args': {
             'exchange_type': 'fanout'
         },

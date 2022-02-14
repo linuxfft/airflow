@@ -135,7 +135,7 @@ upgrade_curve_template_task = RabbitmqOperator(
     priority_weight=9,
     mq_config={
         'conn_id': 'qcos_rabbitmq',
-        'queue': os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates_airflow'),
+        'queue': os.environ.get('MQ_TEMPLATE_QUEUE', 'qcos_templates'),
         'queue_args': {
             'durable': True
         },
