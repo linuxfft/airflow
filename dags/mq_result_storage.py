@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import datetime as dt
 import json
+import os
 import pprint
 from datetime import timedelta
 from typing import Dict
@@ -142,11 +143,11 @@ listener_task = RabbitmqOperator(
     priority_weight=9,
     mq_config={
         'conn_id': 'qcos_rabbitmq',
-        'queue': f'qcos_result_storage',
+        'queue':  os.environ.get('MQ_RESULT_STORAGE_QUEUE', 'qcos_result_storage'),
         'queue_args': {
             'durable': True
         },
-        'exchange': f'qcos_analysis_result',
+        'exchange': os.environ.get('MQ_RESULT_STORAGE_EXCHANGE', 'qcos_analysis_result'),
         'exchange_args': {
             'exchange_type': 'fanout'
         },
