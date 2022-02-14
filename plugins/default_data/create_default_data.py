@@ -166,6 +166,7 @@ def create_default_curve_templates():
         return
     templates = load_default_curve_templates()
     suc_count = 0
+    fail_count = 0
     for k, v in templates.items():
         try:
             CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
