@@ -88,7 +88,7 @@ def create_default_connection(session=None):
             conn_id='qcos_rabbitmq', conn_type='rabbitmq',
             login='admin',
             password='admin',
-            schema='amqp',
+            schema='http',
             extra=json.dumps({
                 'vhost': 'qcos',
                 'heartbeat': '0',
@@ -119,8 +119,12 @@ def create_default_connection(session=None):
 
     db.merge_conn(
         Connection(
-            conn_id='qcos_minio', conn_type='http',
-            host='172.17.0.1', port=9000
+            conn_id='qcos_minio',
+            login='minio',
+            password='minio123',
+            conn_type='http',
+            host='172.17.0.1',
+            port=9000
         ), session)
 
     db.merge_conn(
