@@ -302,7 +302,7 @@
           csrf_token: '{{ csrf_token() }}',
           final_state: finalState,
           error_tags: errorTagsArr,
-          execution_date: '{{result.execution_date}}'
+          update_time: '{{result.update_time}}'
         }),
         headers: {'X-CSRFToken': '{{ csrf_token() }}'},
         dataType: 'json',
@@ -384,7 +384,7 @@
           label: "{{ '编号' if result.device_type == 'servo_press' else '螺栓编号'}}",
           value: '<a target="_blank" href="' + "{{url_for('CurveTemplateView.list',_flt_0_key=result.bolt_number)}}" + '">{{result.bolt_number}}</a>'
         },
-        execution_date: {
+        update_time: {
           label: "{{ '时间' if result.device_type == 'servo_press' else '拧紧时间'}}",
           value: new Date('{{result.update_time}}').toLocaleString()
         },

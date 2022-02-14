@@ -122,9 +122,9 @@ def get_curve_args(connection_key='qcos_minio'):
 
 def get_curve_entity_ids(bolt_number=None, craft_type=None):
     from qcos_addons.models.result import ResultModel
-    tasks = ResultModel.list_results(craft_type, bolt_number)
-    tasks.sort(key=lambda t: t.execution_date, reverse=True)
-    return list(map(lambda ti: ti.entity_id, tasks))
+    results = ResultModel.list_results(craft_type, bolt_number)
+    results.sort(key=lambda r: r.update_time, reverse=True)
+    return list(map(lambda r: r.entity_id, results))
 
 
 def trigger_push_result_to_mq(data_type, result, entity_id, verify_error, curve_mode):

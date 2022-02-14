@@ -74,15 +74,6 @@ class TriggerAnalyzeHook(BaseHook, ABC):
         if should_skip_analysis:
             return
 
-        # 结果中不再绑定任务信息
-        # from plugins.result_storage.result_storage_plugin import ResultStorageHook
-        # entity_id = params.get('entity_id', None)
-        # ResultStorageHook.bind_analyze_task(
-        #     entity_id,
-        #     task_instance.dag_id,
-        #     task_instance.task_id,
-        #     task_instance.execution_date
-        # )
         TriggerAnalyzeHook._guard_params(params)
 
         # 触发推送结果到外部mq

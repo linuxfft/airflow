@@ -111,10 +111,7 @@ def trigger_training_task(task_instance, **kwargs):
     ResultStorageHook.save_final_state(
         entity_id,
         final_state,
-        error_tag=json.dumps(error_tags),
-        training_dag_id=task_instance.dag_id,
-        training_task_id=task_instance.task_id,
-        training_execution_date=task_instance.execution_date
+        error_tag=json.dumps(error_tags)
     )
     _logger.info('publishing result')
     trigger_push_result_to_mq(

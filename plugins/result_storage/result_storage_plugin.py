@@ -38,10 +38,10 @@ def get_recent_mismatch_rate(session=None):
     min_date = timezone.utcnow() - delta
     from qcos_addons.models.result import ResultModel
     total = session.query(ResultModel).filter(
-        ResultModel.execution_date > min_date
+        ResultModel.update_time > min_date
     ).count()
     mismatches = session.query(ResultModel).filter(
-        ResultModel.execution_date > min_date,
+        ResultModel.update_time > min_date,
         ResultModel.measure_result != ResultModel.result
     ).count()
     _logger.info('total:{},mismatches:{}'.format(total, mismatches))
@@ -200,19 +200,6 @@ class ResultStorageHook(BaseHook, ABC):
         st.update(
             final_state=final_state,
             **extra
-        )
-
-    # 在结果中保存task相关信息
-    @staticmethod
-    def bind_analyze_task(entity_id, dag_id, task_id, execution_date):
-        st = ClsResultStorage()
-        st.metadata = {
-            'entity_id': entity_id
-        }
-        st.update(
-            dag_id=dag_id,
-            task_id=task_id,
-            execution_date=execution_date
         )
 
 

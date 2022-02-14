@@ -40,10 +40,10 @@ class CurvesView(AirflowModelView):
     route_base = '/curves'
     from qcos_addons.models.result import ResultModel
     datamodel = CustomSQLAInterface(ResultModel)
-    search_columns = ['execution_date', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
+    search_columns = ['update_time', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
     label_columns = {
         'error_tag': lazy_gettext('Error Tags'),
-        'execution_date': lazy_gettext('Execution Date'), 'car_code': lazy_gettext('Car Code'),
+        'update_time': lazy_gettext('Update Time'), 'car_code': lazy_gettext('Car Code'),
         'measure_result': lazy_gettext('Measure Result'), 'result': lazy_gettext('Result'),
         'final_state': lazy_gettext('Final State')
     }
@@ -88,7 +88,7 @@ class CurvesView(AirflowModelView):
                                      value=controller)
 
         joined_filters = self._filters.get_joined_filters(self._base_filters)
-        order_column, order_direction = "execution_date", "desc"
+        order_column, order_direction = "update_time", "desc"
         page_size = PAGE_SIZE
         count, lst = self.datamodel.query(
             joined_filters,
@@ -125,7 +125,7 @@ class CurvesView(AirflowModelView):
             selected_results[result.get('entity_id')] = {
                 'carCode': result.get('car_code'),
                 'value': result.get('entity_id'),
-                'date': str(result.get('execution_date'))
+                'date': str(result.get('update_time'))
             }
         widgets = self._list()
 
