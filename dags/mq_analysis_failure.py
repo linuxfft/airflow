@@ -2,74 +2,12 @@
 import datetime as dt
 import json
 import os
-from datetime import timedelta
-from typing import Dict
-from airflow.api.common.experimental import trigger_dag
-
-import pika
-
 from airflow.models import DAG, DagRun
 import pendulum
 from airflow.operators.python import PythonOperator
-from plugins.rabbitmq.rabbimq_plugin import RabbitmqOperator
 from plugins.utils.logger import generate_logger
 
 _logger = generate_logger(__name__)
-
-
-def analysis_failure_listener(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties,
-                              body: bytes):
-    if not body:
-        return
-    if not body or not channel:
-        return
-    data = body
-    if isinstance(data, bytes):
-        data = data.decode('utf-8')
-    data_dict: Dict = json.loads(data)
-    # 触发重试dag
-    trigger_dag.trigger_dag('analysis_failure_handler', replace_microseconds=False, conf=data_dict)
-
-
-analysis_failure_listener_concurrency = int(os.getenv('ANALYSIS_FAILURE_LISTENER_CONCURRENCY', '1'))
-
-listener_dag = DAG(
-    dag_id='analysis_failure_listener',
-    description=u'监听分析异常',
-    start_date=dt.datetime(2020, 1, 1, tzinfo=pendulum.timezone("Asia/Shanghai")),
-    schedule_interval=timedelta(seconds=1),
-    default_args={
-        'owner': 'qcos',
-        'depends_on_past': False,
-        'retries': 0,
-        'trigger_rule': 'all_success'
-    },
-    catchup=False,
-    concurrency=analysis_failure_listener_concurrency,
-    max_active_runs=analysis_failure_listener_concurrency,
-    tags=['analyze', 'mq']
-)
-
-listener_task = RabbitmqOperator(
-    task_id='mq_analysis_failure_listener_task',
-    dag=listener_dag,
-    priority_weight=9,
-    mq_config={
-        'conn_id': 'qcos_rabbitmq',
-        'queue': os.environ.get('MQ_ANALYSIS_FAILURE_QUEUE', 'qcos_analysis_failure'),
-        'queue_args': {
-            'durable': True
-        },
-        'exchange': os.environ.get('MQ_ANALYSIS_FAILURE_EXCHANGE', 'qcos_analysis_failure'),
-        'exchange_args': {
-            'exchange_type': 'fanout'
-        },
-        'binding_args': {
-            'routing_key': f'*',
-        },
-        'message_handler': analysis_failure_listener
-    }
-)
 
 analysis_failure_handler_concurrency = int(os.getenv('ANALYSIS_FAILURE_HANDLER_CONCURRENCY', '16'))
 
