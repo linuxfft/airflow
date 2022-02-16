@@ -55,7 +55,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
             curve_data = data_dict.get('curve_data', None)
             measure_result = data_dict.get('measure_result', None)
             factory_code = data_dict.get('factory_code', None)
-            curve_mode = data_dict.get('rescurve_storageult', None)
+            curve_mode = data_dict.get('result', None)
             verify_error = data_dict.get('verify_error', None)
         except Exception as e:
             raise Exception("解析分析结果异常: {}".format(repr(e)))
