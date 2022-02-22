@@ -139,6 +139,9 @@ class CustomAuthDBView(AuthDBView):
     @expose("/logout/")
     @access_log('LOGOUT', 'LOGOUT', '登出')
     def logout(self):
+        if ENV_PORTAL_INDEX_URL and RUNTIME_ENV == 'prod':
+            logout_user()
+            return redirect(ENV_PORTAL_INDEX_URL)
         return super(CustomAuthDBView, self).logout()
 
 
