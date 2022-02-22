@@ -81,7 +81,7 @@ EXISTING_ROLES = {
 ENV_SUC_CRCCODE_KEY = os.getenv('ENV_SUC_CRCCODE_KEY', 'crccode')
 ENV_SUC_ROOT_URL = os.getenv('ENV_SUC_ROOT_URL', 'http://localhost:8080')
 ENV_PORTAL_INDEX_URL = os.getenv(
-    'ENV_PORTAL_INDEX_URL', 'http://idas-pv.smicmotor.com/ids/index.html')
+    'ENV_PORTAL_INDEX_URL', '/')
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 
