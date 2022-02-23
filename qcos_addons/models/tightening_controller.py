@@ -1,4 +1,5 @@
 from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer, Text
 from qcos_addons.models.base import Base
@@ -19,6 +20,7 @@ class TighteningController(Base):
     work_center_name = Column(String(1000), nullable=True)
     device_type_id = Column(Integer, ForeignKey('device_type.id', onupdate='CASCADE', ondelete='SET NULL'),
                             nullable=True)
+    device_type = relationship("DeviceTypeModel", foreign_keys=[device_type_id])
     config = Column(Text, nullable=True)
 
     field_name_map = {
