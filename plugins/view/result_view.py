@@ -19,16 +19,45 @@ class ResultModelView(AirflowModelView):
 
     page_size = PAGE_SIZE
 
-    list_columns = ['entity_id', 'update_time', 'car_code', 'bolt_number', 'measure_result', 'result',
-                    'final_state']
+    list_columns = [
+        'entity_id',
+        'update_time',
+        'car_code',
+        'controller_name',
+        'tool_sn',
+        'pset',
+        'job',
+        'batch_count',
+        'bolt_number',
+        'measure_result',
+        'result',
+        'final_state'
+    ]
 
-    search_columns = ['entity_id', 'update_time', 'car_code', 'bolt_number', 'measure_result', 'result',
-                      'final_state']
+    search_columns = [
+        'entity_id',
+        'update_time',
+        'car_code',
+        'controller_name',
+        'tool_sn',
+        'pset',
+        'job',
+        'batch_count',
+        'bolt_number',
+        'measure_result',
+        'result',
+        'final_state'
+    ]
 
     label_columns = {
         'entity_id': lazy_gettext('Entity Id'),
         'update_time': lazy_gettext('Update Time'),
         'car_code': lazy_gettext('Car Code'),
+        'controller_name': lazy_gettext('Controller Name'),
+        'tool_sn': lazy_gettext('Tool SN'),
+        'pset': lazy_gettext('PSET'),
+        'job': lazy_gettext('Job'),
+        'batch_count': lazy_gettext('Batch Count'),
         'bolt_number': lazy_gettext('Bolt Number'),
         'measure_result': lazy_gettext('Measure Result'),
         'result': lazy_gettext('Result'),
