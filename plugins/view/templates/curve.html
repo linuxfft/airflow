@@ -25,12 +25,7 @@
       </div>
     {% endcall %}
     {% call panel.panel('','result-check-container','flex-row') %}
-      {% if result.device_type == 'tightening' %}
-
-        {{ result_panel.result_panel('拧紧结果', 'measure-result-card',result.measure_result) }}
-      {% else %}
-        {{ result_panel.result_panel('结果', 'measure-result-card',result.measure_result) }}
-      {% endif %}
+      {{ result_panel.result_panel('采集结果', 'measure-result-card',result.measure_result) }}
       {% if result.should_analyze != False %}
         {{ result_panel.result_panel('分析结果', 'analysis-result-card',result.result,
   verify_error_map.get('{}'.format(result.verify_error),result.verify_error)) }}
@@ -89,7 +84,7 @@
         </table>
       </div>
       <button onclick="downloadCurveAndResult()"
-              class="btn btn-primary  m-2">{{ '下载结果和曲线' if result.device_type == 'servo_press' else '下载拧紧结果和曲线' }}</button>
+              class="btn btn-primary  m-2">{{ '下载结果和曲线' }}</button>
     {% endcall %}
 
   </div>
@@ -381,11 +376,11 @@
           value: '<a target="_blank" href="' + "{{url_for('CurvesView.view_curves',bolt_no=result.bolt_number,craft_type=result.craft_type,curves=result.get('entity_id','').replace('/','@'))}}" + '">{{result.entity_id}}</a>'
         },
         bolt_number: {
-          label: "{{ '编号' if result.device_type == 'servo_press' else '螺栓编号'}}",
+          label: "编号",
           value: '<a target="_blank" href="' + "{{url_for('CurveTemplateView.list',_flt_0_key=result.bolt_number)}}" + '">{{result.bolt_number}}</a>'
         },
         update_time: {
-          label: "{{ '时间' if result.device_type == 'servo_press' else '拧紧时间'}}",
+          label: "时间",
           value: new Date('{{result.update_time}}').toLocaleString()
         },
         controller_name: {label: '控制器', value: '{{controller.controller_name}}'},

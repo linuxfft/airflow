@@ -99,11 +99,11 @@ class CurvesView(AirflowModelView):
         )
 
         error_tag_vals = ErrorTag.get_all_dict() or {}
-        device_type = None
+        view_config = None
         for t in lst:
             ret = []
-            if device_type is None and t.device_type is not None:
-                device_type = t.device_type
+            if view_config is None and t.controller.device_type.view_config is not None:
+                view_config = t.controller.device_type.view_config
             try:
                 error_tags = json.loads(t.error_tag or '[]')
                 if not error_tags:
@@ -128,20 +128,7 @@ class CurvesView(AirflowModelView):
                 'date': str(result.get('update_time'))
             }
         widgets = self._list()
-
-        if device_type == 'servo_press':
-            cur_key_map = {
-                'cur_w': '位移',
-                'cur_m': '压力',
-                'cur_t': '时间',
-            }
-        else:
-            cur_key_map = {
-                'cur_w': '角度',
-                'cur_m': '扭矩',
-                'cur_t': '时间',
-                'cur_s': '转速'
-            }
+        cur_key_map = json.loads(view_config).get('curve_key_map') if view_config is not None else {}
 
         return self.render_template('curves.html', results=lst, page=page, page_size=page_size, count=count,
                                     modelview_name=view_name,
@@ -202,7 +189,7 @@ class CurvesView(AirflowModelView):
                 deserialize_json=True,
                 default_var={}
             )
-        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x,x), inplace=True)
+        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x, x), inplace=True)
         try:
             curves = get_curves(entities)
             for curve in curves:

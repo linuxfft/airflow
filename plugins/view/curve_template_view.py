@@ -134,24 +134,14 @@ class CurveTemplateView(AirflowModelView):
         if curve_template is None:
             # todo: 不要返回错误页面
             return AirflowNotFoundException()
-
-        device_type = 'tightening'  # fixme: 临时使用固定的device_type, 后续在控制器配置中添加
-        if device_type == 'servo_press':
-            cur_key_map = {
-                'cur_w': '位移',
-                'cur_m': '压力',
-                'cur_t': '时间',
-            }
-        else:
-            cur_key_map = {
-                'cur_w': '角度',
-                'cur_m': '扭矩',
-                'cur_t': '时间',
-                'cur_s': '转速'
-            }
+        from qcos_addons.models.tightening_controller import TighteningController
+        controller_name = bolt_no.split('_')[0]
+        controller = TighteningController.find_controller(controller_name)
+        cur_key_map = json.loads(controller.device_type.view_config).get('curve_key_map', {}) \
+            if controller.device_type.view_config is not None else {}
         return self.render_template('curve_template.html', can_delete=can_delete,
                                     curve_template=curve_template, bolt_no=bolt_no,
-                                    craft_type=craft_type, device_type=device_type, cur_key_map=cur_key_map)
+                                    craft_type=craft_type, cur_key_map=cur_key_map)
 
     @expose('/<string:bolt_no>/<string:craft_type>/remove_curve', methods=['PUT'])
     @access_log('DELETE', 'CURVE_TEMPLATE', '删除曲线模板')

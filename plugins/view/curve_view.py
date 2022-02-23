@@ -5,12 +5,11 @@ from flask_appbuilder import BaseView, expose
 from airflow.models import Variable
 from plugins.utils.utils import get_curve, get_result
 from qcos_addons.models.error_tag import ErrorTag
-from datetime import datetime
 import os
-from airflow.settings import TIMEZONE
-from flask_login import current_user
 from airflow.security import permissions
 from qcos_addons.access_log.log import access_log
+import json
+
 _logger = logging.getLogger(__name__)
 
 
@@ -63,38 +62,19 @@ class CurveView(BaseView):
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE', False)
         show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_RESULT)
-
-        if result.get('device_type') == 'servo_press':
-            cur_key_map = {
-                'cur_w': '位移',
-                'cur_m': '压力',
-                'cur_t': '时间',
-            }
-            display_keys = Variable.get('servo_press_view_curve_page_keys', deserialize_json=True,
-                                        default_var={})
-            result_keys_translation_mapping = Variable.get('servo_press_result_keys_translation_mapping',
-                                                           deserialize_json=True,
-                                                           default_var={})
-        else:
-            cur_key_map = {
-                'cur_w': '角度',
-                'cur_m': '扭矩',
-                'cur_t': '时间',
-                'cur_s': '转速'
-            }
-            display_keys = Variable.get('view_curve_page_keys', deserialize_json=True,
-                                        default_var={})
-            result_keys_translation_mapping = Variable.get('result_keys_translation_mapping',
-                                                           deserialize_json=True,
-                                                           default_var={})
+        view_config = json.loads(controller.device_type.view_config) \
+            if controller.device_type.view_config is not None else {}
+        cur_key_map = view_config.get('curve_key_map', {})
+        display_keys = view_config.get('display_keys', {})
+        translation_mapping = view_config.get('translation_mapping', {})
 
         return self.render_template('curve.html', result=result,
                                     curve=curve, analysisErrorMessageMapping=analysis_error_message_mapping,
                                     resultErrorMessageMapping=result_error_message_mapping,
-                                    resultKeysTranslationMapping=result_keys_translation_mapping,
+                                    resultKeysTranslationMapping=translation_mapping,
                                     verify_error_map=verify_error_map,
                                     can_verify=can_verify,
-                                    controller=controller,
+                                    controller=controller.to_dict() if controller else {},
                                     errorTags=error_tags,
                                     show_range=show_range,
                                     display_keys=display_keys,

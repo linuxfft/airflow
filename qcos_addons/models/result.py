@@ -1,3 +1,4 @@
+from sqlalchemy.orm import relationship
 from airflow.utils.sqlalchemy import UtcDateTime
 from airflow.utils import timezone
 from sqlalchemy import Boolean, Float, Text
@@ -81,6 +82,7 @@ class ResultModel(Base):
     controller_id = Column(Integer,
                            ForeignKey('tightening_controller.id', onupdate='CASCADE', ondelete='RESTRICT'),
                            nullable=True, default=sql.null())
+    controller = relationship("TighteningController", foreign_keys=[controller_id], lazy='joined')
 
     def as_dict(self):
         v: dict = self.__dict__

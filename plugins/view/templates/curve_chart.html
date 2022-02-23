@@ -2,32 +2,32 @@
      class="panel panel-default border rounded-sm d-flex p-2 bd-highlight shadow p-2 m-1 rounded flex-column">
   <div class="flex-row mb-2" id="actions-container">
       <span class="btn-group btn-group-toggle" data-toggle="buttons">
-        <label class="btn active btn-default font-weight-bold " for="update-chart-w-m" style="z-index: 0"
+        <label class="btn active btn-default font-weight-bold " for="update-chart-w-m" style="z-index: 0;display:none;"
                id="update-chart-w-m-label"
                title="Also include past task instances when clearing this one">
           <input id="update-chart-w-m" type="radio" name="chart-type" checked autocomplete="off">
           <span id="update-chart-w-m-text">角度/扭矩</span>
         </label>
         <label class="btn btn-default font-weight-bold " for="update-chart-t-m" id="update-chart-t-m-label"
-               style="z-index: 0"
+               style="z-index: 0;display:none;"
                title="Also include past task instances when clearing this one">
           <input id="update-chart-t-m" type="radio" name="chart-type" autocomplete="off">
           <span id="update-chart-t-m-text">时间/扭矩</span>
         </label>
         <label class="btn btn-default font-weight-bold " for="update-chart-t-w" id="update-chart-t-w-label"
-               style="z-index: 0"
+               style="z-index: 0;display:none;"
                title="Also include past task instances when clearing this one">
           <input id="update-chart-t-w" type="radio" name="chart-type" autocomplete="off">
           <span id="update-chart-t-w-text">时间/角度</span>
         </label>
         <label class="btn btn-default font-weight-bold " for="update-chart-t-s" id="update-chart-t-s-label"
-               style="z-index: 0"
+               style="z-index: 0;display:none;"
                title="Also include past task instances when clearing this one">
           <input id="update-chart-t-s" type="radio" name="chart-type" autocomplete="off">
           <span id="update-chart-t-s-text">时间/转速</span>
         </label>
         <label class="btn btn-default font-weight-bold " for="update-chart-t-a" id="update-chart-t-a-label"
-               style="z-index: 0"
+               style="z-index: 0;display:none;"
                title="Also include past task instances when clearing this one">
           <input id="update-chart-t-a" type="radio" name="chart-type" autocomplete="off">
           <span id="update-chart-all-text">全部</span>
@@ -43,13 +43,27 @@
   let curveChart = null;
 
   const curKeyMap = JSON.parse('{{ cur_key_map|tojson|safe }}');
-  $('#update-chart-w-m-text').html(curKeyMap.cur_w + '/' + curKeyMap.cur_m);
-  $('#update-chart-t-m-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_m);
-  $('#update-chart-t-w-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_w);
-  if (!curKeyMap.cur_s) {
-    $('#update-chart-t-s-label').remove()
+  if (curKeyMap.cur_w && curKeyMap.cur_m) {
+      $('#update-chart-w-m-label').css('display', 'inline-block');
+      $('#update-chart-w-m-text').html(curKeyMap.cur_w + '/' + curKeyMap.cur_m);
+    }
+  if (curKeyMap.cur_t) {
+    if (curKeyMap.cur_m) {
+      $('#update-chart-t-m-label').css('display', 'inline-block');
+      $('#update-chart-t-m-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_m);
+    }
+    if (curKeyMap.cur_w) {
+      $('#update-chart-t-w-label').css('display', 'inline-block');
+      $('#update-chart-t-w-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_w);
+    }
+    if (curKeyMap.cur_s) {
+      $('#update-chart-t-s-label').css('display', 'inline-block');
+      $('#update-chart-t-s-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_s);
+    }
   }
-
+  if(Object.keys(curKeyMap).length>0){
+    $('#update-chart-t-a-label').css('display', 'inline-block');
+  }
 
   const chartParams = {
     xKey: 'cur_w',

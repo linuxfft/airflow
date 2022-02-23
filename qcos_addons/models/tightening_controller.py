@@ -4,7 +4,6 @@ from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer, Text
 from qcos_addons.models.base import Base
 
-
 class TighteningController(Base):
     """
     tightening controllers.
@@ -19,8 +18,8 @@ class TighteningController(Base):
     work_center_code = Column(String(1000), nullable=False)
     work_center_name = Column(String(1000), nullable=True)
     device_type_id = Column(Integer, ForeignKey('device_type.id', onupdate='CASCADE', ondelete='SET NULL'),
-                            nullable=True)
-    device_type = relationship("DeviceTypeModel", foreign_keys=[device_type_id])
+                            nullable=False)
+    device_type = relationship("DeviceTypeModel", foreign_keys=[device_type_id], lazy='joined')
     config = Column(Text, nullable=True)
 
     field_name_map = {
@@ -52,17 +51,17 @@ class TighteningController(Base):
     @classmethod
     @provide_session
     def find_controller(cls, controller_name, session=None):
-        obj = session.query(cls).filter(cls.controller_name == controller_name).first()
-        if obj is None:
-            return {}
+        return session.query(cls).filter(cls.controller_name == controller_name).first()
+
+    def to_dict(self):
         return {
-            'id': obj.id,
-            'controller_name': obj.controller_name,
-            'line_code': obj.line_code,
-            'line_name': obj.line_name,
-            'work_center_code': obj.work_center_code,
-            'work_center_name': obj.work_center_name,
-            'device_type_id': obj.device_type_id,
+            'id': self.id,
+            'controller_name': self.controller_name,
+            'line_code': self.line_code,
+            'line_name': self.line_name,
+            'work_center_code': self.work_center_code,
+            'work_center_name': self.work_center_name,
+            'device_type_id': self.device_type_id
         }
 
     @classmethod
@@ -74,7 +73,7 @@ class TighteningController(Base):
         return cls.find_controller(
             fields_data.get('controller_name', None)
             , session=session
-        ).get('id', None) is not None
+        ).to_dict().get('id', None) is not None
 
     @classmethod
     @provide_session
@@ -104,4 +103,4 @@ class TighteningController(Base):
         controller_data = TighteningController.find_controller(controller_name)
         if not controller_data:
             raise Exception('未找到控制器数据: {}'.format(controller_name))
-        return controller_data.get('line_code', None), controller_data.get('id')
+        return controller_data.to_dict().get('line_code', None), controller_data.get('id')
