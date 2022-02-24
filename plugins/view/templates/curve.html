@@ -24,17 +24,24 @@
         </table>
       </div>
     {% endcall %}
-    {% call panel.panel('','result-check-container','flex-row') %}
+    <div id="result-check-container" class="d-flex overflow-hidden flex-row" >
       {{ result_panel.result_panel('采集结果', 'measure-result-card',result.measure_result) }}
       {% if result.should_analyze != False %}
-        {{ result_panel.result_panel('分析结果', 'analysis-result-card',result.result,
-  verify_error_map.get('{}'.format(result.verify_error),result.verify_error)) }}
-
+        {{ result_panel.result_panel(
+          '分析结果',
+          'analysis-result-card',
+          result.result,
+           verify_error_map.get('{}'.format(result.verify_error),result.verify_error)
+        ) }}
       {% endif %}
       {% if result.should_analyze != False %}
 
-        {% call panel.panel('二次确认', 'double-check-card','panel-danger base-info-item' if result.final_state =='NOK'
-  else ('panel-success base-info-item' if result.final_state =='OK' else 'panel-default base-info-item')) %}
+        {% call panel.panel(
+          '二次确认',
+          'double-check-card',
+          'panel-danger base-info-item' if result.final_state =='NOK' else
+          ('panel-success base-info-item' if result.final_state =='OK' else 'panel-default base-info-item')
+        ) %}
           <div class="panel-body d-flex flex-column justify-content-center align-items-center"
                style="flex:1">
             <!--      <button id="error-tag-button" class="btn btn-primary px-4 py-1">编辑</button>-->
@@ -67,7 +74,7 @@
           </div>
         {% endcall %}
       {% endif %}
-    {% endcall %}
+    </div>
 
     {% include 'curve_chart.html' %}
 
@@ -466,16 +473,16 @@
       Object.keys(result).forEach(function (k) {
 
         const key = resultKeys[k] || k;
-        if(k==='step_results'){
-          resultLocalized[key] = result[k].map(function(r){
+        if (k === 'step_results') {
+          resultLocalized[key] = result[k].map(function (r) {
             ret = {}
             Object.keys(r).forEach(function (rk) {
               const rkey = resultKeys[rk] || rk;
-              ret[rkey]=r[rk];
+              ret[rkey] = r[rk];
             })
             return ret;
           })
-        }else{
+        } else {
           resultLocalized[key] = result[k];
         }
       })
