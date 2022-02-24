@@ -102,7 +102,10 @@ class CurvesView(AirflowModelView):
         view_config = None
         for t in lst:
             ret = []
-            if view_config is None and t.controller.device_type.view_config is not None:
+            if view_config is None \
+                and t.controller is not None \
+                and t.controller.device_type is not None \
+                and t.controller.device_type.view_config is not None:
                 view_config = t.controller.device_type.view_config
             try:
                 error_tags = json.loads(t.error_tag or '[]')
