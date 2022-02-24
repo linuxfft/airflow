@@ -8,6 +8,7 @@ from airflow.configuration import conf
 from airflow.security import permissions
 from flask_appbuilder import expose
 from flask import redirect, abort, url_for
+from os import environ
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')
 
@@ -52,7 +53,7 @@ class ResultModelView(AirflowModelView):
     label_columns = {
         'entity_id': lazy_gettext('Entity Id'),
         'update_time': lazy_gettext('Update Time'),
-        'car_code': lazy_gettext('Car Code'),
+        'car_code': lazy_gettext(environ.get('ENV_CAR_CODE_TEXT', 'Car Code')),
         'controller_name': lazy_gettext('Controller Name'),
         'tool_sn': lazy_gettext('Tool SN'),
         'pset': lazy_gettext('PSET'),

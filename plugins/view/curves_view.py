@@ -28,6 +28,7 @@ from airflow.exceptions import AirflowException
 from airflow.security import permissions
 from qcos_addons.access_log.log import access_log
 from airflow.models import Variable
+from os import environ
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class CurvesView(AirflowModelView):
     search_columns = ['update_time', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
     label_columns = {
         'error_tag': lazy_gettext('Error Tags'),
-        'update_time': lazy_gettext('Update Time'), 'car_code': lazy_gettext('Car Code'),
+        'update_time': lazy_gettext('Update Time'), 'car_code': lazy_gettext(environ.get('ENV_CAR_CODE_TEXT', 'Car Code')),
         'measure_result': lazy_gettext('Measure Result'), 'result': lazy_gettext('Result'),
         'final_state': lazy_gettext('Final State')
     }
@@ -140,6 +141,7 @@ class CurvesView(AirflowModelView):
                                     selected_results=selected_results,
                                     cur_key_map=cur_key_map,
                                     cur_unit_map=cur_unit_map,
+                                    car_code_name=environ.get('ENV_CAR_CODE_TEXT', 'Car Code'),
                                     widgets=widgets)
 
     @expose('/analysis')

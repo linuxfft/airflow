@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-28 15:43+0800\n"
+"POT-Creation-Date: 2022-02-24 12:55+0800\n"
 "PO-Revision-Date: 2020-03-23 18:12+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -365,8 +365,8 @@ msgid "Equipments"
 msgstr "设备"
 
 #: airflow/security/permissions.py:63
-#: plugins/view/tightening_controller_views.py:64
-#: plugins/view/tightening_controller_views.py:95
+#: plugins/view/tightening_controller_views.py:65
+#: plugins/view/tightening_controller_views.py:115
 msgid "Device Type"
 msgstr "设备类型"
 
@@ -415,7 +415,6 @@ msgid "State"
 msgstr "状态"
 
 #: airflow/www/forms.py:151 airflow/www/forms.py:176 airflow/www/forms.py:206
-#: plugins/view/curves_view.py:45 plugins/view/templates/curves.html:62
 msgid "Execution Date"
 msgstr "执行时间"
 
@@ -495,12 +494,7 @@ msgstr "登录"
 msgid "View Source"
 msgstr "查看源代码"
 
-#: plugins/view/curve_analysis_views.py:78 plugins/view/curves_view.py:45
-#: plugins/view/result_view.py:31 plugins/view/templates/curves.html:63
-msgid "Car Code"
-msgstr "车辆代码"
-
-#: plugins/view/curve_analysis_views.py:96 plugins/view/result_view.py:32
+#: plugins/view/curve_analysis_views.py:96 plugins/view/result_view.py:62
 msgid "Bolt Number"
 msgstr "螺栓编号"
 
@@ -516,22 +510,27 @@ msgstr "值"
 msgid "Active"
 msgstr "启用"
 
-#: plugins/view/curves_view.py:44 plugins/view/templates/curves.html:77
+#: plugins/view/curves_view.py:46 plugins/view/templates/curves.html:79
 msgid "Error Tags"
 msgstr "错误标签"
 
-#: plugins/view/curves_view.py:46 plugins/view/result_view.py:33
+#: plugins/view/curves_view.py:47 plugins/view/result_view.py:55
 #: plugins/view/templates/curves.html:64
+msgid "Update Time"
+msgstr "拧紧时间"
+
+#: plugins/view/curves_view.py:48 plugins/view/result_view.py:63
+#: plugins/view/templates/curves.html:66
 msgid "Measure Result"
 msgstr "测量结果"
 
-#: plugins/view/curves_view.py:46 plugins/view/result_view.py:34
-#: plugins/view/templates/curves.html:69
+#: plugins/view/curves_view.py:48 plugins/view/result_view.py:64
+#: plugins/view/templates/curves.html:71
 msgid "Result"
 msgstr "分析结果"
 
-#: plugins/view/curves_view.py:47 plugins/view/result_view.py:35
-#: plugins/view/templates/curves.html:73
+#: plugins/view/curves_view.py:49 plugins/view/result_view.py:65
+#: plugins/view/templates/curves.html:75
 msgid "Final State"
 msgstr "最终结果"
 
@@ -543,52 +542,72 @@ msgstr "值"
 msgid "Label"
 msgstr "标签"
 
-#: plugins/view/result_view.py:29
+#: plugins/view/result_view.py:54
 msgid "Entity Id"
 msgstr "曲线编号"
 
-#: plugins/view/result_view.py:30
-msgid "Update Time"
-msgstr "拧紧时间"
+#: plugins/view/result_view.py:57
+#: plugins/view/tightening_controller_views.py:110
+msgid "Controller Name"
+msgstr "控制器名称"
 
-#: plugins/view/result_view.py:76
+#: plugins/view/result_view.py:58
+#, fuzzy
+msgid "Tool SN"
+msgstr "工具序列号"
+
+#: plugins/view/result_view.py:59
+msgid "PSET"
+msgstr ""
+
+#: plugins/view/result_view.py:60
+msgid "Job"
+msgstr ""
+
+#: plugins/view/result_view.py:61
+msgid "Batch Count"
+msgstr "批次数"
+
+#: plugins/view/result_view.py:106
 #, fuzzy
 msgid "Task Instance Rework"
 msgstr "任务实例"
 
-#: plugins/view/result_view.py:77
+#: plugins/view/result_view.py:107
 #, fuzzy
 msgid "Task Instance Normal"
 msgstr "任务实例"
 
-#: plugins/view/tightening_controller_views.py:48
+#: plugins/view/tightening_controller_views.py:49
 #, fuzzy
 msgid "Equipment Name"
 msgstr "设备名称"
 
-#: plugins/view/tightening_controller_views.py:51
-#: plugins/view/tightening_controller_views.py:91
+#: plugins/view/tightening_controller_views.py:52
+#: plugins/view/tightening_controller_views.py:111
 msgid "Line Code"
 msgstr "工段编号"
 
-#: plugins/view/tightening_controller_views.py:54
-#: plugins/view/tightening_controller_views.py:92
+#: plugins/view/tightening_controller_views.py:55
+#: plugins/view/tightening_controller_views.py:112
 msgid "Line Name"
 msgstr "工段名称"
 
-#: plugins/view/tightening_controller_views.py:57
-#: plugins/view/tightening_controller_views.py:93
+#: plugins/view/tightening_controller_views.py:58
+#: plugins/view/tightening_controller_views.py:113
 msgid "Work Center Code"
 msgstr "工作中心编号"
 
-#: plugins/view/tightening_controller_views.py:60
-#: plugins/view/tightening_controller_views.py:94
+#: plugins/view/tightening_controller_views.py:61
+#: plugins/view/tightening_controller_views.py:114
 msgid "Work Center Name"
 msgstr "工作中心名称"
 
-#: plugins/view/tightening_controller_views.py:90
-msgid "Controller Name"
-msgstr "控制器名称"
+#: plugins/view/tightening_controller_views.py:74
+#: plugins/view/tightening_controller_views.py:116
+#, fuzzy
+msgid "Config"
+msgstr "配置"
 
 #: plugins/view/templates/curves.html:19
 msgid "Search"
@@ -597,4 +616,7 @@ msgstr "搜索"
 #: plugins/view/templates/curves.html:35
 msgid "curve"
 msgstr "曲线"
+
+msgid "Car Code"
+msgstr "车辆代码"
 

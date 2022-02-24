@@ -9,7 +9,7 @@ from flask_appbuilder.models.sqla.filters import BaseFilter
 from airflow.plugins_manager import AirflowPlugin
 from airflow.security import permissions
 from plugins.view.tightening_controller_views import TighteningControllerView, TighteningControllerListWidget
-
+from os import environ
 
 class CurveAnalysisListWidget(AirflowModelListWidget):
     template = 'curve_analysis_list.html'
@@ -75,7 +75,7 @@ class CurveAnalysisTrackNoView(AirflowModelView):
     search_columns = ['car_code']
 
     label_columns = {
-        'car_code': lazy_gettext('Car Code')
+        'car_code': lazy_gettext(environ.get('ENV_CAR_CODE_TEXT', 'Car Code'))
     }
 
     base_filters = [['car_code', TrackNoNotNullFilter, lambda: []]]
