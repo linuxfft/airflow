@@ -63,7 +63,7 @@ class CurveView(BaseView):
         show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_RESULT)
         view_config = json.loads(controller.device_type.view_config) \
-            if controller.device_type.view_config is not None else {}
+            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else {}
         cur_key_map = view_config.get('curve_key_map', {})
         cur_unit_map = view_config.get('curve_unit_map', {})
         display_keys = view_config.get('display_keys', {})
