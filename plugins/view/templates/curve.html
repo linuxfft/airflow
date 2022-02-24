@@ -119,15 +119,15 @@
     let $errorTagInput = null;
 
     function getAllData() {
-      const {yKey, yName} = chartParams;
+      const {yKey} = chartParams;
       return {
-        series: yKey.map(function (n, idx) {
+        series: yKey.map(function (yk, idx) {
           return {
             color: stringToColor('{{ result.entity_id }}'.split('').reverse().join('')),
-            name: yName[idx],
+            name: curUnitMap[yk],
             type: 'line',
             showSymbol: false,
-            data: genData(n),
+            data: genData(yk),
             xAxisIndex: idx,
             yAxisIndex: idx,
             lineStyle: {

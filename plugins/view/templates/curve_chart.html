@@ -43,10 +43,11 @@
   let curveChart = null;
 
   const curKeyMap = JSON.parse('{{ cur_key_map|tojson|safe }}');
+  const curUnitMap = JSON.parse('{{ cur_unit_map|tojson|safe }}');
   if (curKeyMap.cur_w && curKeyMap.cur_m) {
-      $('#update-chart-w-m-label').css('display', 'inline-block');
-      $('#update-chart-w-m-text').html(curKeyMap.cur_w + '/' + curKeyMap.cur_m);
-    }
+    $('#update-chart-w-m-label').css('display', 'inline-block');
+    $('#update-chart-w-m-text').html(curKeyMap.cur_w + '/' + curKeyMap.cur_m);
+  }
   if (curKeyMap.cur_t) {
     if (curKeyMap.cur_m) {
       $('#update-chart-t-m-label').css('display', 'inline-block');
@@ -61,28 +62,22 @@
       $('#update-chart-t-s-text').html(curKeyMap.cur_t + '/' + curKeyMap.cur_s);
     }
   }
-  if(Object.keys(curKeyMap).length>0){
+  if (Object.keys(curKeyMap).length > 0) {
     $('#update-chart-t-a-label').css('display', 'inline-block');
   }
 
   const chartParams = {
     xKey: 'cur_w',
-    yKey: 'cur_m',
-    xName: curKeyMap.cur_w,
-    yName: curKeyMap.cur_m
+    yKey: 'cur_m'
   };
 
   function setChartParams(xKey, yKey) {
     chartParams.xKey = xKey;
-    chartParams.xName = curKeyMap[xKey];
     if (yKey instanceof Array) {
       chartParams.yKey = yKey;
     } else {
       chartParams.yKey = [yKey];
     }
-    chartParams.yName = chartParams.yKey.map(function (k) {
-      return curKeyMap[k];
-    })
   }
 
   $('#update-chart-w-m').change(() => {
@@ -112,7 +107,7 @@
   });
 
   function renderChart() {
-    const {xName, yName, yKey, xKey} = chartParams;
+    const {yKey, xKey} = chartParams;
     let options = {
       toolbox: {
         show: true,
@@ -132,21 +127,21 @@
       dataZoom: [
         {
           type: 'slider',
-          xAxisIndex: yName.map(function (n, idx) {
+          xAxisIndex: yKey.map(function (yk, idx) {
             return idx;
           }),
           filterMode: 'none'
         },
         {
           type: 'inside',
-          xAxisIndex: yName.map(function (n, idx) {
+          xAxisIndex: yKey.map(function (yk, idx) {
             return idx;
           }),
           filterMode: 'none'
         },
         {
           type: 'slider',
-          yAxisIndex: yName.map(function (n, idx) {
+          yAxisIndex: yKey.map(function (yk, idx) {
             return idx;
           }),
           filterMode: 'none',
@@ -155,7 +150,7 @@
         },
         {
           type: 'inside',
-          yAxisIndex: yName.map(function (n, idx) {
+          yAxisIndex: yKey.map(function (yk, idx) {
             return idx;
           }),
           filterMode: 'none'
@@ -167,18 +162,18 @@
           type: 'cross'
         }
       },
-      xAxis: yName.map(function (n, idx) {
+      xAxis: yKey.map(function (yk, idx) {
         return {
           type: 'value',
           nameRotate: 0,
           axisLabel: {
             fontSize: 16
           },
-          name: xName,
+          name: `${curKeyMap[xKey]}\n(${curUnitMap[xKey]})`,
           gridIndex: idx
         }
       }),
-      yAxis: yName.map(function (n, idx) {
+      yAxis: yKey.map(function (yk, idx) {
         return {
           type: 'value',
           nameLocation: 'middle',
@@ -187,21 +182,21 @@
           axisLabel: {
             fontSize: 16
           },
-          name: n,
+          name: `${curKeyMap[yk]}\n(${curUnitMap[yk]})`,
           gridIndex: idx,
           axisLine: {
             show: true,
           }
         }
       }),
-      grid: yName.map(function (n, idx) {
+      grid: yKey.map(function (yk, idx) {
         const margin = 5;
         const top = 10;
         const bottom = 10;
-        const height = ((100 - top - bottom) - margin * (yName.length - 1)) / yName.length;
+        const height = ((100 - top - bottom) - margin * (yKey.length - 1)) / yKey.length;
         return {
           top: top + (margin + height) * idx + '%',
-          bottom: bottom + (margin + height) * (yName.length - idx - 1) + '%',
+          bottom: bottom + (margin + height) * (yKey.length - idx - 1) + '%',
         }
       })
     };

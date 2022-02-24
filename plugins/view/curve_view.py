@@ -65,6 +65,7 @@ class CurveView(BaseView):
         view_config = json.loads(controller.device_type.view_config) \
             if controller.device_type.view_config is not None else {}
         cur_key_map = view_config.get('curve_key_map', {})
+        cur_unit_map = view_config.get('curve_unit_map', {})
         display_keys = view_config.get('display_keys', {})
         translation_mapping = view_config.get('translation_mapping', {})
 
@@ -78,7 +79,8 @@ class CurveView(BaseView):
                                     errorTags=error_tags,
                                     show_range=show_range,
                                     display_keys=display_keys,
-                                    cur_key_map=cur_key_map
+                                    cur_key_map=cur_key_map,
+                                    cur_unit_map=cur_unit_map
                                     )
 
 

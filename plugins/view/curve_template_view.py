@@ -139,9 +139,11 @@ class CurveTemplateView(AirflowModelView):
         controller = TighteningController.find_controller(controller_name)
         cur_key_map = json.loads(controller.device_type.view_config).get('curve_key_map', {}) \
             if controller.device_type.view_config is not None else {}
+        cur_unit_map = json.loads(controller.device_type.view_config).get('curve_unit_map', {}) \
+            if controller.device_type.view_config is not None else {}
         return self.render_template('curve_template.html', can_delete=can_delete,
                                     curve_template=curve_template, bolt_no=bolt_no,
-                                    craft_type=craft_type, cur_key_map=cur_key_map)
+                                    craft_type=craft_type, cur_key_map=cur_key_map, cur_unit_map=cur_unit_map)
 
     @expose('/<string:bolt_no>/<string:craft_type>/remove_curve', methods=['PUT'])
     @access_log('DELETE', 'CURVE_TEMPLATE', '删除曲线模板')

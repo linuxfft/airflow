@@ -132,12 +132,14 @@ class CurvesView(AirflowModelView):
             }
         widgets = self._list()
         cur_key_map = json.loads(view_config).get('curve_key_map') if view_config is not None else {}
+        cur_unit_map = json.loads(view_config).get('curve_unit_map') if view_config is not None else {}
 
         return self.render_template('curves.html', results=lst, page=page, page_size=page_size, count=count,
                                     modelview_name=view_name,
                                     selected_curves=curves_list,
                                     selected_results=selected_results,
                                     cur_key_map=cur_key_map,
+                                    cur_unit_map=cur_unit_map,
                                     widgets=widgets)
 
     @expose('/analysis')
