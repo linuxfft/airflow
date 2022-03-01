@@ -44,66 +44,64 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     data_dict: Dict = json.loads(data)
 
     try:
-        try:
-            _logger.debug(f"Receive Analysis Result, data: {data}")
-            entity_id = data_dict.get('entity_id', None)
-            _logger.debug(f"entity_id: {entity_id}")
-            if entity_id is None:
-                _logger.debug("entity_id not in result")
-                return
-            result_data = data_dict.get('result_data', None)
-            curve_data = data_dict.get('curve_data', None)
-            measure_result = data_dict.get('measure_result', None)
-            factory_code = data_dict.get('factory_code', None)
-            curve_mode = data_dict.get('result', None)
-            verify_error = data_dict.get('verify_error', None)
-        except Exception as e:
-            raise Exception("解析分析结果异常: {}".format(repr(e)))
-
-        result_exists = False
-        try:
-            ResultStorageHook.save_result(
-                entity_id,
-                result_data,
-                **ResultStorageHook.generate_extra_data(result_data, True, factory_code)
-            )
-
-            PublishResultHook.trigger_publish('tightening_result', data_dict)
-        except IntegrityError as e:
-            # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
-            if isinstance(e.orig, errors.UniqueViolation):
-                _logger.info(f'结果{entity_id}已存在')
-                result_exists = True
-        except Exception as e:
-            raise Exception("保存结果异常: {}".format(repr(e)))
-
-        try:
-            ResultStorageHook.save_curve(
-                entity_id,
-                curve_data
-            )
-        except Exception as e:
-            raise Exception("保存曲线异常: {}".format(repr(e)))
-
-        _logger.info(f'保存控制器结果和曲线完成。')
-
-        # 如果结果已经存在，则认为分析异常已经触发过（如存在分析异常），因此不再触发
-        if not result_exists and curve_mode is None or verify_error is None:
-            # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
-            raise Exception(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
-
-        if curve_mode is not None and verify_error is not None:
-            _logger.info(f'分析结果解析正常，开始保存分析结果。')
-            ResultStorageHook.save_analyze_result(
-                entity_id, measure_result, curve_mode, verify_error
-            )
-            _logger.info(f'保存分析结果完成。')
-        _logger.info(f"{entity_id} all saved")
+        _logger.debug(f"Receive Analysis Result, data: {data}")
+        entity_id = data_dict.get('entity_id', None)
+        _logger.debug(f"entity_id: {entity_id}")
+        if entity_id is None:
+            _logger.debug("entity_id not in result")
+            return
+        result_data = data_dict.get('result_data', None)
+        curve_data = data_dict.get('curve_data', None)
+        measure_result = data_dict.get('measure_result', None)
+        factory_code = data_dict.get('factory_code', None)
+        curve_mode = data_dict.get('result', None)
+        verify_error = data_dict.get('verify_error', None)
     except Exception as e:
-        _logger.error(e)
-        _logger.info(f'正在触发异常处理任务。')
-        trigger_dag.trigger_dag('analysis_failure_handler', replace_microseconds=False, conf=data_dict)
-        _logger.info(f'异常处理任务触发完成。')
+        raise Exception("解析分析结果异常: {}".format(repr(e)))
+
+    result_exists = False
+    try:
+        ResultStorageHook.save_result(
+            entity_id,
+            result_data,
+            **ResultStorageHook.generate_extra_data(result_data, True, factory_code)
+        )
+
+        PublishResultHook.trigger_publish('tightening_result', data_dict)
+    except IntegrityError as e:
+        # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
+        if isinstance(e.orig, errors.UniqueViolation):
+            _logger.info(f'结果{entity_id}已存在')
+            result_exists = True
+    except Exception as e:
+        raise Exception("保存结果异常: {}".format(repr(e)))
+
+    try:
+        ResultStorageHook.save_curve(
+            entity_id,
+            curve_data
+        )
+    except Exception as e:
+        raise Exception("保存曲线异常: {}".format(repr(e)))
+
+    _logger.info(f'保存控制器结果和曲线完成。')
+
+    if curve_mode is None or verify_error is None:
+        # 如果结果已经存在，则认为分析异常已经触发过（如存在分析异常），因此不再触发
+        if not result_exists:
+            # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
+            _logger.warn(f"{entity_id}分析结果异常（curve_mode：{curve_mode}，verify_error：{verify_error}）")
+            _logger.info(f'正在触发异常处理任务。')
+            trigger_dag.trigger_dag('analysis_failure_handler', replace_microseconds=False, conf=data_dict)
+            _logger.info(f'异常处理任务触发完成。')
+            return
+
+        _logger.info(f'分析结果解析正常，开始保存分析结果。')
+        ResultStorageHook.save_analyze_result(
+            entity_id, measure_result, curve_mode, verify_error
+        )
+        _logger.info(f'保存分析结果完成。')
+        _logger.info(f"{entity_id} all saved")
 
 
 dag = DAG(
