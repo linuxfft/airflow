@@ -94,14 +94,14 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
             _logger.info(f'正在触发异常处理任务。')
             trigger_dag.trigger_dag('analysis_failure_handler', replace_microseconds=False, conf=data_dict)
             _logger.info(f'异常处理任务触发完成。')
-            return
+        return
 
-        _logger.info(f'分析结果解析正常，开始保存分析结果。')
-        ResultStorageHook.save_analyze_result(
-            entity_id, measure_result, curve_mode, verify_error
-        )
-        _logger.info(f'保存分析结果完成。')
-        _logger.info(f"{entity_id} all saved")
+    _logger.info(f'分析结果解析正常，开始保存分析结果。')
+    ResultStorageHook.save_analyze_result(
+        entity_id, measure_result, curve_mode, verify_error
+    )
+    _logger.info(f'保存分析结果完成。')
+    _logger.info(f"{entity_id} all saved")
 
 
 dag = DAG(
