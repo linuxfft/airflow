@@ -18,14 +18,14 @@ class CurveAnalysisListWidget(AirflowModelListWidget):
 class TrackNoNotNullFilter(BaseFilter):
     def apply(self, query, func):  # noqa
         result = self.model
-        ret = query.filter(result.car_code.isnot(None)).distinct(result.car_code).group_by(result)
+        ret = query.filter(result.car_code.isnot(None)).distinct(result.car_code)
         return ret
 
 
 class BoltNoNotNullFilter(BaseFilter):
     def apply(self, query, func):  # noqa
         result = self.model
-        return query.filter(result.bolt_number.isnot(None)).distinct(result.bolt_number).group_by(result)
+        return query.filter(result.bolt_number.isnot(None)).distinct(result.bolt_number)
 
 
 class CurveAnalysisControllerView(AirflowModelView):
@@ -120,4 +120,8 @@ curve_ana_bolt_no_package = {"name": permissions.RESOURCE_ANALYSIS_VIA_BOLT_NO,
 
 class CurveAnalysisControllerViewPlugin(AirflowPlugin):
     name = "curve_analysis_controller_view"
-    appbuilder_views = [curve_ana_controller_package, curve_ana_track_no_package, curve_ana_bolt_no_package]
+    appbuilder_views = [
+        curve_ana_controller_package,
+        curve_ana_track_no_package,
+        curve_ana_bolt_no_package
+    ]
