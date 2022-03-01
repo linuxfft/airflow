@@ -106,10 +106,6 @@ class ClsResultStorage(ClsEntity):
             return None
         for table in data:
             ret = table.as_dict()
-            if ret.get('step_results'):
-                ret['step_results'] = json.loads(ret['step_results'])
-            if ret.get('controller'):
-                ret['controller'] = ret.get('controller').to_dict()
             return ret
         return None
 

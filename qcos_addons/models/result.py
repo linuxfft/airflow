@@ -8,6 +8,7 @@ from qcos_addons.models.base import Base
 from distutils.util import strtobool
 from sqlalchemy import text, ForeignKey, sql
 import os
+import json
 
 ENV_TIMESCALE_ENABLE = strtobool(os.environ.get('ENV_TIMESCALE_ENABLE', 'false'))
 
@@ -89,6 +90,10 @@ class ResultModel(Base):
         if v:
             if v.get('_sa_instance_state'):
                 v.pop('_sa_instance_state')
+            if v.get('step_results'):
+                v['step_results'] = json.loads(v['step_results'])
+            if v.get('controller'):
+                v['controller'] = v.get('controller').to_dict()
             return v
         else:
             return dict()
