@@ -45,7 +45,8 @@ class TighteningController(Base):
         v: dict = self.__dict__
         if v:
             v.pop('id')
-            v.pop('_sa_instance_state')
+            if v.get('_sa_instance_state'):
+                v.pop('_sa_instance_state')
         return v
 
     @classmethod
