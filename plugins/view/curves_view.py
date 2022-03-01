@@ -44,7 +44,8 @@ class CurvesView(AirflowModelView):
     search_columns = ['update_time', 'car_code', 'error_tag', 'measure_result', 'result', 'final_state']
     label_columns = {
         'error_tag': lazy_gettext('Error Tags'),
-        'update_time': lazy_gettext('Update Time'), 'car_code': lazy_gettext(environ.get('ENV_CAR_CODE_TEXT', 'Car Code')),
+        'update_time': lazy_gettext('Update Time'),
+        'car_code': lazy_gettext(environ.get('ENV_CAR_CODE_TEXT', 'Car Code')),
         'measure_result': lazy_gettext('Measure Result'), 'result': lazy_gettext('Result'),
         'final_state': lazy_gettext('Final State')
     }
@@ -132,6 +133,12 @@ class CurvesView(AirflowModelView):
                 'date': str(result.get('update_time'))
             }
         widgets = self._list()
+        if view_config is None:
+            try:
+                from qcos_addons.constants import ENV_DEFAULT_DEVICE_VIEW_CONFIG
+                view_config = ENV_DEFAULT_DEVICE_VIEW_CONFIG
+            except Exception as e:
+                _logger.error(e)
         cur_key_map = json.loads(view_config).get('curve_key_map') if view_config is not None else {}
         cur_unit_map = json.loads(view_config).get('curve_unit_map') if view_config is not None else {}
 

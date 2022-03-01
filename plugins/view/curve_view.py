@@ -62,12 +62,18 @@ class CurveView(BaseView):
         ENV_CURVE_GRAPH_SHOW_RANGE = os.environ.get('CURVE_GRAPH_SHOW_RANGE', False)
         show_range = (ENV_CURVE_GRAPH_SHOW_RANGE is True) or (ENV_CURVE_GRAPH_SHOW_RANGE == 'True')
         can_verify = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_RESULT)
-        view_config = json.loads(controller.device_type.view_config) \
-            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else {}
-        cur_key_map = view_config.get('curve_key_map', {})
-        cur_unit_map = view_config.get('curve_unit_map', {})
-        display_keys = view_config.get('display_keys', {})
-        translation_mapping = view_config.get('translation_mapping', {})
+        view_config = controller.device_type.view_config \
+            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else None
+        if view_config is None:
+            try:
+                from qcos_addons.constants import ENV_DEFAULT_DEVICE_VIEW_CONFIG
+                view_config = ENV_DEFAULT_DEVICE_VIEW_CONFIG
+            except Exception as e:
+                _logger.error(e)
+        cur_key_map = json.loads(view_config).get('curve_key_map', {})
+        cur_unit_map = json.loads(view_config).get('curve_unit_map', {})
+        display_keys = json.loads(view_config).get('display_keys', {})
+        translation_mapping = json.loads(view_config).get('translation_mapping', {})
 
         return self.render_template('curve.html', result=result,
                                     curve=curve, analysisErrorMessageMapping=analysis_error_message_mapping,

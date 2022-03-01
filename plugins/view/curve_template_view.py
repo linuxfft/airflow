@@ -137,10 +137,15 @@ class CurveTemplateView(AirflowModelView):
         from qcos_addons.models.tightening_controller import TighteningController
         controller_name = bolt_no.split('_')[0]
         controller = TighteningController.find_controller(controller_name)
-        cur_key_map = json.loads(controller.device_type.view_config).get('curve_key_map', {}) \
-            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else {}
-        cur_unit_map = json.loads(controller.device_type.view_config).get('curve_unit_map', {}) \
-            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else {}
+        view_config = controller.device_type.view_config if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else None
+        if view_config is None:
+            try:
+                from qcos_addons.constants import ENV_DEFAULT_DEVICE_VIEW_CONFIG
+                view_config = ENV_DEFAULT_DEVICE_VIEW_CONFIG
+            except Exception as e:
+                _logger.error(e)
+        cur_key_map = json.loads(view_config).get('curve_key_map', {})
+        cur_unit_map = json.loads(view_config).get('cur_unit_map', {})
         return self.render_template('curve_template.html', can_delete=can_delete,
                                     curve_template=curve_template, bolt_no=bolt_no,
                                     craft_type=craft_type, cur_key_map=cur_key_map, cur_unit_map=cur_unit_map)
