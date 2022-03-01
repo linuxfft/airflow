@@ -103,4 +103,4 @@ class TighteningController(Base):
         controller_data = TighteningController.find_controller(controller_name)
         if not controller_data:
             raise Exception('未找到控制器数据: {}'.format(controller_name))
-        return controller_data.to_dict().get('line_code', None), controller_data.get('id')
+        return controller_data.to_dict().get('line_code', None), controller_data.to_dict().get('id')
