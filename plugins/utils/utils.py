@@ -120,6 +120,19 @@ def get_curve_args(connection_key='qcos_minio'):
     }
 
 
+def get_template_args(connection_key='qcos_minio'):
+    from airflow.models.connection import Connection
+    oss = Connection.get_connection_from_secrets(connection_key)
+    extra = oss.extra_dejson if oss else {}
+    return {
+        "bucket": extra.get('bucket', 'bck1'),
+        "endpoint": '{}:{}'.format(oss.host, oss.port) if oss else None,
+        "access_key": oss.login if oss else None,
+        "secret_key": oss.get_password() if oss else None,
+        "secure": extra.get('secure', False),
+    }
+
+
 def get_curve_entity_ids(bolt_number=None, craft_type=None):
     from qcos_addons.models.result import ResultModel
     results = ResultModel.list_results(craft_type, bolt_number)
