@@ -165,6 +165,19 @@ class ResultStorageHook(BaseHook, ABC):
     @staticmethod
     def on_curve_receive(params):
         should_store = True  # 目前总是为True，未来视情况更改
+        result = params.get('result')
+        controller_name = result.get('controller_name', None)
+        job = result.get('job', None)
+        batch_count = result.get('batch_count', None)
+        pset = result.get('pset', None)
+        bolt_number = generate_bolt_number(controller_name, job, batch_count, pset)
+        try:
+            craft_type = get_craft_type(bolt_number)
+            _logger.info("craft_type: {}".format(craft_type))
+        except Exception as e:
+            _logger.error(e)
+            craft_type = 1
+            _logger.info('使用默认工艺类型：{}'.format(craft_type))
         if should_store:
             entity_id = params.get('entity_id')
 
