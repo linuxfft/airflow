@@ -142,10 +142,6 @@ def doLoadCurveTmplsTask(**kwargs):
     _logger.debug("Loading Curve Templates to Redis...")
     doLoadTmpls2Redis(template_names)
     _logger.debug("Load Curve Templates to Redis Success!")
-    _logger.debug("测试保存模板")
-    template_args = get_template_args()
-    ct = ClsTmplStorage(**template_args)
-    ct.write_tmpl()
     _logger.debug("测试完毕")
     #加载完成后不再通知CAS,会自动获取
     #_logger.debug("informing training server to update templates...")

@@ -118,9 +118,19 @@ class ClsTmplStorage(ClsEntity):
         self._fileName = self.get_file_name(entity_id)
         return self._fileName
 
-    def write_tmpl(self, **kwargs):
-        template_names = kwargs.get('template_names', None)
-        _logger.debug('kwargs: {0}'.format(kwargs))
+    def write_tmpl(self, template):
+        template_names = template.get('template_names', None)
+        _logger.debug('kwargs: {0}'.format(template))
+        templates: Dict = ClsTmplStorage.get_templates_from_variables(template_names)
+        self.ensure_bucket(self._bucket)
+        _logger.debug('bucket确认完毕，正在写入')
+        data = json.dumps(templates)
+        tmpl = data.encode('utf-8')
+        f = io.BytesIO(tmpl)
+        self._client.put_object(self._bucket, self.object_name, f, length=len(data))
+        _logger.info('写入完成!')
+
+    def write_tmpl_name(self, template_names):
         templates: Dict = ClsTmplStorage.get_templates_from_variables(template_names)
         self.ensure_bucket(self._bucket)
         _logger.debug('bucket确认完毕，正在写入')

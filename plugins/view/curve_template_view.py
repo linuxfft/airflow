@@ -1,4 +1,5 @@
 import json
+from typing import Dict
 
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 from airflow.plugins_manager import AirflowPlugin
@@ -11,6 +12,8 @@ from airflow.exceptions import AirflowNotFoundException
 import logging
 from airflow.api.common.experimental import trigger_dag as trigger
 from plugins.common import AirflowModelView
+from plugins.entities.template_stroage import ClsTmplStorage
+from plugins.utils.utils import get_template_args
 from qcos_addons.models.curve_template import CurveTemplateModel
 import uuid
 from flask_appbuilder.actions import action
@@ -248,7 +251,11 @@ class CurveTemplateView(AirflowModelView):
                     fail_count += 1
                 else:
                     suc_count += 1
+            template_args = get_template_args('qcos_minio')
+            ct = ClsTmplStorage(**template_args)
+            ct.write_tmpl(d)
             flash("{} Curve Template(s) successfully updated.".format(suc_count))
+            flash("{} Curve Template(s) successfully saved to minio.".format(suc_count))
             if fail_count:
                 flash("{} Curve Template(s) failed to be updated.".format(fail_count), 'error')
             self.update_redirect()
