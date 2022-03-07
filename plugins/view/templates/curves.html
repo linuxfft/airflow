@@ -67,8 +67,6 @@
                       <a
                               class="badge {{ 'badge-success' if result.measure_result=='OK' else ('badge-danger' if result.measure_result=='NOK' else 'badge-secondary') }}">{{ result.measure_result if result.measure_result else '无结果' }}</a>
                     </p>
-                    <p class="list-group-item-text ml-4"><span>{{ _(Measure Torque) }}：</span>{{ result.measure_torque }}</p>
-                    <p class="list-group-item-text ml-4"><span>{{ _(Measure Angle) }}：</span>{{ result.measure_angle }}</p>
                     {% if result.should_analyze != False %}
                       <p class="list-group-item-text ml-4"><span>{{ _('Result') }}：</span>
                         <a
