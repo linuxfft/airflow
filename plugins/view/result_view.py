@@ -31,6 +31,8 @@ class ResultModelView(AirflowModelView):
         'batch_count',
         'bolt_number',
         'measure_result',
+        'measure_torque',
+        'measure_angle',
         'result',
         'final_state'
     ]
@@ -46,6 +48,8 @@ class ResultModelView(AirflowModelView):
         'batch_count',
         'bolt_number',
         'measure_result',
+        'measure_torque',
+        'measure_angle',
         'result',
         'final_state'
     ]
@@ -61,6 +65,8 @@ class ResultModelView(AirflowModelView):
         'batch_count': lazy_gettext('Batch Count'),
         'bolt_number': lazy_gettext('Bolt Number'),
         'measure_result': lazy_gettext('Measure Result'),
+        'measure_torque':lazy_gettext('Measure Torque'),
+        'measure_angle': lazy_gettext('Measure Angle'),
         'result': lazy_gettext('Result'),
         'final_state': lazy_gettext('Final State'),
     }

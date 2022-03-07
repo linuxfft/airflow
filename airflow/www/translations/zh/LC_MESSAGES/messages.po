@@ -525,11 +525,21 @@ msgid "Measure Result"
 msgstr "测量结果"
 
 #: plugins/view/curves_view.py:48 plugins/view/result_view.py:64
+#: plugins/view/templates/curves.html:66
+msgid "Measure Torque"
+msgstr "测量扭矩"
+
+#: plugins/view/curves_view.py:48 plugins/view/result_view.py:65
+#: plugins/view/templates/curves.html:66
+msgid "Measure Angle"
+msgstr "测量角度"
+
+#: plugins/view/curves_view.py:48 plugins/view/result_view.py:66
 #: plugins/view/templates/curves.html:71
 msgid "Result"
 msgstr "分析结果"
 
-#: plugins/view/curves_view.py:49 plugins/view/result_view.py:65
+#: plugins/view/curves_view.py:49 plugins/view/result_view.py:67
 #: plugins/view/templates/curves.html:75
 msgid "Final State"
 msgstr "最终结果"
