@@ -104,17 +104,35 @@ class ClsTmplStorage(ClsEntity):
         except ResponseError as err:
             raise err
 
-    def write_tmpl(self, template):
-        template_names = template.get('template_names', None)
-        _logger.debug('kwargs: {0}'.format(template))
-        objects = self.get_templates_from_variables(template_names)
-        file_names = list(objects.keys())
+    def count_tmpl(self, template: Dict):
+        file_names = list(template.keys())
+        lth = len(file_names)
+        return lth
+
+    def write_tmpl(self, template: Dict):
+        # template_names = template.get('template_names', None)
+        # _logger.debug('kwargs: {0}'.format(template))
+        # objects = self.get_templates_from_variables(template_names)
+        file_names = list(template.keys())
         lth = len(file_names)
         self.ensure_bucket(self._bucket)
         _logger.debug('bucket确认完毕，正在写入')
         for i in range(lth):
-            data = json.dumps(objects[file_names[i]])
+            data = json.dumps(template[file_names[i]])
             tmpl = data.encode('utf-8')
             f = io.BytesIO(tmpl)
             self._client.put_object(self._bucket, file_names[i], f, length=len(data))
+        _logger.info('写入完成!')
+
+    def write_tmpl_single(self, template: Dict):
+        # template_names = template.get('template_names', None)
+        # _logger.debug('kwargs: {0}'.format(template))
+        # objects = self.get_templates_from_variables(template_names)
+        file_names = template.keys()
+        self.ensure_bucket(self._bucket)
+        _logger.debug('bucket确认完毕，正在写入')
+        data = json.dumps(template)
+        tmpl = data.encode('utf-8')
+        f = io.BytesIO(tmpl)
+        self._client.put_object(self._bucket, file_names, f, length=len(data))
         _logger.info('写入完成!')

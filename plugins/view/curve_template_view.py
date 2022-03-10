@@ -245,15 +245,16 @@ class CurveTemplateView(AirflowModelView):
             suc_count = fail_count = 0
             for k, v in d.items():
                 try:
-                    CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+                    # CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+                    template_args = get_template_args('qcos_minio')
+                    ct = ClsTmplStorage(**template_args)
+                    ct.count_tmpl(d)
+                    ct.write_tmpl(d)
                 except Exception as e:
                     logging.info('Curve Template import failed: {}'.format(repr(e)))
                     fail_count += 1
                 else:
                     suc_count += 1
-            template_args = get_template_args('qcos_minio')
-            ct = ClsTmplStorage(**template_args)
-            ct.write_tmpl(d)
             flash("{} Curve Template(s) successfully updated.".format(suc_count))
             flash("{} Curve Template(s) successfully saved to minio.".format(suc_count))
             if fail_count:
