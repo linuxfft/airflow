@@ -26,10 +26,10 @@ from qcos_addons.access_log.log import access_log
 _logger = logging.getLogger(__name__)
 
 
-def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=None, mode=None, group_center_idx=None,
+def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=None, mode=None, group_idx=None,
                                         curve_idx=None):
     if version is None or not bolt_no or not craft_type \
-        or mode is None or group_center_idx is None or curve_idx is None:
+        or mode is None or group_idx is None or curve_idx is None:
         raise Exception('参数错误')
     template_name = '{}/{}'.format(bolt_no, craft_type)
     key, curve_template = CurveTemplateModel.get_fuzzy_active(template_name,
@@ -50,7 +50,7 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
     groups = mode_cluster.get('curve_template_group_array', None)
     if groups is None:
         raise Exception('无法找到对应模式的曲线组')
-    group = groups[group_center_idx]  # fixme
+    group = groups[group_idx]
     if group is None:
         raise Exception('无法找到对应模式的曲线组')
     template_data_array = group.get('template_data_array', None)
@@ -58,8 +58,13 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
         raise Exception('无法找到对应模式的曲线组')
     if template_data_array[curve_idx]:
         del template_data_array[curve_idx]
+    center = group.get('template_centroid_index', 0)
+    if curve_idx <= center:
+        # 如果删除的曲线在中心之前或就是中心曲线，移动中心曲线的下标，
+        # fixme: 实际上删除曲线后曲线的中心应当变更，需要调用算法库更新模板
+        group['template_centroid_index'] = center - 1 if center >= 1 else 0
     if len(template_data_array) == 0:
-        del groups[group_center_idx]
+        del groups[group_idx]
         mode_cluster['curve_template_groups_k'] -= 1
     if mode_cluster['curve_template_groups_k'] == 0:
         del template_cluster[mode]
@@ -161,10 +166,10 @@ class CurveTemplateView(AirflowModelView):
         params = request.get_json(force=True)
         version = params.get('version', None)
         mode = params.get('mode', None)
-        group_center_idx = params.get('group_center_idx', None)
+        group_idx = params.get('group_idx', None)
         curve_idx = params.get('curve_idx', None)
         try:
-            new_template = do_remove_curve_from_curve_template(bolt_no, craft_type, version, mode, group_center_idx,
+            new_template = do_remove_curve_from_curve_template(bolt_no, craft_type, version, mode, group_idx,
                                                                curve_idx)
             return {'data': new_template}
         except Exception as e:

@@ -78,18 +78,18 @@
         renderChart();
       },
       group: (event, data) => {
-        renderCurves = curves.filter(c => c.mode === data.mode && c.centroid === data.centroid);
+        renderCurves = curves.filter(c => c.mode === data.mode && c.groupIdx === data.groupIdx);
         renderChart();
       },
       curve: (event, data) => {
         renderCurves = curves.filter(c => c.mode === data.mode
-          && c.centroid === data.centroid
+          && c.groupIdx === data.groupIdx
           && c.idx === data.idx);
         renderChart();
       }
     };
 
-    function doRemoveCurve(version, mode, groupCenterIdx, curveIdx) {
+    function doRemoveCurve(version, mode, groupIdx, curveIdx) {
       $.ajax({
         type: 'PUT',
         url: "{{ url_for('CurveTemplateView.remove_curve_template',bolt_no=bolt_no, craft_type=craft_type ) }}",
@@ -97,7 +97,7 @@
           csrf_token: '{{ csrf_token() }}',
           version,
           mode,
-          group_center_idx: groupCenterIdx,
+          group_idx: groupIdx,
           curve_idx: curveIdx
         }),
         headers: {'X-CSRFToken': '{{ csrf_token() }}'},
@@ -128,7 +128,7 @@
           doRemoveCurve(
             curveTemplate.version || 0,
             curve.mode,
-            curve.centroid,
+            curve.groupIdx,
             curve.idx,
           );
         },
@@ -202,20 +202,20 @@
         templateGroup.forEach((group, groupIdx) => {
           const {template_data_array: curvesData, template_centroid_index: centroid} = group;
           const gRow = {
-            text: `<span style="user-select: none;">曲线聚类-${mode}-${centroid}</span>`,
+            text: `<span style="user-select: none;">模式${mode}-曲线聚类${groupIdx}, 中心：曲线${centroid}</span>`,
             nodes: [],
             mode,
-            centroid,
+            groupIdx,
             role: treeRoles.group
           };
           curvesData.forEach((curve, idx) => {
             const {template_angle: cur_w, template_torque: cur_m, start_point} = curve;
             const color = randomColor();
-            const name = `曲线-${mode}-${centroid}-${idx}`;
+            const name = `模式${mode}-曲线聚类${groupIdx}-曲线${idx}`;
             curves.push({
               start_point,
               mode,
-              centroid,
+              groupIdx,
               idx,
               cur_w,
               cur_m,
@@ -235,7 +235,7 @@
               name,
               curveColor: color,
               role: treeRoles.curve,
-              centroid,
+              groupIdx,
               idx,
               mode
             });
