@@ -1,6 +1,5 @@
 import io
 import json
-import uuid
 from typing import Dict, Optional
 
 import urllib3
@@ -9,8 +8,6 @@ from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from tablib import Dataset
 
 from plugins.entities.entity import ClsEntity
-from plugins.utils.utils import get_curve_template_name
-from qcos_addons.models import CurveTemplateModel
 
 from plugins.utils.logger import generate_logger
 import threading
@@ -60,18 +57,6 @@ class ClsTmplStorage(ClsEntity):
     def endpoint(self):
         return self._url
 
-    def get_templates_from_variables(self, template_names=None) -> Dict:
-        # 如果没有指定template_names，加载所有模板
-        if not template_names or len(template_names) == 0:
-            return CurveTemplateModel.get_all_active_curve_tmpls()
-        # 加载指定模板
-        templates = {}
-        for t in template_names:
-            key, val = CurveTemplateModel.get_fuzzy_active(t, deserialize_json=True, default_var=None)
-            template_name = get_curve_template_name(key)
-            templates[template_name] = val
-        return templates
-
     def connect(self):
         if not self.endpoint:
             raise BaseException(u'{} 地址未定义'.format(__class__.__name__))
@@ -114,14 +99,16 @@ class ClsTmplStorage(ClsEntity):
         # _logger.debug('kwargs: {0}'.format(template))
         # objects = self.get_templates_from_variables(template_names)
         file_names = list(template.keys())
-        lth = len(file_names)
+        file_name = []
+        for i in range(len(file_names)):
+            file_name.append(str(file_names[i]).split('@@')[0])
         self.ensure_bucket(self._bucket)
         _logger.debug('bucket确认完毕，正在写入')
-        for i in range(lth):
+        for i in range(len(file_name)):
             data = json.dumps(template[file_names[i]])
             tmpl = data.encode('utf-8')
             f = io.BytesIO(tmpl)
-            self._client.put_object(self._bucket, file_names[i], f, length=len(data))
+            self._client.put_object(self._bucket, file_name[i], f, length=len(data))
         _logger.info('写入完成!')
 
     def write_tmpl_single(self, template: Dict):
@@ -129,10 +116,30 @@ class ClsTmplStorage(ClsEntity):
         # _logger.debug('kwargs: {0}'.format(template))
         # objects = self.get_templates_from_variables(template_names)
         file_names = template.keys()
+        file_name = str(file_names[0]).split('@@')[0]
         self.ensure_bucket(self._bucket)
         _logger.debug('bucket确认完毕，正在写入')
         data = json.dumps(template)
         tmpl = data.encode('utf-8')
         f = io.BytesIO(tmpl)
-        self._client.put_object(self._bucket, file_names, f, length=len(data))
+        self._client.put_object(self._bucket, file_name, f, length=len(data))
         _logger.info('写入完成!')
+
+    def get_tmpl_single(self, tmpl_key):
+        self.ensure_bucket(self._bucket)
+        file_name = tmpl_key
+        data = self._client.get_object(self._bucket, file_name)
+        a = json.loads(data)
+        return data
+
+    # 获取全部模板
+    def get_tmpl(self):
+        self.ensure_bucket(self._bucket)
+        file_names = self.bucket_list_files(self._bucket)
+        lth = len(file_names)
+        tmpl = {}
+        for i in range(lth):
+            data = self._client.get_object(self._bucket, file_names[i])
+            a = json.loads(data)
+            tmpl[a.key] = a.value
+        return tmpl

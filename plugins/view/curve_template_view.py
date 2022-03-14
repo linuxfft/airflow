@@ -35,10 +35,7 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
         or mode is None or group_center_idx is None or curve_idx is None:
         raise Exception('参数错误')
     template_name = '{}/{}'.format(bolt_no, craft_type)
-    key, curve_template = CurveTemplateModel.get_fuzzy_active(template_name,
-                                                              deserialize_json=True,
-                                                              default_var=None
-                                                              )
+    key, curve_template = CurveTemplateModel.get_fuzzy_active(template_name)
     template_version = curve_template.get('version', 0)
     if version != template_version:
         raise Exception('曲线模板信息过期，请刷新页面')
@@ -127,10 +124,8 @@ class CurveTemplateView(AirflowModelView):
     @expose('/<string:bolt_no>/<string:craft_type>')
     @access_log('VIEW', 'CURVE_TEMPLATE', '查看曲线模板页面')
     def view_curve_template(self, bolt_no, craft_type):
-        curve_template = CurveTemplateModel.get_fuzzy_active('{}/{}'.format(bolt_no, craft_type),
-                                                             deserialize_json=True,
-                                                             default_var=None
-                                                             )[1]
+        curve_template = CurveTemplateModel.\
+            get_fuzzy_active('{}/{}'.format(bolt_no, craft_type))
         _has_access = self.appbuilder.sm.has_access
         can_delete = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CURVE_TEMPLATE)
 
@@ -245,10 +240,9 @@ class CurveTemplateView(AirflowModelView):
             suc_count = fail_count = 0
             for k, v in d.items():
                 try:
-                    # CurveTemplateModel.set(k, v, serialize_json=isinstance(v, dict))
+                    CurveTemplateModel.set(k, v)
                     template_args = get_template_args('qcos_minio')
                     ct = ClsTmplStorage(**template_args)
-                    ct.count_tmpl(d)
                     ct.write_tmpl(d)
                 except Exception as e:
                     logging.info('Curve Template import failed: {}'.format(repr(e)))

@@ -87,7 +87,7 @@ def remove_outdated_templates():
     for key in keys:
         name = parse_template_name(key.decode())
         try:
-            k, v = CurveTemplateModel.get_fuzzy_active(name, deserialize_json=True)
+            k, v = CurveTemplateModel.get_fuzzy_active(name)
             _logger.info('模板{}在使用中'.format(k))
         except:
             _logger.info('模板{}已过期，将从redis中删除'.format(name))

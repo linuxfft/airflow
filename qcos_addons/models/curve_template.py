@@ -1,5 +1,7 @@
 import json
 from typing import Any, List
+
+from plugins.entities.template_stroage import ClsTmplStorage
 from qcos_addons.models.base import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean
 from airflow.utils.db import provide_session
@@ -86,29 +88,19 @@ class CurveTemplateModel(Base):
         session.flush()
 
     @classmethod
-    @provide_session
     def get_all_active_curve_tmpls(cls, session=None):
-        tmpls: List[cls] = session.query(cls).filter(cls.active).all()
-        ret = {}
-        for tmpl in tmpls:
-            ret[tmpl.key] = tmpl.val
-        return ret
+        from plugins.utils.utils import get_template_args
+        template_args = get_template_args('qcos_minio')
+        ct = ClsTmplStorage(**template_args)
+        tmpl = ct.get_tmpl()
+        return tmpl
 
     @classmethod
-    @provide_session
-    def get_fuzzy_active(
-        cls,
-        key,  # type: str
-        deserialize_json=False,  # type: bool
-        session=None,
-        default_var=__NO_DEFAULT_SENTINEL
-    ):
-        key_p = "%{}%".format(key)
-        obj = session.query(cls).filter(cls.key.like(key_p), cls.active).first()
+    def get_fuzzy_active(cls, key):
+        from plugins.utils.utils import get_template_args
+        template_args = get_template_args('qcos_minio')
+        ct = ClsTmplStorage(**template_args)
+        obj = ct.get_tmpl_single(key)
         if obj is None:
-            if default_var is not cls.__NO_DEFAULT_SENTINEL:
-                return key, default_var
             raise KeyError('Curve Template {} does not exist'.format(key))
-        if deserialize_json:
-            return obj.key, json.loads(obj.val)
         return obj.key, obj.val
