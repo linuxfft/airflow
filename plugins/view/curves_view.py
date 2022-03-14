@@ -2,9 +2,6 @@ from flask_appbuilder.urltools import get_filter_args, get_page_args
 import http
 import zipfile
 import json
-from flask_login import current_user
-from airflow.settings import TIMEZONE
-from datetime import datetime
 from typing import List
 from flask import Response
 from flask import send_file
@@ -15,7 +12,7 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowNotFoundException
 from qcos_addons.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
-from plugins.utils.utils import get_curve_entity_ids, get_curve, get_result, get_results, get_curves
+from plugins.utils.utils import get_curve_entity_ids, get_result, get_results, get_curves
 import logging
 import os
 import pandas as pd
@@ -156,15 +153,12 @@ class CurvesView(AirflowModelView):
         track_no = request.args.get('track_no', default=None)
         bolt_no = request.args.get('bolt_no', default=None)
         controller = request.args.get('controller', default=None)
-        analysis_type = request.args.get('analysis_type', default=None)
         ret = None
-        if not analysis_type:
-            raise AirflowNotFoundException
-        if analysis_type == 'track_no' and track_no:
+        if track_no:
             ret = self.do_render(track_no=track_no)
-        elif analysis_type == 'bolt_no' and bolt_no:
+        elif bolt_no:
             ret = self.do_render(bolt_no=bolt_no)
-        elif analysis_type == 'controller' and controller:
+        elif controller:
             ret = self.do_render(controller=controller)
         if not ret:
             raise AirflowNotFoundException

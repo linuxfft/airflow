@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask import flash, make_response, request
 import json
-from flask_babel import lazy_gettext, gettext
-from datetime import datetime
-from flask_login import current_user
+from flask_babel import lazy_gettext
 from flask_appbuilder.actions import action
 from flask_appbuilder import expose
 from flask import redirect
-from wtforms.validators import InputRequired
 
 from plugins.common import AirflowModelView
 from airflow.plugins_manager import AirflowPlugin
-from airflow.settings import TIMEZONE
 from airflow.www.decorators import action_logging
 from flask_wtf.csrf import CSRFProtect
 import logging

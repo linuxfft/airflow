@@ -14,17 +14,17 @@
           <center>
             {{ lib.btn_crud(can_show, can_edit, can_delete, pk, modelview_name, filters) }}
           </center>
-          {% if modelview_name == 'CurveAnalysisBoltNoView' %}
-            <a href="{{ url_for('CurveTemplateView.view_curve_template',bolt_no=item.bolt_number,craft_type='1') }}"
+          {% if to_curve_templates %}
+            <a href="{{ url_for('CurveTemplateView.view_curve_template', **get_templates_filters(item)) }}"
                target="_blank" style="display:block">查看曲线模板</a>
           {% endif %}
-          {% if modelview_name == 'CurveAnalysisTrackNoView' %}
-            <a href="{{ url_for('CurvesView.view_curves_analysis',track_no=item.car_code, analysis_type='track_no') }}"
+          {% if to_curves %}
+            <a href="{{ url_for('CurvesView.view_curves_analysis', **get_curves_filters(item)) }}"
                target="_blank" style="display:block">查看相关曲线</a>
           {% endif %}
-          {% if modelview_name == 'CurveAnalysisBoltNoView' %}
-            <a href="{{ url_for('CurvesView.view_curves_analysis',bolt_no=item.bolt_number, analysis_type='bolt_no') }}"
-               target="_blank" style="display:block">查看相关曲线</a>
+          {% if to_results %}
+            <a href="{{ url_for('ResultModelView.list', **get_results_filters(item)) }}"
+               target="_blank" style="display:block">查看相关结果</a>
           {% endif %}
         </td>
       {% endif %}
