@@ -156,7 +156,7 @@
       return data;
     }
 
-    function genMarkLine(dataKey,  xk, yk, name, value, color = null) {
+    function genMarkLine(dataKey, xk, yk, name, value, color = null, labelPosition = 'insideEndTop') {
       if (Number.isNaN(+value)) {
         return null;
       }
@@ -173,6 +173,10 @@
         [dataAxis]: +value,
         lineStyle: {
           color: color
+        },
+        label: {
+          position: labelPosition,
+          color: color
         }
       };
     }
@@ -187,16 +191,16 @@
           return markLines;
         }
         if (dataKey === 'cur_w') {
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_max, result.angle_max, 'orange'));
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_min, result.angle_min, 'orange'));
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_target, result.angle_target, 'green'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_max, result.angle_max, 'orange', 'insideStartTop'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_min, result.angle_min, 'orange', 'insideStartTop'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_target, result.angle_target, 'green', 'insideStartTop'));
           markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.measure_angle, result.measure_angle));
           return markLines;
         }
         if (dataKey === 'cur_m') {
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_max, result.torque_max, 'orange'));
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_min, result.torque_min, 'orange'));
-          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_target, result.torque_target, 'green'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_max, result.torque_max, 'orange', 'insideStartTop'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_min, result.torque_min, 'orange', 'insideStartTop'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_target, result.torque_target, 'green', 'insideStartTop'));
           markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.measure_torque, result.measure_torque));
           return markLines;
         }
@@ -225,23 +229,23 @@
       };
     }
 
-    function getMarkAreaByDataKey(xk ,yk) {
+    function getMarkAreaByDataKey(xk, yk) {
       if (!showRange) {
         return [];
       }
-      const dataKeys = [xk ,yk];
+      const dataKeys = [xk, yk];
       return dataKeys.reduce(function (markArea, dataKey) {
         if (dataKey !== 'cur_w' && dataKey !== 'cur_m') {
           return markArea;
         }
         if (dataKey === 'cur_w') {
-          markArea.push([genMarkArea(dataKey, xk ,yk, resultKeys.angle_max, result.angle_max, 'green'),
-            genMarkArea(dataKey, xk ,yk, resultKeys.angle_min, result.angle_min, 'orange')]);
+          markArea.push([genMarkArea(dataKey, xk, yk, resultKeys.angle_max, result.angle_max, 'green'),
+            genMarkArea(dataKey, xk, yk, resultKeys.angle_min, result.angle_min, 'orange')]);
           return markArea;
         }
         if (dataKey === 'cur_m') {
-          markArea.push([genMarkArea(dataKey, xk ,yk, resultKeys.torque_max, result.torque_max, 'green'),
-            genMarkArea(dataKey, xk ,yk, resultKeys.torque_min, result.torque_min, 'orange')]);
+          markArea.push([genMarkArea(dataKey, xk, yk, resultKeys.torque_max, result.torque_max, 'green'),
+            genMarkArea(dataKey, xk, yk, resultKeys.torque_min, result.torque_min, 'orange')]);
           return markArea;
         }
       }, []).filter(function (m) {
