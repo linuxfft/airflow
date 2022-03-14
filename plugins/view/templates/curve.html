@@ -24,7 +24,7 @@
         </table>
       </div>
     {% endcall %}
-    <div id="result-check-container" class="d-flex overflow-hidden flex-row" >
+    <div id="result-check-container" class="d-flex overflow-hidden flex-row">
       {{ result_panel.result_panel('采集结果', 'measure-result-card',result.measure_result) }}
       {% if result.should_analyze != False %}
         {{ result_panel.result_panel(
@@ -119,7 +119,7 @@
     let $errorTagInput = null;
 
     function getAllData() {
-      const {yKey} = chartParams;
+      const {xKey, yKey} = chartParams;
       return {
         series: yKey.map(function (yk, idx) {
           return {
@@ -133,10 +133,17 @@
             lineStyle: {
               width: 3
             },
+            markLine: {
+              data: getMarkLineByDataKey(xKey, yk)
+            },
+            markArea: {
+              data: getMarkAreaByDataKey(xKey, yk)
+            }
           };
         })
       };
     }
+
 
     function genData(yKey) {
       const {xKey} = chartParams;
@@ -149,15 +156,14 @@
       return data;
     }
 
-    function genMarkLine(dataKey, name, value, color = null) {
+    function genMarkLine(dataKey,  xk, yk, name, value, color = null) {
       if (Number.isNaN(+value)) {
         return null;
       }
-      const {xKey, yKey} = chartParams;
       let dataAxis = '';
-      if (xKey === dataKey) {
+      if (xk === dataKey) {
         dataAxis = 'xAxis';
-      } else if (yKey === dataKey) {
+      } else if (yk === dataKey) {
         dataAxis = 'yAxis';
       } else {
         return null;
@@ -171,42 +177,40 @@
       };
     }
 
-    function getMarkLineByDataKey() {
+    function getMarkLineByDataKey(xk, yk) {
       if (!showRange) {
         return [];
       }
-      const {xKey, yKey} = chartParams;
-      const dataKeys = [xKey, yKey];
+      const dataKeys = [xk, yk];
       return dataKeys.reduce(function (markLines, dataKey) {
         if (dataKey !== 'cur_w' && dataKey !== 'cur_m') {
           return markLines;
         }
         if (dataKey === 'cur_w') {
-          markLines.push(genMarkLine(dataKey, resultKeys.angle_max, result.angle_max, 'orange'));
-          markLines.push(genMarkLine(dataKey, resultKeys.angle_min, result.angle_min, 'orange'));
-          markLines.push(genMarkLine(dataKey, resultKeys.angle_target, result.angle_target, 'green'));
-          markLines.push(genMarkLine(dataKey, resultKeys.measure_angle, result.measure_angle));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_max, result.angle_max, 'orange'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_min, result.angle_min, 'orange'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.angle_target, result.angle_target, 'green'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.measure_angle, result.measure_angle));
           return markLines;
         }
         if (dataKey === 'cur_m') {
-          markLines.push(genMarkLine(dataKey, resultKeys.torque_max, result.torque_max, 'orange'));
-          markLines.push(genMarkLine(dataKey, resultKeys.torque_min, result.torque_min, 'orange'));
-          markLines.push(genMarkLine(dataKey, resultKeys.torque_target, result.torque_target, 'green'));
-          markLines.push(genMarkLine(dataKey, resultKeys.measure_torque, result.measure_torque));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_max, result.torque_max, 'orange'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_min, result.torque_min, 'orange'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.torque_target, result.torque_target, 'green'));
+          markLines.push(genMarkLine(dataKey, xk, yk, resultKeys.measure_torque, result.measure_torque));
           return markLines;
         }
       }, []).filter(Boolean);
     }
 
-    function genMarkArea(dataKey, name, value, color = null) {
+    function genMarkArea(dataKey, xk, yk, name, value, color = null) {
       if (Number.isNaN(+value)) {
         return null;
       }
-      const {xKey, yKey} = chartParams;
       let dataAxis = '';
-      if (xKey === dataKey) {
+      if (xk === dataKey) {
         dataAxis = 'xAxis';
-      } else if (yKey === dataKey) {
+      } else if (yk === dataKey) {
         dataAxis = 'yAxis';
       } else {
         return null;
@@ -221,24 +225,23 @@
       };
     }
 
-    function getMarkAreaByDataKey() {
+    function getMarkAreaByDataKey(xk ,yk) {
       if (!showRange) {
         return [];
       }
-      const {xKey, yKey} = chartParams;
-      const dataKeys = [xKey, yKey];
+      const dataKeys = [xk ,yk];
       return dataKeys.reduce(function (markArea, dataKey) {
         if (dataKey !== 'cur_w' && dataKey !== 'cur_m') {
           return markArea;
         }
         if (dataKey === 'cur_w') {
-          markArea.push([genMarkArea(dataKey, resultKeys.angle_max, result.angle_max, 'green'),
-            genMarkArea(dataKey, resultKeys.angle_min, result.angle_min, 'orange')]);
+          markArea.push([genMarkArea(dataKey, xk ,yk, resultKeys.angle_max, result.angle_max, 'green'),
+            genMarkArea(dataKey, xk ,yk, resultKeys.angle_min, result.angle_min, 'orange')]);
           return markArea;
         }
         if (dataKey === 'cur_m') {
-          markArea.push([genMarkArea(dataKey, resultKeys.torque_max, result.torque_max, 'green'),
-            genMarkArea(dataKey, resultKeys.torque_min, result.torque_min, 'orange')]);
+          markArea.push([genMarkArea(dataKey, xk ,yk, resultKeys.torque_max, result.torque_max, 'green'),
+            genMarkArea(dataKey, xk ,yk, resultKeys.torque_min, result.torque_min, 'orange')]);
           return markArea;
         }
       }, []).filter(function (m) {

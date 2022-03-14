@@ -71,12 +71,19 @@
     yKey: 'cur_m'
   };
 
+  var onChartParamsChange = null;
+
+  const extra_options = {};
+
   function setChartParams(xKey, yKey) {
     chartParams.xKey = xKey;
     if (yKey instanceof Array) {
       chartParams.yKey = yKey;
     } else {
       chartParams.yKey = [yKey];
+    }
+    if (onChartParamsChange && typeof onChartParamsChange === 'function') {
+      onChartParamsChange();
     }
   }
 
@@ -201,6 +208,7 @@
       })
     };
     options = Object.assign(options, getAllData(yKey, xKey));
+    options = Object.assign(options, extra_options);
     curveChart.setOption(options, true);
   }
 
