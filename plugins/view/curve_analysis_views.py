@@ -160,12 +160,16 @@ class CurveAnalysisBoltNoView(CurveAnalysisTrackNoView):
     datamodel = wwwutils.CustomSQLAInterface(ResultModel)
     list_title = lazy_gettext("Analysis Via Bolt No")
 
-    list_columns = ['bolt_number', 'craft_type']
+    list_columns = ['bolt_number', 'craft_type', 'controller_name', 'job', 'batch_count', 'pset']
 
-    search_columns = ['bolt_number']
+    search_columns = ['bolt_number', 'controller_name', 'job', 'batch_count', 'pset']
 
     label_columns = {
-        'bolt_number': lazy_gettext('Bolt Number')
+        'bolt_number': lazy_gettext('Bolt Number'),
+        'controller_name': lazy_gettext('Controller Name'),
+        'job': lazy_gettext('Job'),
+        'batch_count': lazy_gettext('Batch Count'),
+        'pset': lazy_gettext('PSET')
     }
 
     class_permission_name = permissions.RESOURCE_ANALYSIS_VIA_BOLT_NO
