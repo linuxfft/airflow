@@ -45,6 +45,10 @@ if not os.path.exists(CUSTOM_LOG_FILE_PATH_DIR):
 CUSTOM_LOG_MAX_BYTES = conf.get('logging', 'CUSTOM_LOG_MAX_BYTES')
 CUSTOM_LOG_BACKUP_COUNT = conf.get('logging', 'CUSTOM_LOG_BACKUP_COUNT')
 
+# task log config
+TASK_LOG_MAX_BYTES = conf.get('logging', 'TASK_LOG_MAX_BYTES', fallback='10485760')
+TASK_LOG_BACKUP_COUNT = conf.get('logging', 'TASK_LOG_BACKUP_COUNT', fallback='5')
+
 COLORED_LOG_FORMAT: str = conf.get('logging', 'COLORED_LOG_FORMAT')
 
 COLORED_LOG: bool = conf.getboolean('logging', 'COLORED_CONSOLE_LOG')
@@ -92,11 +96,13 @@ DEFAULT_LOGGING_CONFIG: Dict[str, Any] = {
             'backupCount': int(CUSTOM_LOG_BACKUP_COUNT)
         },
         'task': {
-            'class': 'airflow.utils.log.file_task_handler.FileTaskHandler',
+            'class': 'qcos_addons.utils.log.RotateFileTaskHandler.RotateFileTaskHandler',
             'formatter': 'airflow',
             'base_log_folder': os.path.expanduser(BASE_LOG_FOLDER),
             'filename_template': FILENAME_TEMPLATE,
             'filters': ['mask_secrets'],
+            'maxBytes': int(TASK_LOG_MAX_BYTES),  # 100MB
+            'backupCount': int(TASK_LOG_BACKUP_COUNT)
         },
         'processor': {
             'class': 'airflow.utils.log.file_processor_handler.FileProcessorHandler',
