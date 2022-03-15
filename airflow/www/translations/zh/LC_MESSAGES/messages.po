@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-24 12:55+0800\n"
+"POT-Creation-Date: 2022-03-15 09:54+0800\n"
 "PO-Revision-Date: 2020-03-23 18:12+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -542,15 +542,29 @@ msgstr "分析结果"
 msgid "Final State"
 msgstr "最终结果"
 
-#: plugins/view/error_tag_views.py:37 plugins/view/error_tag_views.py:58
+#: plugins/view/error_tag_views.py:41 plugins/view/error_tag_views.py:62
 msgid "Value"
 msgstr "值"
 
-#: plugins/view/error_tag_views.py:40 plugins/view/error_tag_views.py:58
+#: plugins/view/error_tag_views.py:44 plugins/view/error_tag_views.py:62
 msgid "Label"
 msgstr "标签"
 
 #: plugins/view/result_view.py:54
+#: plugins/view/error_tag_views.py:97
+#, fuzzy
+msgid "Export"
+msgstr "导出"
+
+#: plugins/view/error_tag_views.py:108
+msgid "Delete"
+msgstr "删除"
+
+#: plugins/view/error_tag_views.py:109
+msgid "Are you sure you want to delete selected records?"
+msgstr "确认*删除*选中的记录？"
+
+#: plugins/view/result_view.py:29
 msgid "Entity Id"
 msgstr "曲线编号"
 
