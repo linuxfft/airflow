@@ -113,16 +113,8 @@ class ResultModelView(AirflowModelView):
             return ','.join(ret)
         return ','.join(ret)
 
-    #
-    def type_f(attr):
-        ti_type = attr.get('type')
-        if ti_type == 'rework':
-            return lazy_gettext('Task Instance Rework')
-        return lazy_gettext('Task Instance Normal')
-
     formatters_columns = {
         'error_tag': error_tag_f,
-        'type': type_f,
     }
 
     @expose("/show/<pk>", methods=["GET"])

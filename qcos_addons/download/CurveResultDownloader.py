@@ -4,13 +4,14 @@ import zipfile
 from jinja2.utils import htmlsafe_json_dumps  # type: ignore
 
 from airflow.configuration import AIRFLOW_HOME
-from plugins.utils.utils import get_result, get_curves
+from plugins.utils.utils import get_results_model, get_curves
 import os
 import pandas as pd
-from airflow.models import Variable
 from typing import List
 from pathlib import Path
 import logging
+
+from qcos_addons.models import TighteningController
 from qcos_addons.models.result import ResultModel
 
 _logger = logging.getLogger(__name__)
@@ -43,36 +44,29 @@ class CurveResultDownloader:
         '''
         files = []
         base_path = cls.cache_folder()
-        result_table = pd.DataFrame()
-        result = None
         if results is None and entity_ids is None:
             raise Exception('未选中结果或曲线')
         if results is not None:
             result_table = pd.DataFrame(list(map(lambda r: r.as_dict(), results)))
-            result = results[0].as_dict()
             entity_ids = list(map(lambda r: r.entity_id, results))
         else:
-            for entity_id in entity_ids:
-                try:
-                    result = get_result(entity_id)
-                    tb = pd.DataFrame(result, index=[0])
-                    result_table = pd.concat([result_table, tb], ignore_index=True)
-                except Exception as e:
-                    _logger.error(e)
+            results = list(map(get_results_model, entity_ids))
+            result_table = pd.DataFrame(list(map(lambda r: r.as_dict(), results)))
+        result = results[0]
 
-        if result is not None and result.get('device_type') == 'servo_press':
-            result_keys_translation_mapping = Variable.get(
-                'servo_press_result_keys_translation_mapping',
-                deserialize_json=True,
-                default_var={}
-            )
-        else:
-            result_keys_translation_mapping = Variable.get(
-                'result_keys_translation_mapping',
-                deserialize_json=True,
-                default_var={}
-            )
-        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x, x), inplace=True)
+        controller = result.controller
+        if isinstance(controller, dict):
+            controller = TighteningController.find_controller(controller.get('controller_name'))
+        view_config = controller.device_type.view_config \
+            if controller is not None and controller.device_type is not None and controller.device_type.view_config is not None else None
+        if view_config is None:
+            try:
+                from qcos_addons.constants import ENV_DEFAULT_DEVICE_VIEW_CONFIG
+                view_config = ENV_DEFAULT_DEVICE_VIEW_CONFIG
+            except Exception as e:
+                _logger.error(e)
+        translation_mapping = json.loads(view_config).get('translation_mapping', {})
+        result_table.rename(columns=lambda x: translation_mapping.get(x, x), inplace=True)
         try:
             curves = get_curves(entity_ids)
             for curve in curves:

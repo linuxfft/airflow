@@ -84,12 +84,7 @@ class ClsResultStorage(ClsEntity):
         return self._write(result_body)
 
     def query_results(self):
-        if not self.entity_id:
-            raise BaseException(u'entity_id未指定')
-        if not isinstance(self.entity_id, list):
-            raise BaseException(u'entity_id必须是列表')
-
-        data = self._filter(ResultModel.entity_id.in_(self.entity_id))
+        data = self.query_results_model()
         ret = []
         if not data:
             return ret
@@ -97,6 +92,13 @@ class ClsResultStorage(ClsEntity):
             if isinstance(table, ResultModel):
                 ret.append(table.as_dict())
         return ret
+
+    def query_results_model(self):
+        if not self.entity_id:
+            raise BaseException(u'entity_id未指定')
+        if not isinstance(self.entity_id, list):
+            raise BaseException(u'entity_id必须是列表')
+        return self._filter(ResultModel.entity_id.in_(self.entity_id))
 
     def query_result(self):
         if not self.entity_id:
