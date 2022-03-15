@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import json
+from typing import List
+
+import pandas as pd
+
 from plugins.common import AirflowModelView
 from datetime import datetime
 from flask_login import current_user
@@ -90,24 +94,19 @@ class ErrorTagModelView(AirflowModelView):
     def post_delete(self, item):
         super(ErrorTagModelView, self).post_delete(item)
 
-    @action('export_analysis', "Export Statistics", '', single=False)
+    @action('export_analysis', lazy_gettext("Export"), '', single=False)
     @provide_session
-    def action_export_error_tag_statistics(self, error_tags, session=None):
-        ret = {}
-        d = json.JSONDecoder()
-        for var in error_tags:
-            try:
-                val = d.decode(var.val)
-            except Exception:
-                val = var.val
-            ret[var.key] = val
-
-        response = make_response(json.dumps(ret, sort_keys=True, indent=4, ensure_ascii=False))
-        response.headers["Content-Disposition"] = "attachment; filename=错误标签分析.json"
-        response.headers["Content-Type"] = "application/json; charset=utf-8"
+    def action_export_error_tag_statistics(self, error_tags: List[ErrorTag], session=None):
+        error_tags_list = []
+        for et in error_tags:
+            error_tags_list.append(ErrorTag.to_dict(et))
+        response = make_response(pd.DataFrame(error_tags_list).to_csv())
+        response.headers["Content-Disposition"] = "attachment; filename=Error Tags.csv"
+        response.headers["Content-Type"] = "application/octet-stream; charset=utf-8"
         return response
 
-    @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?',
+    @action('muldelete', lazy_gettext("Delete"),
+            lazy_gettext('Are you sure you want to delete selected records?'),
             single=False)
     @access_log('DELETE', 'ERROR_TAG', '删除选中错误标签')
     def action_muldelete(self, items):

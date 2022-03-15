@@ -22,10 +22,13 @@ class ErrorTag(Base):
 
     @staticmethod
     def _error_tag_data(error_tag):
+        return error_tag.to_dict()
+
+    def to_dict(self):
         return {
-            'id': error_tag.id,
-            'label': error_tag.label,
-            'value': error_tag.value
+            'id': self.id,
+            'label': self.label,
+            'value': self.value
         }
 
     @staticmethod
@@ -47,4 +50,3 @@ class ErrorTag(Base):
         objs = session.query(cls).all()
         dataArr = list(map(cls._error_tag_data, objs))
         return dataArr
-
