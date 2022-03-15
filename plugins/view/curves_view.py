@@ -1,8 +1,6 @@
 from flask_appbuilder.urltools import get_filter_args, get_page_args
 import http
-import zipfile
 import json
-from typing import List
 from flask import Response
 from flask import send_file
 from flask_appbuilder import expose
@@ -12,19 +10,15 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowNotFoundException
 from qcos_addons.models.error_tag import ErrorTag
 from airflow.www import utils as wwwutils
-from plugins.utils.utils import get_curve_entity_ids, get_result, get_results, get_curves
+from plugins.utils.utils import get_curve_entity_ids, get_results, get_curves
 import logging
-import os
-import pandas as pd
-from pathlib import Path
-from airflow.configuration import AIRFLOW_HOME
+from qcos_addons.download.CurveResultDownloader import CurveResultDownloader
 from airflow.plugins_manager import AirflowPlugin
 from plugins.common import AirflowModelView
 from flask import jsonify, request
 from airflow.exceptions import AirflowException
 from airflow.security import permissions
 from qcos_addons.access_log.log import access_log
-from airflow.models import Variable
 from os import environ
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +41,6 @@ class CurvesView(AirflowModelView):
         'final_state': lazy_gettext('Final State')
     }
 
-    download_static_folder = os.path.join(AIRFLOW_HOME, 'downloads/contents')
     class_permission_name = permissions.RESOURCE_CURVES
 
     base_permissions = [
@@ -65,7 +58,6 @@ class CurvesView(AirflowModelView):
 
     def __init__(self, *args, **kwargs):
         ret = super(CurvesView, self).__init__(**kwargs)
-        os.makedirs(self.download_static_folder, exist_ok=True)
 
     @access_log('VIEW', 'CURVES', '查看曲线对比页面')
     def do_render(self, track_no=None, bolt_no=None, controller=None, craft_type=None):
@@ -164,93 +156,13 @@ class CurvesView(AirflowModelView):
             raise AirflowNotFoundException
         return ret
 
-    def clean_download_static_files(self):
-        fds = ['*.json', '*.csv']
-        for fd in fds:
-            for f in Path(self.download_static_folder).glob(fd):
-                try:
-                    f.unlink()
-                except OSError as e:
-                    _logger.error(f"Error: {f} : {e}")
-
-    def do_download_contents(self, entities: List[str]) -> List[str]:
-        files = []
-        base_path = self.download_static_folder
-        result_table = pd.DataFrame()
-        for entity_id in entities:
-            try:
-                result = get_result(entity_id)
-                result["step_results"] = json.dumps(result['step_results'])
-                tb = pd.DataFrame(result, index=[0])
-                result_table = pd.concat([result_table, tb], ignore_index=True)
-            except Exception as e:
-                _logger.error(e)
-        if result.get('device_type') == 'servo_press':
-            result_keys_translation_mapping = Variable.get(
-                'servo_press_result_keys_translation_mapping',
-                deserialize_json=True,
-                default_var={}
-            )
-        else:
-            result_keys_translation_mapping = Variable.get(
-                'result_keys_translation_mapping',
-                deserialize_json=True,
-                default_var={}
-            )
-        result_table.rename(columns=lambda x: result_keys_translation_mapping.get(x, x), inplace=True)
-        try:
-            curves = get_curves(entities)
-            for curve in curves:
-                entity_id = curve.get('entity_id')
-                f = f'{entity_id}.csv'.replace('/', '@')
-                f = os.path.join(base_path, f)
-                dd = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in curve.items()]))
-                dd.to_csv(f, index=False, header=True)
-                files.append(f)
-        except Exception as e:
-            _logger.error(e)
-        try:
-            rf = os.path.join(base_path, "results.csv")
-            result_table.to_csv(rf, index=False, header=True)
-            files.append(rf)
-        except Exception as e:
-            _logger.error(e)
-        return files
-
-    def generate_download_zip_file(self, files: List[str]):
-        try:
-            fn = f'{self.download_static_folder}/curves.zip'
-            with zipfile.ZipFile(fn, 'w') as f:
-                for file in files:
-                    if not os.path.exists(file):
-                        continue
-                    f.write(file, arcname=os.path.basename(file), compress_type=zipfile.ZIP_DEFLATED)
-            return True
-        except Exception as e:
-            _logger.error(e)
-            return False
-
     @expose('/download/<string:entity_ids>')
     def download(self, entity_ids: str):
         if not entity_ids or entity_ids == 'None':
             return Response(status=http.HTTPStatus.OK)
-
-        fn = f'{self.download_static_folder}/curves.zip'
-        chk_file = Path(fn)
-
-        if chk_file.is_file():
-            chk_file.unlink()
         entity_ids = entity_ids.replace('@', '/')
         entities = entity_ids.split(',')
-        ll = len(entities)
-        if ll > 500:
-            return Response(status=http.HTTPStatus.BAD_REQUEST, response=f'请求的曲线数量过大,最大只能500条，当前为{ll}')
-        files = self.do_download_contents(entities)
-        if not files:
-            return Response(status=http.HTTPStatus.BAD_REQUEST, response=f'未生成数据')
-        ret = self.generate_download_zip_file(files)
-        if not ret:
-            return Response(status=http.HTTPStatus.BAD_REQUEST, response=f'未生成压缩包数据')
+        fn = CurveResultDownloader.prepare_download_file(entities)
         return send_file(fn, mimetype='application/zip', attachment_filename='curves.zip',
                          as_attachment=True)
 
