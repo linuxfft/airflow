@@ -162,7 +162,7 @@ class CurvesView(AirflowModelView):
             return Response(status=http.HTTPStatus.OK)
         entity_ids = entity_ids.replace('@', '/')
         entities = entity_ids.split(',')
-        fn = CurveResultDownloader.prepare_download_file(entities)
+        fn = CurveResultDownloader.prepare_download_file(entity_ids=entities)
         return send_file(fn, mimetype='application/zip', attachment_filename='curves.zip',
                          as_attachment=True)
 

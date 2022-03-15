@@ -90,9 +90,9 @@ class ResultModel(Base):
         if v:
             if v.get('_sa_instance_state'):
                 v.pop('_sa_instance_state')
-            if v.get('step_results'):
+            if v.get('step_results') and isinstance(v['step_results'], str):
                 v['step_results'] = json.loads(v['step_results'])
-            if v.get('controller'):
+            if v.get('controller') and not isinstance(v.get('controller'), dict):
                 v['controller'] = v.get('controller').to_dict()
             return v
         else:

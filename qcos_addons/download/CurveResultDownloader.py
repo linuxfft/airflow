@@ -11,6 +11,7 @@ from airflow.models import Variable
 from typing import List
 from pathlib import Path
 import logging
+from qcos_addons.models.result import ResultModel
 
 _logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class CurveResultDownloader:
     """
     用于批量下载曲线和结果
     """
+
     def __init__(self):
         pass
 
@@ -35,7 +37,7 @@ class CurveResultDownloader:
         return cls._cache_folder
 
     @classmethod
-    def cache_contents(cls, entity_ids: List[str]) -> List[str]:
+    def cache_contents(cls, entity_ids: List[str] = None, results: List[ResultModel] = None) -> List[str]:
         '''
         在服务器上缓存需要下载的曲线和结果
         '''
@@ -43,13 +45,21 @@ class CurveResultDownloader:
         base_path = cls.cache_folder()
         result_table = pd.DataFrame()
         result = None
-        for entity_id in entity_ids:
-            try:
-                result = get_result(entity_id)
-                tb = pd.DataFrame(result, index=[0])
-                result_table = pd.concat([result_table, tb], ignore_index=True)
-            except Exception as e:
-                _logger.error(e)
+        if results is None and entity_ids is None:
+            raise Exception('未选中结果或曲线')
+        if results is not None:
+            result_table = pd.DataFrame(list(map(lambda r: r.as_dict(), results)))
+            result = results[0].as_dict()
+            entity_ids = list(map(lambda r: r.entity_id, results))
+        else:
+            for entity_id in entity_ids:
+                try:
+                    result = get_result(entity_id)
+                    tb = pd.DataFrame(result, index=[0])
+                    result_table = pd.concat([result_table, tb], ignore_index=True)
+                except Exception as e:
+                    _logger.error(e)
+
         if result is not None and result.get('device_type') == 'servo_press':
             result_keys_translation_mapping = Variable.get(
                 'servo_press_result_keys_translation_mapping',
@@ -97,7 +107,7 @@ class CurveResultDownloader:
                     _logger.error(f"Error: {f} : {e}")
 
     @classmethod
-    def prepare_download_file(cls, entity_ids):
+    def prepare_download_file(cls, entity_ids: List[str] = None, results: List[ResultModel] = None):
         """
         创建需要下载的文件并返回文件名
         """
@@ -107,10 +117,13 @@ class CurveResultDownloader:
         if chk_file.is_file():
             chk_file.unlink()
 
-        n = len(entity_ids)
+        if entity_ids is None and results is None:
+            raise Exception('未选中结果或曲线')
+        n = len(results) if results else len(entity_ids)
         if n > cls._max_download_count:
             raise Exception(f'单次下载最大支持{cls._max_download_count}条曲线，当前为{n}条')
-        files = cls.cache_contents(entity_ids)
+        files = cls.cache_contents(entity_ids=entity_ids, results=results)
+
         if not files:
             raise Exception('未生成数据')
         with zipfile.ZipFile(fn, 'w') as f:

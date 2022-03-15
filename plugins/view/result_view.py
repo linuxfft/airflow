@@ -1,3 +1,4 @@
+from typing import List
 from qcos_addons.models.result import ResultModel
 import json
 from plugins.common import AirflowModelView
@@ -9,6 +10,9 @@ from airflow.security import permissions
 from flask_appbuilder import expose
 from flask import redirect, abort, url_for
 from os import environ
+from flask_appbuilder.actions import action
+from qcos_addons.download.CurveResultDownloader import CurveResultDownloader
+from flask import send_file
 
 PAGE_SIZE = conf.getint('webserver', 'page_size')
 
@@ -68,7 +72,7 @@ class ResultModelView(AirflowModelView):
         'bolt_number': lazy_gettext('Bolt Number'),
         'craft_type': lazy_gettext('Craft Type'),
         'measure_result': lazy_gettext('Measure Result'),
-        'measure_torque':lazy_gettext('Measure Torque'),
+        'measure_torque': lazy_gettext('Measure Torque'),
         'measure_angle': lazy_gettext('Measure Angle'),
         'result': lazy_gettext('Result'),
         'final_state': lazy_gettext('Final State'),
@@ -86,6 +90,7 @@ class ResultModelView(AirflowModelView):
         'list': 'read',
         'show': 'read',
         'edit': 'edit_all',
+        'action_export_results': 'read'
     }
 
     class_permission_name = permissions.RESOURCE_RESULT
@@ -127,6 +132,12 @@ class ResultModelView(AirflowModelView):
         if not item:
             abort(404)
         return redirect(url_for('CurveView.view_curve_page', entity_id=item.entity_id.replace('/', '@')))
+
+    @action('export_results', lazy_gettext("Export"), '', single=False)
+    def action_export_results(self, results: List[ResultModel]):
+        fn = CurveResultDownloader.prepare_download_file(results=results)
+        return send_file(fn, mimetype='application/zip', attachment_filename='curves.zip',
+                         as_attachment=True)
 
 
 result_view = ResultModelView()
