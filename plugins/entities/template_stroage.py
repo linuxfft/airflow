@@ -116,7 +116,8 @@ class ClsTmplStorage(ClsEntity):
         # _logger.debug('kwargs: {0}'.format(template))
         # objects = self.get_templates_from_variables(template_names)
         file_names = template.keys()
-        file_name = str(file_names[0]).split('@@')[0]
+        if '@@' in file_names[0]:
+            file_name = str(file_names[0]).split('@@')[0]
         self.ensure_bucket(self._bucket)
         _logger.debug('bucket确认完毕，正在写入')
         data = json.dumps(template)
@@ -129,13 +130,12 @@ class ClsTmplStorage(ClsEntity):
         self.ensure_bucket(self._bucket)
         file_name = tmpl_key
         data = self._client.get_object(self._bucket, file_name)
-        a = json.loads(data)
         return data
 
     # 获取全部模板
     def get_tmpl(self):
         self.ensure_bucket(self._bucket)
-        file_names = self.bucket_list_files(self._bucket)
+        file_names = self._client.list_objects(self._bucket)
         lth = len(file_names)
         tmpl = {}
         for i in range(lth):

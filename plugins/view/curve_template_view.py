@@ -124,7 +124,7 @@ class CurveTemplateView(AirflowModelView):
     @expose('/<string:bolt_no>/<string:craft_type>')
     @access_log('VIEW', 'CURVE_TEMPLATE', '查看曲线模板页面')
     def view_curve_template(self, bolt_no, craft_type):
-        curve_template = CurveTemplateModel.\
+        key, curve_template = CurveTemplateModel.\
             get_fuzzy_active('{}/{}'.format(bolt_no, craft_type))
         _has_access = self.appbuilder.sm.has_access
         can_delete = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CURVE_TEMPLATE)

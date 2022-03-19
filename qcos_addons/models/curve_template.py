@@ -1,6 +1,8 @@
 import json
 from typing import Any, List
 
+import urllib3
+
 from plugins.entities.template_stroage import ClsTmplStorage
 from qcos_addons.models.base import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean
@@ -101,6 +103,8 @@ class CurveTemplateModel(Base):
         template_args = get_template_args('qcos_minio')
         ct = ClsTmplStorage(**template_args)
         obj = ct.get_tmpl_single(key)
+        datas = urllib3.HTTPResponse.read(obj)
+        print(datas)
         if obj is None:
             raise KeyError('Curve Template {} does not exist'.format(key))
-        return obj.key, obj.val
+        return key, datas
