@@ -133,6 +133,16 @@ def create_default_connection(session=None):
 
     db.merge_conn(
         Connection(
+            conn_id='qcos_samba',
+            login='',
+            password='',
+            conn_type='',
+            host='',
+            port=
+        ), session)
+
+    db.merge_conn(
+        Connection(
             conn_id='qcos_report', conn_type='http',
             host='172.17.0.1', port=8686
         ), session)
