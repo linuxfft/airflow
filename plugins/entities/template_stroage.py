@@ -143,3 +143,9 @@ class ClsTmplStorage(ClsEntity):
             a = json.loads(data)
             tmpl[a.key] = a.value
         return tmpl
+
+    def remove_tmpl(self, tmpl_key):
+        self.ensure_bucket(self._bucket)
+        file_name = tmpl_key
+        self._client.remove_object(self._bucket, file_name)
+        _logger.info('已删除模板')

@@ -103,8 +103,8 @@ class CurveTemplateModel(Base):
         template_args = get_template_args('qcos_minio')
         ct = ClsTmplStorage(**template_args)
         obj = ct.get_tmpl_single(key)
-        datas = urllib3.HTTPResponse.read(obj)
+        datas = urllib3.HTTPResponse.read(obj).decode()
         print(datas)
         if obj is None:
             raise KeyError('Curve Template {} does not exist'.format(key))
-        return key, datas
+        return key, json.loads(datas)
