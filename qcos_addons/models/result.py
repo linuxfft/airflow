@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from pika.compat import time_now
 from sqlalchemy.orm import relationship
 from airflow.utils.sqlalchemy import UtcDateTime
 from airflow.utils import timezone
@@ -112,6 +115,13 @@ class ResultModel(Base):
             results = results.filter(cls.craft_type == craft_type)
         if bolt_number:
             results = results.filter(cls.bolt_number == bolt_number)
+        return results
+
+    @classmethod
+    @provide_session
+    def save_results(cls, craft_type=None, bolt_number=None, session=None):
+        result = session.query(cls)
+        results = result.filter(cls.update_time >= time_now - timedelta(hours=4)).all()
         return results
 
     @classmethod

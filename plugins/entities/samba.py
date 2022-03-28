@@ -1,13 +1,24 @@
-from smb.SMBConnection import *
+import threading
 
+from smb.SMBConnection import *
+import io
 from plugins.entities.entity import ClsEntity
 from plugins.utils.logger import generate_logger
+import pandas as pd
 
 _logger = generate_logger(__name__)
 
 class SmbFile(ClsEntity):
+    _instance_lock = threading.Lock()
 
-    def _init_(self, user_name, password, ip, port, my_name, remote_name):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(SmbFile, "_instance"):
+            with SmbFile._instance_lock:
+                if not hasattr(SmbFile, "_instance"):
+                    SmbFile._instance = object.__new__(cls)
+        return SmbFile._instance
+
+    def __init__(self, user_name, password, ip, port, my_name, remote_name):
         self.user_name = user_name
         self.passwd = password
         self.ip = ip
@@ -15,11 +26,12 @@ class SmbFile(ClsEntity):
         self.my_name = my_name
         self.remote_name = remote_name
         self._client = None
+        self.status = False
 
     def Smb_connect(self):
         try:
-            conn = SMBConnection(self.user_name, self.passwd, self.my_name, self.remote_name, use_ntlm_v2=True)
-            self._client = conn.connect(self.ip, self.port)
+            self._client = SMBConnection(self.user_name, self.passwd, self.my_name, self.remote_name, use_ntlm_v2=True)
+            self._client.connect(self.ip)
             self.status = self._client.auth_result
         except:
             self._client.close()
@@ -44,9 +56,14 @@ class SmbFile(ClsEntity):
         localFile = open(localPath, "rb")
         return localFile
 
-    def upload(self, file_name, smb_path, localPath):
-        local_file = self.openPath(localPath)
-        self._client.storeFile(file_name, smb_path, local_file)
+    def upload(self, file_name, smb_path):
+        from qcos_addons.models.result import ResultModel
+        results = ResultModel.query_results().all()
+        df_results = pd.DataFrame(results)
+        result_buf = io.StringIO()
+        df_results.to_csv(result_buf)
+        # local_file = self.openPath(localPath)
+        self._client.storeFile(file_name, smb_path, result_buf)
 
     @staticmethod
     def get_samba_args(key='qcos_samba'):
@@ -66,14 +83,14 @@ class SmbFile(ClsEntity):
             "username": smb.login,
             "password": smb.get_password()
         }
-        h = smb.host
-        p = smb.port
         lo = smb.login
         ps = smb.get_password()
+        h = smb.host
+        p = smb.port
         try:
             data.update(smb.extra_dejson)
         except Exception as e:
             _logger.error(e)
-        return h, p, lo, ps
+        return lo, ps, h, p
 
 

@@ -134,11 +134,11 @@ def create_default_connection(session=None):
     db.merge_conn(
         Connection(
             conn_id='qcos_samba',
-            login='',
-            password='',
-            conn_type='',
-            host='',
-            port=
+            login='meteor-x',
+            password='dpf470.999',
+            conn_type='samba',
+            host='192.168.3.29',
+            port=445
         ), session)
 
     db.merge_conn(
