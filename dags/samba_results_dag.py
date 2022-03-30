@@ -21,7 +21,7 @@ DAG_ID = 'samba_results_dag'
 TASK_ID = 'samba_results_task'
 
 
-File_NAME = str(datetime.datetime.now().strftime('%Y-%m-%d %H.%M'))+'.csv'
+File_NAME = str(datetime.datetime.now().strftime('%Y-%m-%d %H-%M'))
 
 AIRFLOW__CORE__SQL_ALCHEMY_CONN = 'postgresql+psycopg2://postgres:airflow@postgres/airflow'
 IS_DEBUG = RUNTIME_ENV != 'prod'
@@ -64,14 +64,15 @@ def save_results():
         my_name = value[1]
         remote_name = value[2]
         samba = SmbFile(login, password, host, port, my_name, remote_name)
-    except Exception as e:
+    except Exception:
         raise Exception("连接参数配置错误,正确格式为:"
                         "{\"smb-folder\": \"共享文件名\", \"my-name\": \"此设备名\", \"remote-name\": \"目标名\"}")
     try:
         samba.Smb_connect()
-        _logger.info('已连接')
-       # samba.createDir(File_NAME, SMB_FOLDER)
-        samba.upload(File_NAME, smb_folder)
+        _logger.info('smb已连接')
+        samba._client.createDirectory(smb_folder, File_NAME)
+        samba.uploadDir(smb_folder)
+        _logger.info('数据已经保存')
     except Exception as e:
         raise Exception("保存文件失败")
     finally:

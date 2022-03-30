@@ -1,5 +1,5 @@
 import threading
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from flask_sqlalchemy import SQLAlchemy
 from pika.compat import time_now
@@ -50,30 +50,36 @@ class SmbFile(ClsEntity):
         if self.status:
             self._client.close()
 
-    def createDir(self, path):
+    def uploadDir(self, service_name):
         from qcos_addons.models.result import ResultModel
-        db = SQLAlchemy(app)
-        names = db.session.execute("select distinct(bolt_number || '/' || craft_type) from result")
-        file_names = names.filter(ResultModel.update_time >= time_now - timedelta(hours=4)).all()
-        for file_name in file_names:
+        names = ResultModel.get_names()
+        file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
+        for file_name in names:
             try:
-                self._client.createDirectory(file_name, path)
-            except OperationFailure:
-                pass
+                n = str(file_name)
+                n = n.replace('/', '@@')
+                file_names = f"{file_time}\\{n}.csv"
+                lists = n.split('/')
+                self._client.createDirectory(service_name, file_names)
+                self.uploadCsv(service_name, file_names, craft_type=lists[0], bolt_number=lists[1])
+            except OperationFailure as e:
+                raise e
+
+
 
     def openPath(self, localPath):
         localFile = open(localPath, "rb")
         return localFile
 
-    def upload(self, file_name, smb_folder, craft_type=None, bolt_number=None):
+    def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
         from qcos_addons.models.result import ResultModel
-        results = ResultModel.query_results(craft_type, bolt_number).all()
+        results = ResultModel.query_results(craft_type, bolt_number).all
         result = results.filter(ResultModel.update_time >= time_now - timedelta(hours=4)).all()
         df_results = pd.DataFrame(result)
         result_buf = io.StringIO()
         df_results.to_csv(result_buf)
         # local_file = self.openPath(localPath)
-        self._client.storeFile(smb_folder, file_name, result_buf)
+        self._client.storeFile(service_name, smb_folder, result_buf)
 
     @staticmethod
     def get_samba_args(key='qcos_samba'):
