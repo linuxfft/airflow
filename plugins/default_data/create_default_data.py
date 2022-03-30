@@ -134,11 +134,16 @@ def create_default_connection(session=None):
     db.merge_conn(
         Connection(
             conn_id='qcos_samba',
-            login='meteor-x',
-            password='dpf470.999',
+            login='836537296@qq.com',
+            password='159753.com',
             conn_type='samba',
-            host='192.168.3.29',
-            port=445
+            host='192.168.98.1',
+            port=445,
+            extra=json.dumps({
+                'smb-folder': 'test',
+                'my-name': 'kojima',
+                'remote-name': 'HIDEO-KOJIMA-PR'
+            }),
         ), session)
 
     db.merge_conn(

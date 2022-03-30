@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Optional
 
@@ -9,7 +10,6 @@ from airflow.operators.python import PythonOperator
 from plugins.entities.samba import SmbFile
 
 from plugins.utils.logger import generate_logger
-import logging
 import datetime
 import datetime as dt
 from datetime import timedelta
@@ -20,11 +20,8 @@ RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 DAG_ID = 'samba_results_dag'
 TASK_ID = 'samba_results_task'
 
-File_NAME = str(datetime.datetime.now().strftime('%Y-%m-%d %H.%M'))
-SMB_PATH = '\\\\192.168.3.29\\test_curve_ts038'
-LOCAL_PATH = '/home/kojima/sd'
-MY_NAME = 'kojima'
-REMOTE_NAME = 'LAPTOP-0EH4GB2R'
+
+File_NAME = str(datetime.datetime.now().strftime('%Y-%m-%d %H.%M'))+'.csv'
 
 AIRFLOW__CORE__SQL_ALCHEMY_CONN = 'postgresql+psycopg2://postgres:airflow@postgres/airflow'
 IS_DEBUG = RUNTIME_ENV != 'prod'
@@ -59,16 +56,27 @@ samba: Optional[SmbFile] = None
 def save_results():
     global samba
     if not samba:
-        lo, ps, h, p = SmbFile.get_samba_args(key='qcos_samba')
-        samba = SmbFile(lo, ps, h, p, MY_NAME, REMOTE_NAME)
+        login, password, host, port, extra = SmbFile.get_samba_args(key='qcos_samba')
+    try:
+        data = json.loads(extra)
+        value = list(data.values())
+        smb_folder = value[0]
+        my_name = value[1]
+        remote_name = value[2]
+        samba = SmbFile(login, password, host, port, my_name, remote_name)
+    except Exception as e:
+        raise Exception("连接参数配置错误,正确格式为:"
+                        "{\"smb-folder\": \"共享文件名\", \"my-name\": \"此设备名\", \"remote-name\": \"目标名\"}")
     try:
         samba.Smb_connect()
-       # samba.createDir(File_NAME, SMB_PATH)
-        samba.upload('hello.txt', SMB_PATH)
+        _logger.info('已连接')
+       # samba.createDir(File_NAME, SMB_FOLDER)
+        samba.upload(File_NAME, smb_folder)
     except Exception as e:
         raise Exception("保存文件失败")
     finally:
         samba.Smb_disconnect()
+        _logger.info('已断开连接')
 
 
 

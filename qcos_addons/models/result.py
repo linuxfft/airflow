@@ -109,16 +109,6 @@ class ResultModel(Base):
 
     @classmethod
     @provide_session
-    def query_results(cls, craft_type=None, bolt_number=None, session=None):
-        results = session.query(cls)
-        if craft_type:
-            results = results.filter(cls.craft_type == craft_type)
-        if bolt_number:
-            results = results.filter(cls.bolt_number == bolt_number)
-        return results
-
-    @classmethod
-    @provide_session
     def save_results(cls, craft_type=None, bolt_number=None, session=None):
         result = session.query(cls)
         results = result.filter(cls.update_time >= time_now - timedelta(hours=4)).all()

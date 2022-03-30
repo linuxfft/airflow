@@ -1,10 +1,19 @@
 import threading
+from datetime import timedelta
 
+from flask_sqlalchemy import SQLAlchemy
+from pika.compat import time_now
 from smb.SMBConnection import *
 import io
+
+from sqlalchemy import create_engine
+
 from plugins.entities.entity import ClsEntity
 from plugins.utils.logger import generate_logger
 import pandas as pd
+from flask import Flask
+
+app = Flask(__name__)
 
 _logger = generate_logger(__name__)
 
@@ -33,37 +42,38 @@ class SmbFile(ClsEntity):
             self._client = SMBConnection(self.user_name, self.passwd, self.my_name, self.remote_name, use_ntlm_v2=True)
             self._client.connect(self.ip)
             self.status = self._client.auth_result
-        except:
+        except Exception as e:
             self._client.close()
+            raise e
 
     def Smb_disconnect(self):
         if self.status:
             self._client.close()
 
-    def createDir(self, service_name, path):
-        """
-           创建文件夹
-           :param service_name:共享空间(如C$或/Share/)
-           :param path:
-           :return:
-           """
-        try:
-            self._client.createDirectory(service_name, path)
-        except OperationFailure:
-            pass
+    def createDir(self, path):
+        from qcos_addons.models.result import ResultModel
+        db = SQLAlchemy(app)
+        names = db.session.execute("select distinct(bolt_number || '/' || craft_type) from result")
+        file_names = names.filter(ResultModel.update_time >= time_now - timedelta(hours=4)).all()
+        for file_name in file_names:
+            try:
+                self._client.createDirectory(file_name, path)
+            except OperationFailure:
+                pass
 
     def openPath(self, localPath):
         localFile = open(localPath, "rb")
         return localFile
 
-    def upload(self, file_name, smb_path):
+    def upload(self, file_name, smb_folder, craft_type=None, bolt_number=None):
         from qcos_addons.models.result import ResultModel
-        results = ResultModel.query_results().all()
-        df_results = pd.DataFrame(results)
+        results = ResultModel.query_results(craft_type, bolt_number).all()
+        result = results.filter(ResultModel.update_time >= time_now - timedelta(hours=4)).all()
+        df_results = pd.DataFrame(result)
         result_buf = io.StringIO()
         df_results.to_csv(result_buf)
         # local_file = self.openPath(localPath)
-        self._client.storeFile(file_name, smb_path, result_buf)
+        self._client.storeFile(smb_folder, file_name, result_buf)
 
     @staticmethod
     def get_samba_args(key='qcos_samba'):
@@ -83,14 +93,15 @@ class SmbFile(ClsEntity):
             "username": smb.login,
             "password": smb.get_password()
         }
-        lo = smb.login
-        ps = smb.get_password()
-        h = smb.host
-        p = smb.port
+        login = smb.login
+        password = smb.get_password()
+        host = smb.host
+        port = smb.port
+        extra = smb.get_extra()
         try:
             data.update(smb.extra_dejson)
         except Exception as e:
             _logger.error(e)
-        return lo, ps, h, p
+        return login, password, host, port, extra
 
 
