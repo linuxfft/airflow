@@ -1,11 +1,15 @@
 import threading
 from datetime import timedelta, datetime
 
+import pytz
 from flask_sqlalchemy import SQLAlchemy
-from pika.compat import time_now
+from sentry_sdk.integrations import boto3
+
+from qcos_addons.models.result import ResultModel
 from smb.SMBConnection import *
 import io
 
+from airflow.utils.sqlalchemy import UtcDateTime
 from sqlalchemy import create_engine
 
 from plugins.entities.entity import ClsEntity
@@ -59,9 +63,10 @@ class SmbFile(ClsEntity):
                 n = str(file_name)
                 n = n.replace('/', '@@')
                 file_names = f"{file_time}\\{n}.csv"
-                lists = n.split('/')
-                self._client.createDirectory(service_name, file_names)
-                self.uploadCsv(service_name, file_names, craft_type=lists[0], bolt_number=lists[1])
+                lists = n.split('@@')
+                self._client.createDirectory(service_name, file_time)
+                path = f"{service_name}"
+                self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1])
             except OperationFailure as e:
                 raise e
 
@@ -72,13 +77,16 @@ class SmbFile(ClsEntity):
         return localFile
 
     def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
-        from qcos_addons.models.result import ResultModel
-        results = ResultModel.query_results(craft_type, bolt_number).all
-        result = results.filter(ResultModel.update_time >= time_now - timedelta(hours=4)).all()
-        df_results = pd.DataFrame(result)
+        results = ResultModel.save_results(craft_type, bolt_number)
+        df_results = pd.DataFrame(list(results))
+        test_df = pd.DataFrame([{
+            'a':1,
+            'b':2
+        }])
         result_buf = io.StringIO()
-        df_results.to_csv(result_buf)
+        result_buf.seek(0)
         # local_file = self.openPath(localPath)
+        _logger.info(f'saving {len(results)} results to {service_name}/{smb_folder}')
         self._client.storeFile(service_name, smb_folder, result_buf)
 
     @staticmethod

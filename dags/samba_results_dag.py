@@ -70,8 +70,8 @@ def save_results():
     try:
         samba.Smb_connect()
         _logger.info('smb已连接')
-        samba._client.createDirectory(smb_folder, File_NAME)
-        samba.uploadDir(smb_folder)
+        service_name = smb_folder
+        samba.uploadDir(service_name)
         _logger.info('数据已经保存')
     except Exception as e:
         raise Exception("保存文件失败")

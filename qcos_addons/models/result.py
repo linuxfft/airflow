@@ -121,15 +121,16 @@ class ResultModel(Base):
     @provide_session
     def get_names(cls, session=None):
         result = session.execute(
-            "select distinct(bolt_number || '/' || craft_type) from result where update_time > NOW()-INTERVAL \'4 HOUR\';")
+            "select distinct(bolt_number || '/' || craft_type) from result where update_time > NOW()-INTERVAL '1 DAY';")
         names = result.fetchall()
         return [n[0] for n in names]
 
     @classmethod
     @provide_session
     def save_results(cls, craft_type=None, bolt_number=None, session=None):
-        result = session.query(cls)
-        results = result.filter(cls.update_time >= time_now - timedelta(hours=4)).all()
+        result = session.execute(
+            f"select * from result where craft_type = '{craft_type}' and bolt_number = '{bolt_number}' and update_time > NOW()-INTERVAL '1 DAY';")
+        results = result.fetchall()
         return results
 
     @classmethod
