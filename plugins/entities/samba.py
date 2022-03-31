@@ -79,11 +79,8 @@ class SmbFile(ClsEntity):
     def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
         results = ResultModel.save_results(craft_type, bolt_number)
         df_results = pd.DataFrame(list(results))
-        test_df = pd.DataFrame([{
-            'a':1,
-            'b':2
-        }])
         result_buf = io.StringIO()
+        df_results.to_csv(result_buf)
         result_buf.seek(0)
         # local_file = self.openPath(localPath)
         _logger.info(f'saving {len(results)} results to {service_name}/{smb_folder}')
