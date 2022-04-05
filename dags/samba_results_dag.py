@@ -1,41 +1,27 @@
-import json
-import os
 from typing import Optional
-
 import pendulum
-from sqlalchemy import create_engine
-
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from plugins.entities.samba import SmbFile
-
 from plugins.utils.logger import generate_logger
-import datetime
 import datetime as dt
 from datetime import timedelta
 
-
-RUNTIME_ENV = os.environ.get('RUNTIME_ENV', 'dev')
 
 DAG_ID = 'samba_results_dag'
 TASK_ID = 'samba_results_task'
 
 
-File_NAME = str(datetime.datetime.now().strftime('%Y-%m-%d %H-%M'))
-
-AIRFLOW__CORE__SQL_ALCHEMY_CONN = 'postgresql+psycopg2://postgres:airflow@postgres/airflow'
-IS_DEBUG = RUNTIME_ENV != 'prod'
-
 _logger = generate_logger(__name__)
-
-engine = create_engine(AIRFLOW__CORE__SQL_ALCHEMY_CONN, isolation_level="SERIALIZABLE")
 
 
 def onSambaFail(context):
     _logger.debug("{0} Run Fail".format(context))
 
+
 def onSambaSuccess(context):
     _logger.info("{0} Run Success".format(context))
+
 
 local_tz = pendulum.timezone("Asia/Shanghai")
 
@@ -53,32 +39,34 @@ desoutter_default_args = {
 
 samba: Optional[SmbFile] = None
 
+
 def save_results():
     global samba
-    if not samba:
-        login, password, host, port, extra = SmbFile.get_samba_args(key='qcos_samba')
+    data = SmbFile.get_samba_args(key='qcos_samba')
     try:
-        data = json.loads(extra)
-        value = list(data.values())
-        smb_folder = value[0]
-        my_name = value[1]
-        remote_name = value[2]
-        samba = SmbFile(login, password, host, port, my_name, remote_name)
+        smb_folder = data.get('smb-folder', None)
+        if not samba:
+            samba = SmbFile(
+                data.get('login', None),
+                data.get('password', None),
+                data.get('host', None),
+                data.get('port', None),
+                data.get('my-name', None),
+                data.get('remote-name', None)
+            )
     except Exception:
         raise Exception("连接参数配置错误,正确格式为:"
                         "{\"smb-folder\": \"共享文件名\", \"my-name\": \"此设备名\", \"remote-name\": \"目标名\"}")
     try:
         samba.Smb_connect()
         _logger.info('smb已连接')
-        service_name = smb_folder
-        samba.uploadDir(service_name)
+        samba.uploadDir(smb_folder)
         _logger.info('数据已经保存')
     except Exception as e:
         raise Exception("保存文件失败")
     finally:
         samba.Smb_disconnect()
         _logger.info('已断开连接')
-
 
 
 dag = DAG(
@@ -98,4 +86,3 @@ samba_results_task = PythonOperator(
     dag=dag,  # 指定归属的dag
     retries=2,  # 重写失败重试次数，如果不写，则默认使用dag类中指定的default_args中的设置
 )
-

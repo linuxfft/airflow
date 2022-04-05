@@ -1,18 +1,9 @@
 import threading
-from datetime import timedelta, datetime
-
-
-from airflow.utils import timezone
-import pytz
-from flask_sqlalchemy import SQLAlchemy
-from sentry_sdk.integrations import boto3
+from datetime import datetime
 
 from qcos_addons.models.result import ResultModel
 from smb.SMBConnection import *
 import io
-
-from airflow.utils.sqlalchemy import UtcDateTime
-from sqlalchemy import create_engine
 
 from plugins.entities.entity import ClsEntity
 from plugins.utils.logger import generate_logger
@@ -22,6 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 
 _logger = generate_logger(__name__)
+
 
 class SmbFile(ClsEntity):
     _instance_lock = threading.Lock()
@@ -33,7 +25,8 @@ class SmbFile(ClsEntity):
                     SmbFile._instance = object.__new__(cls)
         return SmbFile._instance
 
-    def __init__(self, user_name, password, ip, port, my_name, remote_name):
+    def __init__(self, user_name, password, ip, port, my_name, remote_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user_name = user_name
         self.passwd = password
         self.ip = ip
@@ -62,33 +55,19 @@ class SmbFile(ClsEntity):
         file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
         self._client.createDirectory(service_name, file_time)
         for file_name in names:
-            try:
-                n = str(file_name)
-                n = n.replace('/', '@@')
-                file_names = f"{file_time}/{n}.csv"
-                lists = n.split('@@')
-                path = f"{service_name}"
-                self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1])
-            except OperationFailure as e:
-                raise e
-
-
-
-    def openPath(self, localPath):
-        localFile = open(localPath, "rb")
-        return localFile
+            n = str(file_name)
+            n = n.replace('/', '@@')
+            file_names = f"{file_time}/{n}.csv"
+            lists = n.split('@@')
+            path = f"{service_name}"
+            self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1])
 
     def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
-        # results = ResultModel.save_results(craft_type, bolt_number)
         results = ResultModel.query_result(craft_type, bolt_number)
-        # column_names = ResultModel.info_columns()
-        # df_column = pd.DataFrame(list(column_names))
         df_results = pd.DataFrame(results)
         result_buf = io.BytesIO()
-        # df_column.to_csv(result_buf)
         df_results.to_csv(result_buf)
         result_buf.seek(0)
-        # local_file = self.openPath(localPath)
         _logger.info(f'saving {len(df_results)} results to {service_name}/{smb_folder}')
         self._client.storeFile(service_name, smb_folder, result_buf)
 
@@ -110,14 +89,9 @@ class SmbFile(ClsEntity):
             "username": smb.login,
             "password": smb.get_password()
         }
-        login = smb.login
-        password = smb.get_password()
-        host = smb.host
-        port = smb.port
-        extra = smb.get_extra()
+
         try:
             data.update(smb.extra_dejson)
         except Exception as e:
             _logger.error(e)
-        return login, password, host, port, extra
-
+        return data
