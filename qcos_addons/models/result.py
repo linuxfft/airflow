@@ -125,8 +125,8 @@ class ResultModel(Base):
             results = results.filter(cls.craft_type == craft_type)
         if bolt_number:
             results = results.filter(cls.bolt_number == bolt_number)
-        result = results.filter(ResultModel.update_time >= timezone.utcnow() - timedelta(days=3)).all()
-        return result
+        result = results.filter(ResultModel.update_time >= timezone.utcnow() - timedelta(days=4)).all()
+        return list(map(lambda r: r.as_dict(), result))
 
     @classmethod
     @provide_session
