@@ -1,6 +1,8 @@
 import threading
 from datetime import timedelta, datetime
 
+
+from airflow.utils import timezone
 import pytz
 from flask_sqlalchemy import SQLAlchemy
 from sentry_sdk.integrations import boto3
@@ -58,13 +60,13 @@ class SmbFile(ClsEntity):
         from qcos_addons.models.result import ResultModel
         names = ResultModel.get_names()
         file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
+        self._client.createDirectory(service_name, file_time)
         for file_name in names:
             try:
                 n = str(file_name)
                 n = n.replace('/', '@@')
-                file_names = f"{file_time}\\{n}.csv"
+                file_names = f"{file_time}/{n}.csv"
                 lists = n.split('@@')
-                self._client.createDirectory(service_name, file_time)
                 path = f"{service_name}"
                 self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1])
             except OperationFailure as e:
@@ -77,13 +79,17 @@ class SmbFile(ClsEntity):
         return localFile
 
     def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
-        results = ResultModel.save_results(craft_type, bolt_number)
-        df_results = pd.DataFrame(list(results))
-        result_buf = io.StringIO()
+        # results = ResultModel.save_results(craft_type, bolt_number)
+        results = ResultModel.query_result(craft_type, bolt_number)
+        # column_names = ResultModel.info_columns()
+        # df_column = pd.DataFrame(list(column_names))
+        df_results = pd.DataFrame(results)
+        result_buf = io.BytesIO()
+        # df_column.to_csv(result_buf)
         df_results.to_csv(result_buf)
         result_buf.seek(0)
         # local_file = self.openPath(localPath)
-        _logger.info(f'saving {len(results)} results to {service_name}/{smb_folder}')
+        _logger.info(f'saving {len(df_results)} results to {service_name}/{smb_folder}')
         self._client.storeFile(service_name, smb_folder, result_buf)
 
     @staticmethod
@@ -114,5 +120,4 @@ class SmbFile(ClsEntity):
         except Exception as e:
             _logger.error(e)
         return login, password, host, port, extra
-
 

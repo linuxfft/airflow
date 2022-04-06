@@ -119,9 +119,20 @@ class ResultModel(Base):
 
     @classmethod
     @provide_session
+    def query_result(cls, craft_type=None, bolt_number=None, session=None):
+        results = session.query(ResultModel)
+        if craft_type:
+            results = results.filter(cls.craft_type == craft_type)
+        if bolt_number:
+            results = results.filter(cls.bolt_number == bolt_number)
+        result = results.filter(ResultModel.update_time >= timezone.utcnow() - timedelta(days=3)).all()
+        return result
+
+    @classmethod
+    @provide_session
     def get_names(cls, session=None):
         result = session.execute(
-            "select distinct(bolt_number || '/' || craft_type) from result where update_time > NOW()-INTERVAL '1 DAY';")
+            "select distinct(bolt_number || '/' || craft_type) from result where update_time > NOW()-INTERVAL '3 DAY';")
         names = result.fetchall()
         return [n[0] for n in names]
 
@@ -129,7 +140,15 @@ class ResultModel(Base):
     @provide_session
     def save_results(cls, craft_type=None, bolt_number=None, session=None):
         result = session.execute(
-            f"select * from result where craft_type = '{craft_type}' and bolt_number = '{bolt_number}' and update_time > NOW()-INTERVAL '1 DAY';")
+            f"select * from result where craft_type = '{craft_type}' and bolt_number = '{bolt_number}' and update_time > NOW()-INTERVAL '3 DAY';")
+        results = result.fetchall()
+        return results
+
+    @classmethod
+    @provide_session
+    def info_columns(cls, session=None):
+        result = session.execute(
+            f"select column_name from information_schema.columns where table_schema='public' and table_name='result';")
         results = result.fetchall()
         return results
 
