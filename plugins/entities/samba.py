@@ -49,21 +49,22 @@ class SmbFile(ClsEntity):
         if self.status:
             self._client.close()
 
-    def uploadDir(self, service_name):
+    def uploadDir(self, service_name, rs_pk):
         from qcos_addons.models.result import ResultModel
         names = ResultModel.get_names()
+        pk = ResultModel.query_pk()
         file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
         self._client.createDirectory(service_name, file_time)
         for file_name in names:
             n = str(file_name)
-            n = n.replace('/', '@@')
             file_names = f"{file_time}/{n}.csv"
             lists = n.split('@@')
             path = f"{service_name}"
-            self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1])
+            self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1], rs_pk=rs_pk)
+        return pk
 
-    def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None):
-        results = ResultModel.query_result(craft_type, bolt_number)
+    def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None, rs_pk=None):
+        results = ResultModel.query_result(craft_type, bolt_number, rs_pk)
         df_results = pd.DataFrame(results)
         result_buf = io.BytesIO()
         df_results.to_csv(result_buf)

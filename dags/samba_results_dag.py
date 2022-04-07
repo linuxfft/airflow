@@ -15,9 +15,14 @@ TASK_ID = 'samba_results_task'
 _logger = generate_logger(__name__)
 
 
+def push_data(**context):
+    context['task_instance'].xcom_push(key='test_key', value='test_val')
+
+def pull_data(**context):
+    test_data = context['ti'].xcom_pull(key='test_key')
+
 def onSambaFail(context):
     _logger.debug("{0} Run Fail".format(context))
-
 
 def onSambaSuccess(context):
     _logger.info("{0} Run Success".format(context))
@@ -40,7 +45,7 @@ desoutter_default_args = {
 samba: Optional[SmbFile] = None
 
 
-def save_results():
+def save_results(**context):
     global samba
     data = SmbFile.get_samba_args(key='qcos_samba')
     try:
@@ -60,8 +65,10 @@ def save_results():
     try:
         samba.Smb_connect()
         _logger.info('smb已连接')
-        samba.uploadDir(smb_folder)
+        result_pk = context['task_instance'].xcom_pull(key="pk", include_prior_dates=True, task_ids=TASK_ID, dag_id=DAG_ID)
+        pk = samba.uploadDir(smb_folder, result_pk)
         _logger.info('数据已经保存')
+        context['task_instance'].xcom_push(key="pk", value=pk)
     except Exception as e:
         raise Exception("保存文件失败")
     finally:
@@ -85,4 +92,6 @@ samba_results_task = PythonOperator(
     python_callable=save_results,  # 指定要执行的函数
     dag=dag,  # 指定归属的dag
     retries=2,  # 重写失败重试次数，如果不写，则默认使用dag类中指定的default_args中的设置
+    provide_context=True
 )
+
