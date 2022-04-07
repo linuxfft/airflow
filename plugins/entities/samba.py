@@ -89,7 +89,6 @@ class SmbFile(ClsEntity):
             "username": smb.login,
             "password": smb.get_password()
         }
-
         try:
             data.update(smb.extra_dejson)
         except Exception as e:

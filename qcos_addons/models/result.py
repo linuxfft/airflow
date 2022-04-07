@@ -1,12 +1,12 @@
 from datetime import timedelta
 
-from pika.compat import time_now
 from sqlalchemy.orm import relationship
 from airflow.utils.sqlalchemy import UtcDateTime
 from airflow.utils import timezone
 from sqlalchemy import Boolean, Float, Text
 from airflow.utils.db import provide_session
 from sqlalchemy import Column, String, Integer
+
 from qcos_addons.models.base import Base
 from distutils.util import strtobool
 from sqlalchemy import text, ForeignKey, sql
@@ -120,12 +120,15 @@ class ResultModel(Base):
     @classmethod
     @provide_session
     def query_result(cls, craft_type=None, bolt_number=None, session=None):
+        from plugins.entities.samba import SmbFile
         results = session.query(ResultModel)
+        data = SmbFile.get_samba_args(key='qcos_samba')
+        delta = int(data.get('delta', None))
         if craft_type:
             results = results.filter(cls.craft_type == craft_type)
         if bolt_number:
             results = results.filter(cls.bolt_number == bolt_number)
-        result = results.filter(ResultModel.update_time >= timezone.utcnow() - timedelta(days=4)).all()
+        result = results.filter(ResultModel.update_time >= timezone.utcnow() - timedelta(hours=delta)).all()
         return list(map(lambda r: r.as_dict(), result))
 
     @classmethod

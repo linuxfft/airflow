@@ -47,7 +47,7 @@ def save_results():
         smb_folder = data.get('smb-folder', None)
         if not samba:
             samba = SmbFile(
-                data.get('login', None),
+                data.get('username', None),
                 data.get('password', None),
                 data.get('host', None),
                 data.get('port', None),
@@ -56,7 +56,7 @@ def save_results():
             )
     except Exception:
         raise Exception("连接参数配置错误,正确格式为:"
-                        "{\"smb-folder\": \"共享文件名\", \"my-name\": \"此设备名\", \"remote-name\": \"目标名\"}")
+                        "{\"smb-folder\": \"共享文件名\", \"my-name\": \"此设备名\", \"remote-name\": \"目标名\"}, \"delta\": \"间隔小时数\"}")
     try:
         samba.Smb_connect()
         _logger.info('smb已连接')

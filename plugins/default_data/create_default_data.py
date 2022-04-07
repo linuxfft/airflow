@@ -142,7 +142,8 @@ def create_default_connection(session=None):
             extra=json.dumps({
                 'smb-folder': 'test',
                 'my-name': 'kojima',
-                'remote-name': 'HIDEO-KOJIMA-PR'
+                'remote-name': 'HIDEO-KOJIMA-PR',
+                'delta': '4'
             }),
         ), session)
 
