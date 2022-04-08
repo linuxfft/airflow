@@ -51,20 +51,24 @@ class SmbFile(ClsEntity):
 
     def uploadDir(self, service_name, rs_pk):
         from qcos_addons.models.result import ResultModel
-        names = ResultModel.get_names()
-        pk = ResultModel.query_pk()
+        results_query = ResultModel.query_results()
+        if rs_pk:
+            results_query = ResultModel.filter(ResultModel.pk > rs_pk)
+        results_query = results_query.order_by(ResultModel.pk.desc())
+        bolts = results_query.distinct(ResultModel.bolt_number).all()  # FIXME
+
+        pk = results_query.first().pk
         file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
         self._client.createDirectory(service_name, file_time)
-        for file_name in names:
+        for file_name in bolts:
             n = str(file_name)
             file_names = f"{file_time}/{n}.csv"
-            lists = n.split('@@')
             path = f"{service_name}"
-            self.uploadCsv(path, file_names, bolt_number=lists[0], craft_type=lists[1], rs_pk=rs_pk)
+            results = list(map(lambda r: r.as_dict(), results_query.filter(ResultModel.bolt_number == file_name).all()))
+            self.uploadCsv(path, file_names, results)
         return pk
 
-    def uploadCsv(self, service_name, smb_folder, craft_type=None, bolt_number=None, rs_pk=None):
-        results = ResultModel.query_result(craft_type, bolt_number, rs_pk)
+    def uploadCsv(self, service_name, smb_folder, results):
         df_results = pd.DataFrame(results)
         result_buf = io.BytesIO()
         df_results.to_csv(result_buf)

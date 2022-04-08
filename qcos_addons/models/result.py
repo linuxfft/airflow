@@ -118,46 +118,6 @@ class ResultModel(Base):
         return results
 
     @classmethod
-    @provide_session
-    def query_result(cls, craft_type=None, bolt_number=None, rs_pk=None, session=None):
-        results = session.query(cls)
-        if craft_type:
-            results = results.filter(cls.craft_type == craft_type)
-        if bolt_number:
-            results = results.filter(cls.bolt_number == bolt_number)
-        if rs_pk:
-            result = results.filter(cls.pk > rs_pk).all()
-        else:
-            rs_pk = 0
-            result = results.filter(cls.pk > rs_pk).all()
-        return list(map(lambda r: r.as_dict(), result))
-
-    @classmethod
-    @provide_session
-    def query_pk(cls, session=None):
-        result = session.query(cls).order_by(cls.pk.desc()).first()
-        return result.pk
-
-    @classmethod
-    @provide_session
-    def get_names(cls, session=None):
-        from plugins.entities.samba import SmbFile
-        data = SmbFile.get_samba_args(key='qcos_samba')
-        delta = int(data.get('delta', None))
-        result = session.execute(
-            f"select distinct(bolt_number || '@@' || craft_type) from result where update_time > NOW()-INTERVAL '{delta} HOUR';")
-        names = result.fetchall()
-        return [n[0] for n in names]
-
-    @classmethod
-    @provide_session
-    def save_results(cls, craft_type=None, bolt_number=None, session=None):
-        result = session.execute(
-            f"select * from result where craft_type = '{craft_type}' and bolt_number = '{bolt_number}' and update_time > NOW()-INTERVAL '3 DAY';")
-        results = result.fetchall()
-        return results
-
-    @classmethod
     def filter_valid_fields(cls, data):
         result_data = {}
         for key, value in data.items():
