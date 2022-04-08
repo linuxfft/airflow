@@ -78,7 +78,7 @@ def do_remove_curve_from_curve_template(bolt_no=None, craft_type=None, version=N
 class CurveTemplateView(AirflowModelView):
     route_base = '/curve_template'
     datamodel = AirflowModelView.CustomSQLAInterface(CurveTemplateModel)
-    list_template = 'curve_template_list.html'
+    list_template = 'curve_template_list1.html'
     edit_template = 'curve_template_edit.html'
 
     list_columns = ['key', 'val', 'active']
@@ -124,8 +124,7 @@ class CurveTemplateView(AirflowModelView):
     @expose('/<string:bolt_no>/<string:craft_type>')
     @access_log('VIEW', 'CURVE_TEMPLATE', '查看曲线模板页面')
     def view_curve_template(self, bolt_no, craft_type):
-        key, curve_template = CurveTemplateModel.\
-            get_fuzzy_active('{}/{}'.format(bolt_no, craft_type))
+        curve_template = CurveTemplateModel.get_fuzzy_active('{}/{}'.format(bolt_no, craft_type))[1]
         _has_access = self.appbuilder.sm.has_access
         can_delete = _has_access(permissions.ACTION_CAN_EDIT, permissions.RESOURCE_CURVE_TEMPLATE)
 

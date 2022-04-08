@@ -55,7 +55,7 @@ class CurveTemplateModel(Base):
         cls,
         key,  # type: str
         value,  # type: Any
-        serialize_json=False,  # type: bool
+        serialize_json=True,  # type: bool
         session=None
     ):
         if serialize_json:
@@ -103,8 +103,8 @@ class CurveTemplateModel(Base):
         template_args = get_template_args('qcos_minio')
         ct = ClsTmplStorage(**template_args)
         obj = ct.get_tmpl_single(key)
-        datas = urllib3.HTTPResponse.read(obj).decode()
+        datas = json.loads(urllib3.HTTPResponse.read(obj).decode())
         print(datas)
         if obj is None:
             raise KeyError('Curve Template {} does not exist'.format(key))
-        return key, json.loads(datas)
+        return key, datas
