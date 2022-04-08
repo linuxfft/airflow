@@ -126,10 +126,10 @@ class ResultModel(Base):
         if bolt_number:
             results = results.filter(cls.bolt_number == bolt_number)
         if rs_pk:
-            result = results.filter(cls.pk >= rs_pk).all()
+            result = results.filter(cls.pk > rs_pk).all()
         else:
-            rs_pk = 1
-            result = results.filter(cls.pk >= rs_pk).all()
+            rs_pk = 0
+            result = results.filter(cls.pk > rs_pk).all()
         return list(map(lambda r: r.as_dict(), result))
 
     @classmethod
