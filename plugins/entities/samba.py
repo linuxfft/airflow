@@ -1,7 +1,5 @@
 import threading
 from datetime import datetime
-
-from qcos_addons.models.result import ResultModel
 from smb.SMBConnection import *
 import io
 
@@ -53,19 +51,26 @@ class SmbFile(ClsEntity):
         from qcos_addons.models.result import ResultModel
         results_query = ResultModel.query_results()
         if rs_pk:
-            results_query = ResultModel.filter(ResultModel.pk > rs_pk)
-        results_query = results_query.order_by(ResultModel.pk.desc())
-        bolts = results_query.distinct(ResultModel.bolt_number).all()  # FIXME
-
-        pk = results_query.first().pk
+            results_query = results_query.filter(ResultModel.pk > rs_pk)
+        results = results_query.order_by(ResultModel.pk.desc()).all()
+        pk = results[0].pk if results and len(results) > 0 else None
         file_time = str(datetime.now().strftime('%Y-%m-%d %H-%M'))
-        self._client.createDirectory(service_name, file_time)
-        for file_name in bolts:
-            n = str(file_name)
-            file_names = f"{file_time}/{n}.csv"
+        try:
+            self._client.createDirectory(service_name, file_time)
+        except Exception as e:
+            _logger.error('目录已存在，为避免冲突，本次将不保存结果')
+            raise e
+        results_by_bolts = {}
+        for result in results:
+            bolt = result.bolt_number
+            if bolt not in results_by_bolts.keys():
+                results_by_bolts[bolt] = [result.as_dict()]
+                continue
+            results_by_bolts[bolt].append(result.as_dict())
+        for bolt in results_by_bolts.keys():
+            file_names = f"{file_time}/{bolt}.csv"
             path = f"{service_name}"
-            results = list(map(lambda r: r.as_dict(), results_query.filter(ResultModel.bolt_number == file_name).all()))
-            self.uploadCsv(path, file_names, results)
+            self.uploadCsv(path, file_names, results_by_bolts[bolt])
         return pk
 
     def uploadCsv(self, service_name, smb_folder, results):

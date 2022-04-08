@@ -68,9 +68,11 @@ def save_results(**context):
         result_pk = context['task_instance'].xcom_pull(key="pk", include_prior_dates=True, task_ids=TASK_ID, dag_id=DAG_ID)
         pk = samba.uploadDir(smb_folder, result_pk)
         _logger.info('数据已经保存')
-        context['task_instance'].xcom_push(key="pk", value=pk)
+        if pk:
+            context['task_instance'].xcom_push(key="pk", value=pk)
     except Exception as e:
-        raise Exception("保存文件失败")
+        _logger.error('已断开连接')
+        raise e
     finally:
         samba.Smb_disconnect()
         _logger.info('已断开连接')
