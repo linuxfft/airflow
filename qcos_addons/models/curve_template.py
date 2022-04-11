@@ -55,7 +55,7 @@ class CurveTemplateModel(Base):
         cls,
         key,  # type: str
         value,  # type: Any
-        serialize_json=True,  # type: bool
+        serialize_json=False,  # type: bool
         session=None
     ):
         if serialize_json:

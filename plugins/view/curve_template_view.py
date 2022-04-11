@@ -239,7 +239,7 @@ class CurveTemplateView(AirflowModelView):
             suc_count = fail_count = 0
             for k, v in d.items():
                 try:
-                    CurveTemplateModel.set(k, v)
+                    CurveTemplateModel.set(k, v, serialize_json=False)
                     template_args = get_template_args('qcos_minio')
                     ct = ClsTmplStorage(**template_args)
                     ct.write_tmpl(d)
