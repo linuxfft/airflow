@@ -6,7 +6,7 @@ from airflow.utils.db import provide_session
 
 class CurveTemplateModel(Base):
     """
-    curve template.
+    curve template：曲线模板
     """
     __tablename__ = "curve_template"
     __NO_DEFAULT_SENTINEL = object()

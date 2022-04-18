@@ -6,7 +6,7 @@ from qcos_addons.models.base import Base
 
 class TighteningController(Base):
     """
-    tightening controllers.
+    tightening controllers：拧紧控制器数据模型
     """
 
     __tablename__ = "tightening_controller"

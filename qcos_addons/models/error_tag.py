@@ -5,7 +5,7 @@ from qcos_addons.models.base import Base
 
 class ErrorTag(Base):
     """
-    curve error tags.
+    curve error tags：曲线异常标签
     """
 
     __tablename__ = "error_tag"

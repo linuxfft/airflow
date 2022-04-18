@@ -3,6 +3,9 @@ from qcos_addons.models.base import Base
 
 
 class DeviceTypeModel(Base):
+    '''
+    device type: 设备类型
+    '''
     __tablename__ = "device_type"
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)

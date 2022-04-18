@@ -6,6 +6,9 @@ from sqlalchemy.ext.declarative import as_declarative
 
 @as_declarative(name="Base")
 class Base(object):
+    '''
+    数据模型的基类
+    '''
     __table_args__ = {"extend_existing": True}
 
     @classmethod

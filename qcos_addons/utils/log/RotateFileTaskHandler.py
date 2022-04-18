@@ -7,6 +7,10 @@ if TYPE_CHECKING:
 
 
 class RotateFileTaskHandler(FileTaskHandler):
+    '''
+    滚动日志处理器，用于将task_instance日志滚动保存，限制单个文件大小，
+    在airflow/config_templates中使用
+    '''
     def __init__(self, base_log_folder: str, filename_template: str, maxBytes=0, backupCount=0):
         FileTaskHandler.__init__(self, base_log_folder, filename_template)
         self.maxBytes = maxBytes

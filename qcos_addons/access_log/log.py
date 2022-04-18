@@ -14,6 +14,11 @@ _logger = logging.getLogger(__name__)
 
 
 def access_log(event, page, msg):
+    '''
+    一个装饰器，用于将访问事件记录日志，供抓取分析，格式和参数对照见constants.py文件
+    示例：
+    @access_log('VIEW', 'CURVES', '查看曲线对比页面')
+    '''
     def decorator(func: T) -> T:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

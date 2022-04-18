@@ -15,7 +15,7 @@ ENV_TIMESCALE_ENABLE = strtobool(os.environ.get('ENV_TIMESCALE_ENABLE', 'false')
 
 class ResultModel(Base):
     """
-    result
+    result: 拧紧结果数据模型
     """
 
     def __repr__(self):

@@ -103,6 +103,21 @@ Use Airflow to author workflows as directed acyclic graphs (DAGs) of tasks. The 
 `pip install setuptools  wheel gitpython`
 
 `python setup.py sdist bdist_wheel`
+
+## 目录说明
+
+定制化开发内容主要位于：
+
+`dags`: 
+
+`plugins`: 
+
+`qcos_addons`: 
+
+
+
+
+
 [![Coverage Status](https://img.shields.io/codecov/c/github/apache/airflow/main.svg)](https://codecov.io/github/apache/airflow?branch=main)
 [![License](https://img.shields.io/:license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/apache-airflow.svg)](https://pypi.org/project/apache-airflow/)
