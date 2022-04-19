@@ -15,6 +15,9 @@ IS_DEBUG = RUNTIME_ENV != 'prod'
 
 
 class ClsRedisConnection(ClsEntity):
+    '''
+    redis,用于模板缓存
+    '''
     _channels = {}
 
     def __init__(self):

@@ -8,6 +8,9 @@ from http import HTTPStatus
 import requests
 
 class CasHook(BaseHook):
+    '''
+    与CAS交互
+    '''
     def __init__(self, role='all'):
         super(CasHook, self).__init__()
         if role == 'analysis':

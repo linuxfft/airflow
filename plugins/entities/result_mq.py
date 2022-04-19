@@ -8,6 +8,9 @@ _logger = generate_logger(__name__)
 
 
 class ClsResultMQ(ClsEntity):
+    '''
+    发布结果到消息队列，传给外部系统
+    '''
     _instance_lock = threading.Lock()
     _connection: pika.BlockingConnection = None
 

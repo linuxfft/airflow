@@ -18,6 +18,9 @@ FACTORY_CODE = os.getenv('FACTORY_CODE', '')
 
 
 class ClsKafkaConsumer(ClsEntity):
+    '''
+    对接kafka，接收结果曲线
+    '''
     _instance_lock = threading.Lock()
     _kafka: Optional[KafkaHook] = None
 

@@ -16,6 +16,9 @@ _log = LoggingMixin().log
 
 
 class DoubleConfirmView(BaseView):
+    '''
+    二次确认
+    '''
     route_base = ''
 
     base_permissions = [permissions.ACTION_CAN_EDIT]
