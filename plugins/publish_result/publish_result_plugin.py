@@ -71,6 +71,8 @@ class ClsSendResultHMI(object):
 
 
 class PublishResultHook(BaseHook, ABC):
+    from plugins.factory_code.factory_code import get_factory_code
+
     @staticmethod
     def format_analysis_result(entity_id: str = '', factory_code: str = '', result: str = '', verify_error: int = 0,
                                curve_mode: list = None, **kwargs) -> Dict:
@@ -208,7 +210,7 @@ class PublishResultHook(BaseHook, ABC):
     def send_final_result_to_mq(
         result=None,
         entity_id=None,
-        factory_code=None,
+        factory_code=get_factory_code(),
         verify_error=None,
         curve_mode=None,
         **kwargs
@@ -240,7 +242,7 @@ class PublishResultHook(BaseHook, ABC):
             raise e
 
     @staticmethod
-    def publish_tightening_result(factory_code='', **data):
+    def publish_tightening_result(factory_code=get_factory_code(), **data):
         result = PublishResultHook.format_tightening_result(factory_code=factory_code, **data)
         PublishResultHook.send_tightening_result_to_mq(result)
         if ENV_PUSH_HMI_ENABLE:
@@ -252,7 +254,7 @@ class PublishResultHook(BaseHook, ABC):
             )
 
     @staticmethod
-    def publish_analysis_result(factory_code='', **data):
+    def publish_analysis_result(factory_code=get_factory_code(), **data):
         result = PublishResultHook.format_analysis_result(factory_code=factory_code, **data)
         if not result:
             return
