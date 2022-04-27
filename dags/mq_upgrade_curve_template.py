@@ -67,6 +67,13 @@ redis_connection: Optional[ClsRedisConnection] = None
 
 
 def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
+    """
+    处理从rabbitmq订阅到的结果，作为channel.basic_consume的on_message_callback参数。
+    @param ch: BlockingChannel
+    @param method: spec.Basic.Deliver
+    @param properties: spec.BasicProperties
+    @param body: bytes 消息体
+    """
     try:
         if not body:
             return
@@ -74,6 +81,7 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
         channel = method.routing_key or ''
         if not data or not channel:
             return
+        # 解析模板名称和数据
         if isinstance(channel, bytes):
             channel = channel.decode('utf-8')
         if isinstance(data, bytes):
@@ -84,12 +92,15 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
     except Exception as e:
         _logger.error("template_upgrade_handler error: {}".format(repr(e)))
         raise e
+
     try:
         key, val = CurveTemplateModel.get_fuzzy_active(key=template_name, deserialize_json=True)
         _logger.debug("Get Template Var: {}".format(key))
+        # 保留现有模板参数中的windows
         windows = val.get('curve_param').get('windows', None) if val.get('curve_param', False) else None
         if windows:
             template.update({'windows': windows})
+        # 版本+1
         template.update({'version': val.get('version', 0) + 1})
         CurveTemplateModel.set(key=key, value=template, serialize_json=True)  # 此业务场景下 params不会变化故覆盖现有的variable
 
@@ -101,6 +112,7 @@ def template_upgrade_handler(ch, method: pika.spec.Basic.Deliver, properties: pi
         # CurveTemplateModel.set(key=key, value=template, serialize_json=True)
     except Exception as e:
         _logger.error("template_upgrade_handler error: {}".format(repr(e)))
+    # 缓存到redis
     try:
         global redis_connection
         if redis_connection is None:

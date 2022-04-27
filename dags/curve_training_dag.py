@@ -49,8 +49,13 @@ desoutter_default_args = {
 }
 
 
-
-def do_trigger_training(result, final_state):
+def do_trigger_training(result: Dict, final_state: str):
+    """
+    触发训练
+    @param result: 结果数据
+    @param final_state: 二次确认结果
+    @return:
+    """
     entity_id = result.get('entity_id')
     _logger.info('getting curve...')
     curve = get_curve(entity_id)
@@ -79,6 +84,11 @@ def do_trigger_training(result, final_state):
 
 
 def verify_params(**kwargs):
+    """
+    验证参数
+    @param kwargs:
+    @return:
+    """
     dag_run = kwargs.get('dag_run', None)
     params = None
     if isinstance(dag_run, DagRun):
@@ -96,7 +106,12 @@ def verify_params(**kwargs):
 
 
 def trigger_training_task(task_instance, **kwargs):
-    """触发训练任务"""
+    """
+    触发训练任务
+    @param task_instance:
+    @param kwargs:
+    @return:
+    """
     entity_id, final_state, error_tags = verify_params(**kwargs)
     result = get_result(entity_id)
 

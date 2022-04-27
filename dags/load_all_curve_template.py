@@ -78,6 +78,10 @@ redis = None
 
 
 def remove_outdated_templates():
+    """
+    将数据库中不存在的模板从redis中移除
+    @return:
+    """
     global redis
     if not redis:
         redis = ClsRedisConnection()
@@ -97,7 +101,12 @@ def remove_outdated_templates():
         redis.remove_templates(templates_to_remove)
 
 
-def doLoadTmpls2Redis(template_names=None):
+def doLoadTmpls2Redis(template_names: List = None):
+    """
+    读取模板并加载到redis
+    @param template_names: 需要加载的模板
+    @return:
+    """
     global redis
     if not redis:
         redis = ClsRedisConnection()
@@ -134,6 +143,11 @@ def training_server_update_templates():
 
 
 def doLoadCurveTmplsTask(**kwargs):
+    """
+    加载曲线模板到redis
+    @param kwargs:
+    @return:
+    """
     _logger.debug('kwargs: {0}'.format(kwargs))
     template_names = kwargs.get('template_names', None)
     # 考虑到多个airflow公用一个redis的情况，不删除多余的模板
@@ -141,8 +155,8 @@ def doLoadCurveTmplsTask(**kwargs):
     _logger.debug("Loading Curve Templates to Redis...")
     doLoadTmpls2Redis(template_names)
     _logger.debug("Load Curve Templates to Redis Success!")
-    #加载完成后不再通知CAS,会自动获取
-    #_logger.debug("informing training server to update templates...")
+    # 加载完成后不再通知CAS,会自动获取
+    # _logger.debug("informing training server to update templates...")
     # training_server_update_templates()
     _logger.debug("task finished")
 

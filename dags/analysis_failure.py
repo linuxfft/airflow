@@ -29,6 +29,11 @@ handler_dag = DAG(
 
 
 def handle_analysis_failure(dag_run):
+    """
+    处理分析异常
+    @param dag_run:
+    @return:
+    """
     if isinstance(dag_run, DagRun):
         params = getattr(dag_run, 'conf')
     elif isinstance(dag_run, dict):

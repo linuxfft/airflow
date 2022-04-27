@@ -25,12 +25,13 @@ def on_success(context):
 
 
 def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
-    '''
-    :param channel: BlockingChannel
-    :param method: spec.Basic.Deliver
-    :param properties: spec.BasicProperties
-    :param body: bytes
-    '''
+    """
+    处理从消息队列中接收到的结果
+    @param channel: BlockingChannel
+    @param method: spec.Basic.Deliver
+    @param properties: spec.BasicProperties
+    @param body: bytes
+    """
     from plugins.result_storage.result_storage_plugin import ResultStorageHook
     from plugins.publish_result.publish_result_plugin import PublishResultHook
     if not body:
@@ -38,11 +39,12 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     channel = method.routing_key or ''
     if not body or not channel:
         return
+
+    # 解析结果数据
     data = body
     if isinstance(data, bytes):
         data = data.decode('utf-8')
     data_dict: Dict = json.loads(data)
-
     try:
         _logger.debug(f"Receive Analysis Result, data: {data}")
         entity_id = data_dict.get('entity_id', None)
@@ -59,6 +61,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     except Exception as e:
         raise Exception("解析分析结果异常: {}".format(repr(e)))
 
+    # 保存结果
     result_exists = False
     try:
         ResultStorageHook.save_result(
@@ -76,6 +79,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
     except Exception as e:
         raise Exception("保存结果异常: {}".format(repr(e)))
 
+    # 保存曲线
     try:
         ResultStorageHook.save_curve(
             entity_id,
@@ -86,6 +90,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
 
     _logger.info(f'保存控制器结果和曲线完成。')
 
+    # 对于异常情况，触发异常处理DAG
     if curve_mode is None or verify_error is None:
         # 如果结果已经存在，则认为分析异常已经触发过（如存在分析异常），因此不再触发
         if not result_exists:
@@ -96,6 +101,7 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
             _logger.info(f'异常处理任务触发完成。')
         return
 
+    # 保存分析结果
     _logger.info(f'分析结果解析正常，开始保存分析结果。')
     ResultStorageHook.save_analyze_result(
         entity_id, measure_result, curve_mode, verify_error
