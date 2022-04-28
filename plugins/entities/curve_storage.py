@@ -17,9 +17,9 @@ _logger = generate_logger(__name__)
 
 
 class ClsCurveStorage(ClsEntity):
-    '''
+    """
     曲线保存
-    '''
+    """
     _instance_lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):

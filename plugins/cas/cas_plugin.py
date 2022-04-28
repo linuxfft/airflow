@@ -7,10 +7,12 @@ import json
 from http import HTTPStatus
 import requests
 
+
 class CasHook(BaseHook):
-    '''
+    """
     与CAS交互
-    '''
+    """
+
     def __init__(self, role='all'):
         super(CasHook, self).__init__()
         if role == 'analysis':
@@ -40,18 +42,27 @@ class CasHook(BaseHook):
 
     @property
     def trigger_analyze_endpoint(self):
+        """
+        触发cas分析的url
+        @return: str
+        """
         return '{}/cas/analysis'.format(self.uri)
 
     @property
-    def load_templates_endpoint(self):
-        return '{}/cas/templates'.format(self.uri)
-
-    @property
     def trigger_training_endpoint(self):
+        """
+        触发cas训练的url
+        @return: str
+        """
         return "{}/cas/invalid-curve".format(self.uri)
 
     async def trigger_analyze(self, params, timeout=ClientTimeout(total=30), retry_attempts=5):
-        '''触发分析，同步获取分析结果'''
+        """
+        触发分析，同步获取分析结果
+        @param params: 用于触发分析的数据
+        @param timeout: 请求超时时间
+        @param retry_attempts: 请求重试次数
+        """
         headers = {
             'Accept': 'application/json',
             'Content-type': 'application/json'
@@ -75,23 +86,11 @@ class CasHook(BaseHook):
                 "push_result_to_training_server except: {}".format(repr(e)))
             raise e
 
-    async def training_server_update_templates(self, timeout=ClientTimeout(total=300), retry_attempts=5):
-        '''通知cas加载模板'''
-        headers = {
-            'Accept': 'application/json',
-            'Content-type': 'application/json'
-        }
-        async with RetryClient(timeout=timeout) as client:
-            async with client.post(headers=headers, url=self.load_templates_endpoint,
-                                   retry_attempts=retry_attempts) as r:
-                r.raise_for_status()
-                resp = await r.read()
-                self.log.debug(
-                    "training_server_update_templates called, url: {} resp: {}".format(self.load_templates_endpoint,
-                                                                                       resp))
-
     def trigger_training(self, data):
-        '''触发异步训练'''
+        """
+        触发异步训练
+        @param data: 用于触发训练的数据
+        """
         json_data = {
             'conf': data
         }

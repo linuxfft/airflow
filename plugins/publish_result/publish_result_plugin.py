@@ -46,6 +46,13 @@ class ClsSendResultHMI(object):
 
     @classmethod
     def send_result_to_hmi(cls, result_type, factory_code, data: Dict):
+        """
+        推送结果到客户HMI
+        @param result_type: 结果类型
+        @param factory_code: 工厂代码
+        @param data: 结果数据
+        @return:
+        """
         _logger.info("Sending {} to hmi".format(result_type, data))
         _logger.debug("data: {}".format(data))
         if not factory_code:
@@ -180,6 +187,12 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def do_push(data, queue):
+        """
+        连接消息队列并推送数据
+        @param data: 需要推送数据
+        @param queue: 保存队列名称的variable key
+        @return:
+        """
         mq = ClsResultMQ(**ClsResultMQ.get_result_mq_args(key='qcos_rabbitmq'))
         queue_config = Variable.get(queue, deserialize_json=True)
         if queue_config is None:
@@ -190,23 +203,6 @@ class PublishResultHook(BaseHook, ABC):
         )
 
     @staticmethod
-    def send_analysis_result_to_mq(data):
-        try:
-            result: str = data.get('result', '')
-            if PUSH_ANALYSIS_RESULT_MODE != 'ALL' and PUSH_ANALYSIS_RESULT_MODE != result:
-                _logger.info('PUSH_ANALYSIS_RESULT_MODE is set to {}, skipping {} analysis results.'.format(
-                    PUSH_ANALYSIS_RESULT_MODE, result))
-                return
-            _logger.info('pushing analysis result to mq...')
-            _logger.debug('pushing analysis result to mq Data: {}'.format(pprint.pformat(data, indent=4)))
-
-            PublishResultHook.do_push(data, 'analysis_result_mq_queue')
-            _logger.info('pushing analysis result to mq success')
-        except Exception as e:
-            _logger.error("push analysis result to mq failed: ".format(repr(e)))
-            raise e
-
-    @staticmethod
     def send_final_result_to_mq(
         result=None,
         entity_id=None,
@@ -215,6 +211,16 @@ class PublishResultHook(BaseHook, ABC):
         curve_mode=None,
         **kwargs
     ):
+        """
+        推送最终结果到消息队列
+        @param result: 最终结果
+        @param entity_id: 曲线编号
+        @param factory_code: 工厂代码
+        @param verify_error: 分析异常
+        @param curve_mode: 异常原因
+        @param kwargs:
+        @return:
+        """
         try:
             _logger.info('pushing final result to mq...')
             _logger.debug(kwargs)
@@ -232,19 +238,17 @@ class PublishResultHook(BaseHook, ABC):
             raise e
 
     @staticmethod
-    def send_tightening_result_to_mq(data):
-        try:
-            _logger.info('pushing tightening result to mq...')
-            PublishResultHook.do_push(data, 'tightening_result_mq_queue')
-            _logger.info('pushing tightening result to mq success')
-        except Exception as e:
-            _logger.error("push tightening result to mq failed: ".format(repr(e)))
-            raise e
-
-    @staticmethod
     def publish_tightening_result(factory_code=get_factory_code(), **data):
+        """
+        推送拧紧结果
+        @param factory_code: 工厂代码
+        @param data: 拧紧结果数据
+        @return:
+        """
         result = PublishResultHook.format_tightening_result(factory_code=factory_code, **data)
-        PublishResultHook.send_tightening_result_to_mq(result)
+        _logger.info('pushing tightening result to mq...')
+        PublishResultHook.do_push(result, 'tightening_result_mq_queue')
+        _logger.info('pushing tightening result to mq success')
         if ENV_PUSH_HMI_ENABLE:
             formatted_data = PublishResultHook.format_tightening_result_for_hmi(factory_code=factory_code, **data)
             ClsSendResultHMI.send_result_to_hmi(
@@ -255,10 +259,25 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def publish_analysis_result(factory_code=get_factory_code(), **data):
+        """
+        推送分析结果
+        @param factory_code: 工厂代码
+        @param data: 发送的数据
+        @return:
+        """
         result = PublishResultHook.format_analysis_result(factory_code=factory_code, **data)
         if not result:
             return
-        PublishResultHook.send_analysis_result_to_mq(result)
+        result: str = data.get('result', '')
+        if PUSH_ANALYSIS_RESULT_MODE != 'ALL' and PUSH_ANALYSIS_RESULT_MODE != result:
+            _logger.info('PUSH_ANALYSIS_RESULT_MODE is set to {}, skipping {} analysis results.'.format(
+                PUSH_ANALYSIS_RESULT_MODE, result))
+            return
+        _logger.info('pushing analysis result to mq...')
+        _logger.debug('pushing analysis result to mq Data: {}'.format(pprint.pformat(data, indent=4)))
+
+        PublishResultHook.do_push(result, 'analysis_result_mq_queue')
+        _logger.info('pushing analysis result to mq success')
         if ENV_PUSH_HMI_ENABLE:
             formatted_data = PublishResultHook.format_analysis_result_for_hmi(factory_code=factory_code, **data)
             ClsSendResultHMI.send_result_to_hmi(
@@ -269,6 +288,13 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def send_curve_template_to_mq(template_name=None, template_data=None, **kwargs):
+        """
+        通过消息队列发送曲线模板
+        @param template_name: 模板名称
+        @param template_data: 模板数据
+        @param kwargs:
+        @return:
+        """
         try:
             _logger.debug('get extra args: {}'.format(repr(kwargs)))
             if not template_name or not template_data:
@@ -283,6 +309,11 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def send_templates_dict_to_mq(**data):
+        """
+        通过消息队列批量发送模板
+        @param data: 模板名称=模板数据
+        @return:
+        """
         for key, value in data.items():
             PublishResultHook.send_curve_template_to_mq(
                 template_name=key,
@@ -291,6 +322,13 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def do_publish(data_type, data):
+        """
+        推送数据
+        @param data_type:
+        @param data:
+        @return:
+        """
+        # 各数据类型对应的推送方法
         data_type_handlers = {
             'tightening_result': PublishResultHook.publish_tightening_result,
             'analysis_result': PublishResultHook.publish_analysis_result,
@@ -306,8 +344,15 @@ class PublishResultHook(BaseHook, ABC):
 
     @staticmethod
     def trigger_publish(data_type, data):
+        """
+        触发推送dag，供模块外调用
+        @param data_type: 数据类型
+        @param data: 数据
+        @return:
+        """
         push_result_dat_id = 'publish_result_dag'
 
+        # 控制对应类型是否推送的环境变量map
         data_type_envs = {
             'tightening_result': 'ENV_PUBLISH_TIGHTENING_RESULT',
             'analysis_result': 'ENV_PUBLISH_ANALYSIS_RESULT',
@@ -332,8 +377,16 @@ class PublishResultHook(BaseHook, ABC):
 
 
 class PublishResultOperator(BaseOperator):
+    """
+    推送结果到外部系统
+    """
     @staticmethod
     def verify_params(params):
+        """
+        验证参数
+        @param params: 传入参数
+        @return: (推送数据的类型， 推送的数据)
+        """
         if params is None:
             raise Exception(u'参数params不存在')
         data_type = params.get('data_type')

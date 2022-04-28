@@ -7,9 +7,9 @@ _logger = generate_logger(__name__)
 
 
 class ClsEntity(object):
-    '''
+    """
     entity 基类
-    '''
+    """
     def __init__(self, *args, **kwargs):
         self._metadata = None  # type: Optional[Dict]
         self._channels = dict()  # type: Dict[Any]

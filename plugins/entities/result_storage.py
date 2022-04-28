@@ -18,9 +18,9 @@ IS_DEBUG = RUNTIME_ENV != 'prod'
 
 
 class ClsResultStorage(ClsEntity):
-    '''
+    """
     保存结果到数据库
-    '''
+    """
     _instance_lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):

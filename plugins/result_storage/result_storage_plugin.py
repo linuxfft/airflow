@@ -27,6 +27,7 @@ FILTER_MISMATCHES = True if os.environ.get('FILTER_MISMATCHES', 'False') == 'Tru
 MISMATCH_RATE_RELAXATION_FACTOR = float(os.environ.get('MISMATCH_RATE_RELAXATION_FACTOR', '1'))
 MISMATCH_RATE_RELAXATION_THRESHOLD = float(os.environ.get('MISMATCH_RATE_RELAXATION_THRESHOLD', '0.001'))
 
+
 def is_mismatch(measure_result, curve_mode):
     analysis_result = 'OK' if curve_mode[0] is 0 else 'NOK'
     return analysis_result != measure_result
@@ -178,8 +179,8 @@ class ResultStorageHook(BaseHook, ABC):
         }
         st.update(
             result=result,
-            error_tag= json.dumps(curve_mode if curve_mode[0] is not 0 else []),
-            verify_error= int(verify_error)
+            error_tag=json.dumps(curve_mode if curve_mode[0] is not 0 else []),
+            verify_error=int(verify_error)
         )
         trigger_push_result_to_mq(
             'analysis_result',
@@ -188,7 +189,6 @@ class ResultStorageHook(BaseHook, ABC):
             verify_error,
             curve_mode
         )
-
 
     # 根据entity_id更新分析二次确认结果
     @staticmethod

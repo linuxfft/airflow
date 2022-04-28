@@ -14,6 +14,12 @@ log = LoggingMixin().log
 
 @provide_session
 def load_default_controller(file_dir, session=None):
+    """
+    加载默认控制器
+    @param file_dir: 控制器数据文件所在目录
+    @param session:
+    @return:
+    """
     from qcos_addons.models.tightening_controller import TighteningController
 
     if len(TighteningController.list_controllers()) > 0:
@@ -30,6 +36,14 @@ def load_default_controller(file_dir, session=None):
 
 @provide_session
 def merge_data(model, data, is_exist, session=None):
+    """
+    保存模型数据（仅保存不存在的）
+    @param model: 模型
+    @param data: 需要保存的数据
+    @param is_exist: 判断数据是否存在的条件
+    @param session:
+    @return:
+    """
     if not session.query(model).filter(is_exist).first():
         session.add(data)
         session.commit()
@@ -37,6 +51,11 @@ def merge_data(model, data, is_exist, session=None):
 
 @provide_session
 def create_default_error_tags(session=None):
+    """
+    创建默认的错误标签
+    @param session:
+    @return:
+    """
     log.info("Loading default error_tags")
     from qcos_addons.models.error_tag import ErrorTag
     error_tags = load_default_error_tags()
@@ -47,6 +66,11 @@ def create_default_error_tags(session=None):
 
 @provide_session
 def create_device_type_support(session=None):
+    """
+    创建设备类型
+    @param session:
+    @return:
+    """
     log.info("Loading default device types")
     if not session:
         return
@@ -58,7 +82,11 @@ def create_device_type_support(session=None):
 
 
 def create_default_users(factory):
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    """
+    创建默认用户
+    @param factory: 工厂代码
+    @return:
+    """
     default_users = load_default_users(factory)
     from airflow.www.app import cached_app
     appbuilder = cached_app().appbuilder
@@ -84,6 +112,11 @@ def create_default_users(factory):
 
 @provide_session
 def create_default_connection(session=None):
+    """
+    创建默认连接
+    @param session:
+    @return:
+    """
     from airflow.utils import db
     from airflow.models import Connection
 
@@ -162,6 +195,9 @@ def create_default_connection(session=None):
 
 
 def create_default_curve_templates():
+    """
+    创建默认曲线模板
+    """
     log.info("Loading default Curve Templates.")
     from qcos_addons.models.curve_template import CurveTemplateModel
     current_templates = len(CurveTemplateModel.get_all_active_curve_tmpls().keys())
@@ -182,6 +218,10 @@ def create_default_curve_templates():
 
 
 def create_default_variables():
+    """
+    创建默认变量
+    @return:
+    """
     log.info("Loading default Variables.")
     from airflow.models import Variable
 

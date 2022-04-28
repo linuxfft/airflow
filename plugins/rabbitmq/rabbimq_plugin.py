@@ -54,6 +54,11 @@ class RabbitmqHook(BaseHook):
 
     @classmethod
     def get_connection(cls, conn_id: str):
+        """
+        建立连接
+        @param conn_id: 创建连接使用的连接模型的id
+        @return:
+        """
         from airflow.models.connection import Connection
         mq = Connection.get_connection_from_secrets(conn_id)
         if mq is None:
@@ -80,6 +85,15 @@ class RabbitmqHook(BaseHook):
         channel: pika.adapters.blocking_connection.BlockingChannel = None,
         **kwargs
     ):
+        """
+        从传入的队列中订阅数据
+        @param queue: 队列名称
+        @param message_handler: 消息处理函数
+        @param subscribe_args: 订阅参数
+        @param channel:
+        @param kwargs:
+        @return:
+        """
         while True:
             try:
                 channel.basic_consume(
@@ -102,6 +116,16 @@ class RabbitmqHook(BaseHook):
         channel: pika.adapters.blocking_connection.BlockingChannel = None,
         **kwargs
     ):
+        """
+        发布消息
+        @param message_source: 消息源：消息或返回消息的函数
+        @param exchange:
+        @param routing_key:
+        @param publish_args: 发送参数
+        @param channel:
+        @param kwargs:
+        @return:
+        """
         if hasattr(message_source, '__call__'):
             for msg in message_source():
                 _logger.debug(f'publishing: {msg}')

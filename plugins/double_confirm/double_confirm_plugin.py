@@ -16,9 +16,9 @@ _log = LoggingMixin().log
 
 
 class DoubleConfirmView(BaseView):
-    '''
+    """
     二次确认
-    '''
+    """
     route_base = ''
 
     base_permissions = [permissions.ACTION_CAN_EDIT]
@@ -27,8 +27,6 @@ class DoubleConfirmView(BaseView):
 
     method_permission_name = {
         'double_confirm_task': 'edit',
-        'save_curve_error_tag_w_csrf': 'edit',
-        'save_curve_error_tag': 'edit'
     }
 
     base_permissions = [
@@ -38,45 +36,30 @@ class DoubleConfirmView(BaseView):
     @expose('/double-confirm/<string:entity_id>', methods=['POST'])
     @access_log('DOUBLE_CONFIRM', 'CURVE', '曲线二次确认')
     def double_confirm_task(self, entity_id):
+        """
+        触发二次确认接口
+        @param entity_id: 曲线编号
+        @return:
+        """
         try:
+            # 从请求中获取数据
             params = request.get_json(force=True)  # success failed
             final_state = params.get('final_state', None)
             error_tags = params.get('error_tags', [])
             entity_id = entity_id.replace('@', '/')
             result = get_result(entity_id)
+            # 参数校验
             if not result.get('result'):
                 raise AirflowException(u"分析结果还没有生成，请等待分析结果生成后再进行二次确认")
             if not final_state or final_state not in ['OK', 'NOK']:
                 raise AirflowException("二次确认参数未定义或数值不正确!")
+            # 触发训练dag
             trigger_training_dag(entity_id, final_state, error_tags)
             return jsonify({'response': 'ok'})
         except AirflowException as err:
             _log.info(err)
             response = jsonify(error="{}".format(err))
             response.status_code = err.status_code
-            return response
-
-    @csrf.exempt
-    @expose('/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>/error_tag', methods=['POST'])
-    def save_curve_error_tag(self, dag_id, task_id, execution_date):
-        return self._save_curve_error_tag(dag_id, task_id, execution_date)
-
-    @csrf.exempt
-    @expose('/error_tag/dags/<string:dag_id>/tasks/<string:task_id>/<string:execution_date>', methods=['POST'])
-    def save_curve_error_tag_w_csrf(self, dag_id, task_id, execution_date):
-        return self._save_curve_error_tag(dag_id, task_id, execution_date)
-
-    def _save_curve_error_tag(self, dag_id, task_id, execution_date):
-        try:
-            params = request.get_json(force=True)  # success failed
-            error_tags = params.get('error_tags', [])
-            # fixme
-            # do_save_curve_error_tag(dag_id, task_id, execution_date, error_tags)
-            return jsonify(response='ok')
-        except Exception as e:
-            _log.info(repr(e))
-            response = jsonify({'error': repr(e)})
-            response.status_code = 400
             return response
 
 

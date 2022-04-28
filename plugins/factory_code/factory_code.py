@@ -7,6 +7,10 @@ factory_code_map = {
 
 
 def get_factory_code():
+    """
+    获取工厂代码
+    @return: str 工厂代码
+    """
     code = os.environ.get('FACTORY_CODE', '')
     for key, values in factory_code_map.items():
         if code in values:

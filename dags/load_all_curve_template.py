@@ -130,18 +130,6 @@ def get_templates_from_variables(template_names=None) -> Dict:
     return templates
 
 
-def training_server_update_templates():
-    roles = ['all', 'analysis', 'training']
-    loop = asyncio.get_event_loop()
-    for role in roles:
-        try:
-            cas = CasHook(role=role)
-            loop.run_until_complete(cas.training_server_update_templates())
-        except Exception as e:
-            _logger.warning(e)
-    loop.close()
-
-
 def doLoadCurveTmplsTask(**kwargs):
     """
     加载曲线模板到redis
@@ -156,8 +144,6 @@ def doLoadCurveTmplsTask(**kwargs):
     doLoadTmpls2Redis(template_names)
     _logger.debug("Load Curve Templates to Redis Success!")
     # 加载完成后不再通知CAS,会自动获取
-    # _logger.debug("informing training server to update templates...")
-    # training_server_update_templates()
     _logger.debug("task finished")
 
 

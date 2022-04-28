@@ -4,9 +4,9 @@ from airflow import settings
 
 # Defining the plugin class
 class ModelsPlugin(AirflowPlugin):
-    '''
+    """
     加载该插件时创建qcos_addons.models中的模型
-    '''
+    """
     name = "models_plugin"
 
     @classmethod
