@@ -178,11 +178,12 @@ def get_results(entity_ids):
 def get_results_model(entity_ids):
     from plugins.entities.result_storage import ClsResultStorage
     st = ClsResultStorage()
+    entity_ids = [entity_ids]
     if not isinstance(entity_ids, list) or len(entity_ids) == 0:
         return []
     st.metadata = {'entity_id': entity_ids}
     result = st.query_results_model()  # 查询多条记录
-    return result if result else []
+    return result[0] if result else []
 
 
 def get_curve(entity_id):
