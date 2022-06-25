@@ -220,12 +220,14 @@ def put_analyze_result():
         if (not ANALYSIS_NOK_RESULTS) and measure_result == 'NOK':
             result = 'NOK'
 
-        extra = {}
+        extra = {'verify_error': int(data.get('verify_error'))}
+
         if curve_mode[0] is not 0:
             extra['error_tag'] = json.dumps(curve_mode)
         else:
+            # 这里如果是指返回了1 measure_result = OK 那错误码肯定应该是空的
             extra['error_tag'] = json.dumps([])
-        extra['verify_error'] = int(data.get('verify_error'))  # OK, NOK
+            extra['verify_error'] = 0
 
         from plugins.result_storage.result_storage_plugin import ResultStorageHook
         ResultStorageHook.save_analyze_result(
