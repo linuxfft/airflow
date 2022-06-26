@@ -180,7 +180,7 @@ class ResultStorageHook(BaseHook, ABC):
         st.update(
             result=result,
             error_tag=json.dumps(curve_mode if curve_mode[0] is not 0 else []),
-            verify_error=int(verify_error)
+            verify_error=int(verify_error) if curve_mode[0] is not 0 else 0
         )
         trigger_push_result_to_mq(
             'analysis_result',
