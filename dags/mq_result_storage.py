@@ -71,13 +71,15 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
         )
 
         PublishResultHook.trigger_publish('tightening_result', data_dict)
-    except IntegrityError as e:
-        # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
-        if isinstance(e.orig, errors.UniqueViolation):
-            _logger.info(f'结果{entity_id}已存在')
-            result_exists = True
+    # except IntegrityError as e:
+    #     # 已经存在的结果不再执行后续流程，避免异常处理陷入循环
+    #     if isinstance(e.orig, errors.UniqueViolation):
+    #         _logger.info(f'结果{entity_id}已存在')
+    #         result_exists = True
     except Exception as e:
-        raise Exception("保存结果异常: {}".format(repr(e)))
+        _logger.info(f'结果{entity_id}已存在')
+        result_exists = True
+    #    raise Exception("保存结果异常: {}".format(repr(e)))
 
     # 保存曲线
     try:
