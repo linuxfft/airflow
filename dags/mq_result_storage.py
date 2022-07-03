@@ -94,6 +94,14 @@ def result_handler(channel, method: pika.spec.Basic.Deliver, properties: pika.sp
 
     # 对于异常情况，触发异常处理DAG
     if curve_mode is None or verify_error is None:
+
+        if result_exists:
+            # 此处的逻辑在于,没有分析结果的话  给定一个默认分析结果---采集结果
+            _logger.info(f'没有分析结果,  给定一个默认分析结果---采集结果')
+            ResultStorageHook.save_analyze_result(
+                entity_id, measure_result, [0], verify_error
+            )
+
         # 如果结果已经存在，则认为分析异常已经触发过（如存在分析异常），因此不再触发
         if not result_exists:
             # 分析结果不存在，视为分析异常，向消息队列中发送异常消息
