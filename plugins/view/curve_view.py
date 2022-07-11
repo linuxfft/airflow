@@ -13,6 +13,19 @@ import json
 _logger = logging.getLogger(__name__)
 
 
+def round_result(result):
+    need_fix = ["torque_threshold", "measure_angle", "measure_torque", "angle_max", "angle_min", "angle_target",
+                "torque_max", "torque_min", "torque_target"]
+
+    for key in need_fix:
+        val = result.get(key)
+        if not val:
+            continue
+        if isinstance(val, float):
+            result[key] = str(round(val, 2))
+    return result
+
+
 class CurveView(BaseView):
     route_base = ''
 
@@ -75,7 +88,7 @@ class CurveView(BaseView):
         display_keys = json.loads(view_config).get('display_keys', {})
         translation_mapping = json.loads(view_config).get('translation_mapping', {})
 
-        return self.render_template('curve.html', result=result,
+        return self.render_template('curve.html', result=round_result(result),
                                     curve=curve, analysisErrorMessageMapping=analysis_error_message_mapping,
                                     resultErrorMessageMapping=result_error_message_mapping,
                                     resultKeysTranslationMapping=translation_mapping,
