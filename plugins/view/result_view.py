@@ -14,6 +14,9 @@ from flask_appbuilder.actions import action
 from qcos_addons.download.CurveResultDownloader import CurveResultDownloader
 from flask import send_file
 
+import pytz
+from datetime import datetime
+
 PAGE_SIZE = conf.getint('webserver', 'page_size')
 
 
@@ -113,8 +116,31 @@ class ResultModelView(AirflowModelView):
             return ','.join(ret)
         return ','.join(ret)
 
+    def update_time_f(attr):
+        update_time = attr.get('update_time')
+
+        try:
+            tz = pytz.timezone("Asia/Shanghai")
+
+            if isinstance(update_time, str):
+                tz_time = datetime.strptime(update_time, "%Y-%m-%d %H:%M:%S%z")
+                tz_time = tz_time.astimezone(tz)
+
+                return tz_time
+            elif isinstance(update_time, datetime):
+                tz_time = update_time.astimezone(tz)
+
+                return tz_time
+
+            else:
+                return update_time
+
+        except Exception as e:
+            return update_time
+
     formatters_columns = {
         'error_tag': error_tag_f,
+        'update_time': update_time_f,
     }
 
     @expose("/show/<pk>", methods=["GET"])
