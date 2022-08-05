@@ -1,6 +1,6 @@
 import datetime
 import json
-
+from typing import Dict
 from plugins.utils.logger import generate_logger
 import os
 from airflow.models import DAG, DagRun

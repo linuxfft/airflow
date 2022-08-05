@@ -6,7 +6,7 @@ from datetime import timedelta
 import pendulum
 from airflow.models import DAG
 from airflow.operators.python_operator import PythonOperator
-from typing import Dict
+from typing import Dict, List
 import logging
 from plugins.utils.utils import get_curve_template_name
 from qcos_addons.models.curve_template import CurveTemplateModel
