@@ -29,6 +29,6 @@ if [[ -d ./static/dist ]]; then
 fi
 
 yarn install --frozen-lockfile
-yarn run build
+NODE_OPTIONS=--openssl-legacy-provider yarn run build
 
 find package.json yarn.lock static/css static/js -type f | sort | xargs md5sum > "${MD5SUM_FILE}"
