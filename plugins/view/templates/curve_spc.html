@@ -250,7 +250,14 @@
       yAxis: {
         type: 'value',
         name: 'x bar',
-        scale: true,
+        min: function (value) {
+          const min = Math.floor(Math.min(value.min, XBarData.lower));
+          return min - 1;
+        },
+        max: function (value) {
+          const max = Math.ceil(Math.max(value.max, XBarData.upper));
+          return max + 1;
+        },
         nameLocation: 'middle',
         nameRotate: 0,
         nameGap: 60,
@@ -258,6 +265,28 @@
           fontSize: 16
         }
       },
+      dataZoom: [
+          {
+              type: 'slider',
+              xAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'slider',
+              yAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'inside',
+              xAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'inside',
+              yAxisIndex: 0,
+              filterMode: 'empty'
+          }
+      ],
       series: [{
         name: 'x bar',
         type: 'line',
@@ -302,11 +331,42 @@
         nameLocation: 'middle',
         nameRotate: 0,
         nameGap: 60,
-        scale: true,
+        min: function (value) {
+          const min = Math.floor(Math.min(value.min, RSData.lower));
+          const max = Math.ceil(Math.max(value.max, RSData.upper));
+          return min - (max - min) / 10;
+        },
+        max: function (value) {
+          const max = Math.ceil(Math.max(value.max, RSData.upper));
+          const min = Math.floor(Math.min(value.min, RSData.lower));
+          return max + (max - min) / 10;
+        },
         axisLabel: {
           fontSize: 16
         }
       },
+      dataZoom: [
+          {
+              type: 'slider',
+              xAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'slider',
+              yAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'inside',
+              xAxisIndex: 0,
+              filterMode: 'empty'
+          },
+          {
+              type: 'inside',
+              yAxisIndex: 0,
+              filterMode: 'empty'
+          }
+      ],
       series: [{
         name: RS,
         type: 'line',
