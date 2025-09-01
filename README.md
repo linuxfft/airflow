@@ -352,3 +352,6 @@ If you would love to have Apache Airflow stickers, t-shirt etc. then check out
 
 - [Documentation](https://airflow.apache.org/docs/apache-airflow/stable/)
 - [Chat](https://s.apache.org/airflow-slack)
+
+
+<!-- Security scan triggered at 2025-09-01 23:49:01 -->
